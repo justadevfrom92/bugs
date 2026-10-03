@@ -187,9 +187,9 @@ dl.kv dd { color: var(--ink); overflow-wrap: anywhere; }
 .toast {
   position: fixed; right: 20px; bottom: 20px; z-index: 100;
   background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.2); transform: translateY(120%); transition: transform .25s;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2); transform: translateY(calc(100% + 40px)); visibility: hidden; transition: transform .25s, visibility .25s;
 }
-.toast.show { transform: none; }
+.toast.show { transform: none; visibility: visible; }
 
 /* Modal */
 .modal-bg { position: fixed; inset: 0; background: rgba(16,34,71,.45); z-index: 90; display: grid; place-items: center; padding: 16px; }
