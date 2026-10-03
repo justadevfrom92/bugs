@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact Us | Energy Texas</title>
+  <meta name="description" content="Get in touch with Energy Texas customer care.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Raleway:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-banner">
+      <div class="wrap">
+        <div class="crumbs"><a href="index.html">Home</a> / Contact Us</div>
+        <h1>Howdy! How can we help?</h1>
+        <p>Our Texas-based team is here to answer questions about your account, bill or new service.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap contact-grid">
+        <div>
+          <div class="contact-card">
+            <h3>Customer Care</h3>
+            <p><a href="tel:18005550100">1-800-555-0100</a><br>Mon – Fri, 8am – 6pm CT</p>
+          </div>
+          <div class="contact-card">
+            <h3>Power Outage?</h3>
+            <p>Contact your local utility (TDSP) directly — they own the poles and wires and handle restoration.</p>
+          </div>
+          <div class="contact-card">
+            <h3>Manage Your Account</h3>
+            <p>Pay your bill, view usage and redeem Rangler Rewards anytime in <a href="#">My Account</a>.</p>
+          </div>
+        </div>
+
+        <form class="byop-panel" id="contact-form" novalidate>
+          <h2>Send us a message</h2>
+          <div class="form-2">
+            <div class="field"><label for="fn">First Name *</label><input id="fn" name="first" required></div>
+            <div class="field"><label for="ln">Last Name *</label><input id="ln" name="last" required></div>
+          </div>
+          <div class="form-2" style="margin-top:16px">
+            <div class="field"><label for="em">Email *</label><input id="em" name="email" type="email" required></div>
+            <div class="field"><label for="ph">Phone</label><input id="ph" name="phone" type="tel"></div>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label for="topic">Topic</label>
+            <select id="topic" name="topic">
+              <option value="general">General question</option>
+              <option value="signup">Sign up for service</option>
+              <option value="billing">Billing &amp; payments</option>
+              <option value="business">Business service</option>
+              <option value="rewards">Rangler Rewards</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label for="msg">Message *</label>
+            <textarea id="msg" name="message" required></textarea>
+          </div>
+          <button class="btn" type="submit" style="margin-top:20px">Send Message</button>
+          <div class="form-msg" role="status"></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+</body>
+</html>
