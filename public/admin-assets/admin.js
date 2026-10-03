@@ -1,0 +1,176 @@
+/*
+  Admin page behaviour. Plain JavaScript, no build step. Pages are rendered by
+  Laravel; this only adds conveniences on top of normal forms and links.
+*/
+(function () {
+  'use strict';
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function toast(msg) {
+    var t = $('#toast');
+    if (!t || !msg) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(function () { t.classList.remove('show'); }, 3200);
+  }
+
+  // A small dialog built into the page (the browser's confirm() is not used)
+  function modal(html, onSubmit) {
+    var bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = '<form class="modal" role="dialog" aria-modal="true">' + html + '</form>';
+    document.body.appendChild(bg);
+    var form = $('form', bg);
+    function close() { bg.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.hasAttribute('data-x')) close(); });
+    form.addEventListener('submit', function (e) { e.preventDefault(); close(); onSubmit(form); });
+    var first = $('input, button.red, button.cyan', form);
+    if (first) first.focus();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Mobile menu and menu search
+    var menuBtn = $('#menu-btn');
+    if (menuBtn) menuBtn.addEventListener('click', function () { $('#sidebar').classList.toggle('open'); });
+    var find = $('#find');
+    if (find) find.addEventListener('input', function () {
+      var v = find.value.toLowerCase();
+      $$('#menu a').forEach(function (a) { a.hidden = !!v && a.textContent.toLowerCase().indexOf(v) < 0; });
+    });
+
+    // Flash message from the server
+    var t = $('#toast');
+    if (t && t.dataset.message) toast(t.dataset.message);
+
+    // Tabs: <div data-tabs> <button data-tab="x"> … <div data-pane="x">
+    $$('[data-tabs]').forEach(function (box) {
+      var buttons = $$('[data-tab]', box);
+      function show(name) {
+        buttons.forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
+        $$('[data-pane]', box).forEach(function (p) { p.hidden = p.dataset.pane !== name; });
+      }
+      buttons.forEach(function (b) {
+        b.addEventListener('click', function () { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); });
+      });
+      var initial = location.hash.slice(1);
+      show(buttons.some(function (b) { return b.dataset.tab === initial; }) ? initial : buttons[0].dataset.tab);
+    });
+
+    // Clickable table rows
+    $$('tr[data-href]').forEach(function (tr) {
+      tr.addEventListener('click', function (e) {
+        if (!e.target.closest('a, button, input, select, form')) location.href = tr.dataset.href;
+      });
+    });
+
+    // Selects that submit their form on change
+    $$('[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
+
+    // Forms that need a confirmation first: data-confirm="Title|Body|Button label"
+    $$('form[data-confirm]').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        if (form.dataset.confirmed) return;
+        e.preventDefault();
+        var parts = form.dataset.confirm.split('|');
+        modal('<h2>' + esc(parts[0]) + '</h2><p>' + esc(parts[1] || '') + '</p>' +
+          '<div class="actions" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x>Cancel</button>' +
+          '<button class="btn red">' + esc(parts[2] || 'Confirm') + '</button></div>', function () {
+          form.dataset.confirmed = '1';
+          form.requestSubmit ? form.requestSubmit() : form.submit();
+        });
+      });
+    });
+
+    // Highlight edited cells in grids
+    $$('input[data-track]').forEach(function (i) {
+      var orig = i.type === 'checkbox' ? i.checked : i.value;
+      i.addEventListener('input', function () {
+        var now = i.type === 'checkbox' ? i.checked : i.value;
+        i.classList.toggle('dirty', now !== orig);
+        if (i.type === 'number') i.classList.toggle('neg', +i.value < 0);
+        var label = i.closest('label') && $('[data-label]', i.closest('label'));
+        if (label) label.textContent = i.checked ? label.dataset.on : label.dataset.off;
+        // Changing a TDSP fee unlocks its effective date
+        if (i.dataset.dateFor) {
+          var d = document.getElementById(i.dataset.dateFor);
+          if (d) { d.disabled = false; if (!d.value || d.value < d.min) d.value = d.min; }
+        }
+      });
+    });
+
+    // Rates: add or subtract an amount from every rate on the screen
+    var adjust = $('[data-adjust]');
+    if (adjust) adjust.addEventListener('click', function () {
+      modal('<h2>Adjust all rates</h2><p>Add an amount to every rate on this screen. Use a negative number to lower rates. Nothing is saved until you choose Save Rates.</p>' +
+        '<div class="field"><label for="adj">Change (¢/kWh)</label><input id="adj" type="number" step="0.001" value="0.100" required></div>' +
+        '<div class="actions" style="justify-content:flex-end;margin-top:16px"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn cyan">Apply</button></div>',
+        function (form) {
+          var d = +$('#adj', form).value;
+          $$('input[data-rate]').forEach(function (i) {
+            if (i.value === '') return;
+            i.value = (+i.value + d).toFixed(3);
+            i.dispatchEvent(new Event('input'));
+          });
+          toast('Adjusted. Review the highlighted cells, then Save Rates.');
+        });
+    });
+
+    // Content block editor: live preview, Tab inserts spaces, Ctrl+S saves
+    var html = $('#b-html'), frame = $('#b-prev');
+    if (html && frame) {
+      var preview = function () { frame.srcdoc = '<style>body{font-family:sans-serif;padding:12px;color:#102247}</style>' + html.value; };
+      html.addEventListener('input', preview);
+      preview();
+      html.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); html.form.requestSubmit ? html.form.requestSubmit() : html.form.submit(); }
+        if (e.key === 'Tab') { e.preventDefault(); html.setRangeText('  ', html.selectionStart, html.selectionEnd, 'end'); }
+      });
+    }
+
+    // New plan: fill the URL slug from the name
+    var name = $('[data-slug-source]'), slug = $('[data-slug-target]');
+    if (name && slug) name.addEventListener('input', function () {
+      slug.value = name.value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    });
+
+    // Sheriff → Users: Add User dialog
+    var addUser = $('[data-add-user]');
+    if (addUser) addUser.addEventListener('click', function () {
+      var tpl = $('#add-user-form');
+      var bg = document.createElement('div');
+      bg.className = 'modal-bg';
+      bg.appendChild(tpl.content.cloneNode(true));
+      document.body.appendChild(bg);
+      bg.addEventListener('click', function (e) { if (e.target === bg || e.target.hasAttribute('data-x')) bg.remove(); });
+      $('input', bg).focus();
+    });
+
+    // Sheriff → Data: add a blank row to a reference table
+    var addRow = $('[data-add-row]');
+    if (addRow) addRow.addEventListener('click', function () {
+      var body = $('#ref-rows');
+      var cols = +addRow.dataset.addRow;
+      var i = $$('tr', body).length;
+      var tr = document.createElement('tr');
+      var cells = '';
+      for (var c = 0; c < cols; c++) cells += '<td><input class="cell-input" name="rows[' + i + '][' + c + ']" aria-label="Row ' + (i + 1) + ' column ' + (c + 1) + '"></td>';
+      tr.innerHTML = cells + '<td><button type="button" class="btn sm ghost" data-remove-row>Remove</button></td>';
+      body.appendChild(tr);
+      $('input', tr).focus();
+    });
+    document.addEventListener('click', function (e) {
+      var rm = e.target.closest('[data-remove-row]');
+      if (rm) rm.closest('tr').remove();
+    });
+  });
+})();

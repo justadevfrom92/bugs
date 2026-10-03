@@ -1,0 +1,62 @@
+{{--
+    The one layout every admin app uses. The sidebar, app switcher and menu come
+    from config/admin.php, so each app only supplies its screens.
+--}}
+@php
+    $appKey = \App\Support\AdminMenu::currentApp();
+    $app = config('admin.apps.'.$appKey);
+    $sections = \App\Support\AdminMenu::sections($appKey);
+    $activeLabel = collect($sections)->flatten(1)->firstWhere('active', true)['label'] ?? '';
+    $user = auth()->user();
+@endphp
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    @include('admin.partials.head')
+    <title>@yield('title', $activeLabel) · {{ $app['name'] }} · {{ config('brand.name') }} Admin</title>
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <img src="/shared/img/logo-mark-on-dark.svg" alt="" width="36" height="36">
+            <div><strong>{{ config('brand.wordmark') }}</strong><span>Admin Tools</span></div>
+        </div>
+        <span class="env">{{ strtoupper(app()->environment()) }}</span>
+        <nav class="app-switch" aria-label="Apps">
+            @foreach ($user->apps() as $key => $a)
+                <a href="{{ route($a['home']) }}" title="{{ $a['desc'] }}" @class(['on' => $key === $appKey]) @if ($key === $appKey) aria-current="page" @endif>
+                    @include('admin.partials.icon', ['name' => $a['icon']]){{ $a['name'] }}
+                </a>
+            @endforeach
+        </nav>
+        <div class="nav-search"><input id="find" type="search" placeholder="Find a menu item…" aria-label="Find a menu item"></div>
+        <nav class="menu" id="menu" aria-label="{{ $app['name'] }} menu">
+            @foreach ($sections as $heading => $items)
+                <h4>{{ $heading }}</h4>
+                @foreach ($items as $it)
+                    <a href="{{ $it['url'] }}" @class(['on' => $it['active']]) @if ($it['active']) aria-current="page" @endif>{{ $it['label'] }}@if ($it['badge'])<span class="count hot">{{ $it['badge'] }}</span>@endif</a>
+                @endforeach
+            @endforeach
+        </nav>
+        <div class="side-foot">
+            <a href="{{ route('admin.launcher') }}">← All apps</a>
+            <a href="/" target="_blank" rel="noopener">Website</a>
+        </div>
+    </aside>
+    <div class="main">
+        <header class="topbar">
+            <button class="menu-btn" id="menu-btn" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+            <div class="crumbs">{{ $app['name'] }} / <b>@yield('crumb', $activeLabel)</b></div>
+            <div class="user-chip"><span class="avatar">{{ $user->initials() }}</span><span><span>{{ $user->name }}</span><small>{{ $user->role?->name }}</small></span></div>
+            <form method="post" action="{{ route('admin.logout') }}" class="inline">@csrf<button class="btn sm ghost">Logout</button></form>
+        </header>
+        <main class="content">
+            @include('admin.partials.flash')
+            @yield('content')
+        </main>
+    </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" data-message="{{ session('status') }}"></div>
+</body>
+</html>

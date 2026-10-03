@@ -1,0 +1,18 @@
+@extends('admin.layouts.app')
+
+@section('content')
+    @include('admin.partials.page-head', ['title' => 'APIs', 'sub' => 'Third-party integrations.'])
+    <div class="banner-note">Keys and passwords live in the server's <span class="mono">.env</span> file, never in the database or the code. This screen only shows whether each value is set.</div>
+    <div class="grid-3">
+        @foreach ($integrations as $i)
+            <div class="panel"><div class="panel-head"><h2>{{ $i['name'] }}</h2>@include('admin.partials.pill', $i['configured'] ? ['text' => 'Configured', 'tone' => 'ok'] : ['text' => 'Not configured', 'tone' => 'warn'])</div>
+                <div class="panel-body">
+                    <p class="muted" style="margin-bottom:10px">{{ $i['purpose'] }}</p>
+                    <dl class="kv" style="grid-template-columns:1fr auto">
+                        @foreach ($i['set'] as $env => $set)<dt class="mono">{{ $env }}</dt><dd @class(['secret-set' => $set, 'muted' => ! $set])>{{ $set ? 'set' : '—' }}</dd>@endforeach
+                    </dl>
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endsection

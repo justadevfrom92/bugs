@@ -1,0 +1,40 @@
+[
+ {
+  "name": "Administrator",
+  "perms": [
+   "corral",
+   "lando",
+   "astro",
+   "sheriff",
+   "delete",
+   "refunds"
+  ]
+ },
+ {
+  "name": "Customer Service",
+  "perms": [
+   "corral"
+  ]
+ },
+ {
+  "name": "Pricing",
+  "perms": [
+   "lando",
+   "astro"
+  ]
+ },
+ {
+  "name": "Content Editor",
+  "perms": [
+   "lando"
+  ]
+ },
+ {
+  "name": "Finance",
+  "perms": [
+   "corral",
+   "sheriff",
+   "refunds"
+  ]
+ }
+]
