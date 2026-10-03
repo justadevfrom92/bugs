@@ -1,102 +1,12 @@
 /*
-  Sample data for the admin tools.
-  Every customer, user and transaction here is FICTIONAL — no real customer records.
-  Plan lineup, markets and page structure mirror the CMS configuration.
+  Admin-only sample data: customers, CMS pages and blocks, queues, integrations.
+  Every customer and transaction here is FICTIONAL — no real customer records.
+  Plans, rates, markets, users and roles live in shared/config instead.
 */
-window.ADMIN_DATA = (function () {
+window.ET = window.ET || {};
+ET.defaults = ET.defaults || {};
+ET.sample = (function () {
   'use strict';
-
-  var MARKETS = [
-    { id: 2, name: 'TX-E-ONCOR', short: 'ONCOR', desc: 'Oncor Electric Delivery', region: 'NORTH', phone: '888-313-4747' },
-    { id: 3, name: 'TX-E-CENTERPOINT', short: 'CNP', desc: 'CenterPoint Energy Houston Electric', region: 'CENTERPOINT', phone: '800-332-7143' },
-    { id: 4, name: 'TX-E-AEPNORTH', short: 'AEPN', desc: 'AEP Texas North', region: 'NORTH', phone: '877-373-4858' },
-    { id: 5, name: 'TX-E-AEPCENTRAL', short: 'AEPC', desc: 'AEP Texas Central', region: 'CENTRAL', phone: '877-373-4858' },
-    { id: 6, name: 'TX-E-TNMP', short: 'TNMP', desc: 'Texas-New Mexico Power', region: 'TNMP', phone: '888-866-7456' }
-  ];
-
-  // Illustrative TDSP delivery charges — replace with the current PUCT tariff values.
-  var TDSP_FEES = [
-    { market: 'TX-E-AEPCENTRAL', perKwh: 5.6436, perBill: 4.79, kwhDate: '2026-09-01', billDate: '2026-09-01' },
-    { market: 'TX-E-AEPNORTH', perKwh: 5.2381, perBill: 4.79, kwhDate: '2026-09-01', billDate: '2026-09-01' },
-    { market: 'TX-E-CENTERPOINT', perKwh: 5.4892, perBill: 4.39, kwhDate: '2026-09-01', billDate: '2026-09-01' },
-    { market: 'TX-E-ONCOR', perKwh: 5.5730, perBill: 4.23, kwhDate: '2026-07-01', billDate: '2026-07-01' },
-    { market: 'TX-E-TNMP', perKwh: 6.0410, perBill: 7.85, kwhDate: '2026-09-01', billDate: '2026-09-01' }
-  ];
-
-  // From the CMS plan list (type, term, display, internal, rolloff, ETF, MRC, green)
-  var PLANS = [
-    ['Biz', 1, 'Mill Creek Variable', 'MCV', 'None', '-', 2.95, 100, true],
-    ['Biz', 1, "Takin' Care of Business Monthly", 'TCBM', 'None', '-', 0, 100, true],
-    ['Biz', 1, "Takin' Care of Business Variable", 'TCBV', 'None', '-', 0, 100, true],
-    ['Biz', 12, 'Homebuilder 12', 'H12', 'None', '-', 2.95, 100, true],
-    ['Biz', 12, 'Indexed 12', 'IDX12', 'None', '-', 0, 100, true],
-    ['Biz', 12, "Takin' Care of Business 12", 'TCB12', 'TCBV', '$300/$50x', 0, 100, true],
-    ['Biz', 24, 'Homebuilder 24', 'H24', 'None', '-', 2.95, 100, true],
-    ['Biz', 24, "Takin' Care of Business 24", 'TCB24', 'TCBV', '$300/$50x', 0, 100, true],
-    ['Biz', 36, 'Epicenter', 'Epicenter', 'None', '-', 0, 100, true],
-    ['Biz', 36, "Takin' Care of Business 36", 'TCB36', 'TCBV', '$300/$50x', 0, 100, true],
-    ['Resi', 1, 'Cinco de Mayo', 'CDMV1', 'None', '-', 4.95, 100, true],
-    ['Resi', 1, 'Energy Texas Monthly', 'ETM', 'None', '-', 4.95, 100, true],
-    ['Resi', 1, 'Energy Texas Monthly', 'ETM2', 'ETM', '-', 4.95, 100, true],
-    ['Resi', 1, "Just Electricity, Y'all", 'JEY', 'None', '-', 4.95, 100, true],
-    ['Resi', 1, "Just Electricity, Y'all", 'JEY2', 'JEY', '-', 4.95, 100, true],
-    ['Resi', 1, "Just Electricity, Y'all", 'JEY3', 'JEY2', '-', 4.95, 100, true],
-    ['Resi', 1, 'Moving Made Easy', 'MME1', 'None', '-', 4.95, 100, true],
-    ['Resi', 12, 'Build Your Own Plan', 'BYOP', 'BYOPV', '$250', 4.95, 100, true],
-    ['Resi', 12, 'Come & Take It 12', 'CT12', 'JEY3', '$250', 4.95, 100, true],
-    ['Resi', 12, 'Freedom Flex 12', 'FreeF12', 'JEY3', '$250', 4.95, 100, true],
-    ['Resi', 12, 'Pardner Preferred 12', 'PP12', 'JEY3', '$250', 4.95, 100, true],
-    ['Resi', 18, 'The Gruene 18', 'G18', 'JEY3', '$275', 4.95, 100, true],
-    ['Resi', 18, 'Pardner Preferred 18', 'PP18', 'JEY3', '$275', 4.95, 100, true],
-    ['Resi', 24, 'Bigger Than Texas 24', 'BTT24', 'JEY3', '$400', 4.95, 100, true],
-    ['Resi', 24, 'Freedom Flex 24', 'FreeF24', 'JEY3', '$400', 4.95, 100, true],
-    ['Resi', 24, 'Pardner Preferred 24', 'PP24', 'JEY3', '$400', 4.95, 100, true],
-    ['Resi', 36, '36 Inflation Fix', '36IF', 'JEY3', '$500', 4.95, 100, true],
-    ['Resi', 36, 'ecobee Clean & Green 36', 'ECG36', 'JEY3', '$500', 4.95, 100, true],
-    ['Resi', 36, 'Freedom Flex 36', 'FreeF36', 'JEY3', '$500', 4.95, 100, true],
-    ['Resi', 36, 'Pardner Preferred 36', 'PP36', 'JEY3', '$500', 4.95, 100, true],
-    ['Biz', 6, "Takin' Care of Business 6", 'TCB6', 'TCBV', '$300', 0, 100, false],
-    ['Resi', 1, 'Build Your Own Plan', 'BYOPV', 'None', '$0', 4.95, 100, false],
-    ['Resi', 3, 'Taste of Energy Texas 3', 'TET3', 'JEY3', '$100', 4.95, 100, false],
-    ['Resi', 3, 'Texan Pride 3', 'TXP3', 'JEY3', '$100', 4.95, 100, false],
-    ['Resi', 6, 'Lone Star 6', 'LS6', 'JEY3', '$175', 4.95, 100, false],
-    ['Resi', 11, 'Texan 11', 'TX11', 'JEY3', '$300', 4.95, 100, false],
-    ['Resi', 12, 'Friends & Family 12', 'FF12', 'JEY3', '$250', 4.95, 100, false],
-    ['Resi', 12, "September Savin' 12", 'SS12', 'JEY3', '$250', 4.95, 100, false],
-    ['Resi', 12, 'Very Important Texan 12', 'VIT12', 'JEY3', '$250', 4.95, 100, false],
-    ['Resi', 12, 'True Texan 12', 'TT12', 'JEY3', '$300', 4.95, 100, false],
-    ['Resi', 13, 'The Abilene 13', 'A13', 'JEY3', '$300', 4.95, 100, false],
-    ['Resi', 14, "Fixin' to 14", 'F14', 'JEY3', '$275', 4.95, 100, false],
-    ['Resi', 15, 'The Seguin 15', 'S15', 'JEY3', '$275', 4.95, 100, false]
-  ].map(function (r, i) {
-    return {
-      id: 60 + i, type: r[0], term: r[1], name: r[2], internal: r[3], rolloff: r[4],
-      etf: r[5], mrc: r[6], green: r[7], active: r[8],
-      slug: r[2].toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    };
-  });
-
-  // Illustrative energy charges (¢/kWh) by plan and market
-  function seedRate(p, m) {
-    var base = p.term === 1 ? 11.2 : 10.6 - Math.min(p.term, 36) * 0.035;
-    var adj = { 'TX-E-ONCOR': 0, 'TX-E-CENTERPOINT': 0.15, 'TX-E-AEPNORTH': 0.35, 'TX-E-AEPCENTRAL': 0.3, 'TX-E-TNMP': 0.5 }[m];
-    return Math.round((base + adj + (p.internal.length % 3) * 0.07) * 1000) / 1000;
-  }
-  var RATES = [];
-  PLANS.filter(function (p) { return p.active; }).forEach(function (p) {
-    MARKETS.forEach(function (m) {
-      RATES.push({ plan: p.internal, market: m.name, energy: seedRate(p, m.name), effective: '2026-09-15' });
-    });
-  });
-
-  var PLAN_GROUPS = [
-    { id: 1, name: 'Homepage Featured', slug: 'featured', plans: ['CT12', 'BTT24', '36IF'] },
-    { id: 2, name: 'All Residential', slug: 'resi', plans: ['JEY', 'ETM', 'MME1', 'CT12', 'FreeF12', 'PP12', 'G18', 'PP18', 'BTT24', 'FreeF24', 'PP24', '36IF', 'ECG36', 'FreeF36', 'PP36'] },
-    { id: 3, name: 'Business', slug: 'business', plans: ['TCBV', 'TCB12', 'TCB24', 'TCB36', 'H12', 'H24', 'IDX12'] },
-    { id: 4, name: 'Freedom Flex', slug: 'freedom-flex', plans: ['FreeF12', 'FreeF24', 'FreeF36'] },
-    { id: 5, name: 'Renewal Offers', slug: 'renew', plans: ['PP12', 'PP24', 'PP36', '36IF'] },
-    { id: 6, name: 'ecobee Partner', slug: 'ecobee', plans: ['ECG36'] }
-  ];
 
   // Site structure (from the CMS page list)
   var PAGES = [
@@ -151,7 +61,7 @@ window.ADMIN_DATA = (function () {
   ];
   var EXC = ['', '', '', '', 'No ESIID', 'Switch Hold', 'Possible Duplicate', '', 'Not sent to Utility', ''];
   var SOURCES = ['Website', 'Phone', 'Texas Electricity Ratings (API)', 'Power to Choose', 'Referral'];
-  var resiPlans = PLANS.filter(function (p) { return p.active && p.type === 'Resi'; });
+  var resiPlans = ET.defaults.PLANS.filter(function (p) { return p.active && p.type === 'Resi'; });
 
   function rnd(seed) { var x = Math.sin(seed) * 10000; return x - Math.floor(x); }
   var CUSTOMERS = [];
@@ -228,50 +138,6 @@ window.ADMIN_DATA = (function () {
     ['Unprocessed Orders', 8, 'Orders waiting to be sent to the utility']
   ];
 
-  // Astro: term discounts (¢/kWh, positive lowers rate) per region
-  var REGIONS = ['Generic', 'CENTRAL', 'NORTH', 'CENTERPOINT', 'ONCOR', 'TNMP'];
-  var TERM_MODS = [];
-  for (var t = 1; t <= 36; t++) {
-    var row = { term: t };
-    REGIONS.forEach(function (r, j) {
-      var v = t === 1 ? -0.5 : Math.round((t / 36) * 1.2 * 100) / 100 - (j === 5 ? 0.15 : 0) + (j === 3 ? 0.05 : 0);
-      row[r] = Math.round(v * 100) / 100;
-    });
-    row.etf = t === 1 ? 0 : t <= 3 ? 100 : t <= 6 ? 175 : t <= 12 ? 250 : t <= 18 ? 275 : t <= 24 ? 400 : 500;
-    TERM_MODS.push(row);
-  }
-
-  var BYOP_PRODUCTS = [
-    { id: 1, name: 'AutoPay', model: 'ItemProductAutopay_model', type: 'Discount', value: '-0.30 ¢/kWh', step: 'Get Started', active: true },
-    { id: 2, name: 'Paperless Billing', model: 'ItemProductPaperless_model', type: 'Discount', value: '-0.20 ¢/kWh', step: 'Get Started', active: true },
-    { id: 3, name: 'Rangler Rewards', model: 'ItemProductReward_model', type: 'Included', value: '—', step: 'Lower Your Bill', active: true },
-    { id: 4, name: 'Peak Perks', model: 'ItemProductPeakPerk_model', type: 'Discount', value: '-0.40 ¢/kWh', step: 'Lower Your Bill', active: true },
-    { id: 5, name: 'Giddy Up Due Date', model: 'ItemProductGiddyup_model', type: 'Free', value: '—', step: 'Lower Your Bill', active: true },
-    { id: 6, name: 'ecobee Smart Thermostat', model: 'ItemProductThermostat_model', type: 'Monthly', value: '$5.99/mo', step: 'Using Less', active: true },
-    { id: 7, name: 'Solar Buy-Back', model: 'ItemProductSolar_model', type: 'Free', value: '—', step: 'Using Less', active: true },
-    { id: 8, name: 'A/C Warranty', model: 'ItemProductWarrantyAc_model', type: 'Monthly', value: '$14.99/mo', step: "Protectin'", active: true },
-    { id: 9, name: 'Line Warranty', model: 'ItemProductWarrantyLine_model', type: 'Monthly', value: '$5.99/mo', step: "Protectin'", active: true },
-    { id: 10, name: 'EV Charger Warranty', model: 'ItemProductWarrantyCharger_model', type: 'Monthly', value: '$7.99/mo', step: "Protectin'", active: true },
-    { id: 11, name: 'Freedom Fix', model: 'ItemProductFreedomFix_model', type: 'Rate Lock', value: '—', step: 'Save More', active: false }
-  ];
-
-  // Sheriff
-  var USERS = [
-    { id: 1, name: 'Admin Demo', email: 'admin@example.com', role: 'Administrator', apps: 'All', last: '2026-10-03 08:12', active: true },
-    { id: 2, name: 'CSR Demo', email: 'csr@example.com', role: 'Customer Service', apps: 'Corral', last: '2026-10-03 09:40', active: true },
-    { id: 3, name: 'Pricing Demo', email: 'pricing@example.com', role: 'Pricing', apps: 'Lando, Astro', last: '2026-10-02 16:05', active: true },
-    { id: 4, name: 'Marketing Demo', email: 'marketing@example.com', role: 'Content Editor', apps: 'Lando', last: '2026-09-29 11:30', active: true },
-    { id: 5, name: 'Finance Demo', email: 'finance@example.com', role: 'Finance', apps: 'Corral, Sheriff', last: '2026-09-30 13:22', active: true },
-    { id: 6, name: 'Former Employee', email: 'former@example.com', role: 'Customer Service', apps: 'Corral', last: '2026-03-14 10:00', active: false }
-  ];
-  var ROLES = [
-    { name: 'Administrator', perms: ['corral', 'lando', 'astro', 'sheriff', 'delete', 'refunds'] },
-    { name: 'Customer Service', perms: ['corral'] },
-    { name: 'Pricing', perms: ['lando', 'astro'] },
-    { name: 'Content Editor', perms: ['lando'] },
-    { name: 'Finance', perms: ['corral', 'sheriff', 'refunds'] }
-  ];
-  var PERMS = [['corral', 'Corral (customers)'], ['lando', 'Lando (CMS & rates)'], ['astro', 'Astro (pricing modifiers)'], ['sheriff', 'Sheriff (settings)'], ['delete', 'Permanent deletes'], ['refunds', 'Refunds & reversals']];
 
   // API integrations — values intentionally blank; secrets belong in server env vars, never in the repo.
   var APIS = [
@@ -316,12 +182,11 @@ window.ADMIN_DATA = (function () {
   var CUSTOMER_STATUSES = ['Submitted', 'Pending - Credit', 'Pending - Deposit Due', 'Pending - No Deposit Due', 'Pending - Utility Not Answered', 'Good - On Flow', 'Rejected - By Utility', 'Dropped - Churned'];
   var EXCEPTIONS = ['Not sent to UtiliBill', 'Not sent to Utility', 'No ESIID', 'Non-Resi Meter', 'Permit Required', 'Switch Hold', 'Possible Duplicate', 'Other Exception'];
 
+  var d = ET.defaults;
+  d.PAGES = PAGES; d.TEMPLATES = TEMPLATES; d.BLOCKS = BLOCKS; d.CUSTOMERS = CUSTOMERS; d.QUEUES = QUEUES;
+  d.APIS = APIS; d.CRONS = CRONS; d.DATA_TABLES = DATA_TABLES; d.NOTES = {};
   return {
-    MARKETS: MARKETS, TDSP_FEES: TDSP_FEES, PLANS: PLANS, RATES: RATES, PLAN_GROUPS: PLAN_GROUPS,
-    PAGES: PAGES, TEMPLATES: TEMPLATES, BLOCKS: BLOCKS, CUSTOMERS: CUSTOMERS, QUEUES: QUEUES,
-    REGIONS: REGIONS, TERM_MODS: TERM_MODS, BYOP_PRODUCTS: BYOP_PRODUCTS, USERS: USERS, ROLES: ROLES,
-    PERMS: PERMS, APIS: APIS, CRONS: CRONS, DATA_TABLES: DATA_TABLES, REPORT_STATUSES: REPORT_STATUSES,
-    CUSTOMER_STATUSES: CUSTOMER_STATUSES, EXCEPTIONS: EXCEPTIONS,
+    REPORT_STATUSES: REPORT_STATUSES, CUSTOMER_STATUSES: CUSTOMER_STATUSES, EXCEPTIONS: EXCEPTIONS,
     payments: payments, bills: bills, notes: notes
   };
 })();

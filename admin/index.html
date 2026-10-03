@@ -4,37 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Energy Texas Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css">
-  <script src="js/data.js" defer></script>
-  <script src="js/admin.js" defer></script>
+  <title>Admin</title>
+  <link rel="stylesheet" href="_app/admin.css">
+  <script src="../shared/boot.js" data-then="_app/launcher.js"></script>
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#00AEEF"/><path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#102247"/><path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/></svg>
-        <div><strong>ENERGY TEXAS</strong><span>Admin Tools</span></div>
-      </div>
-      <span class="env">DEMO</span>
-      <nav class="app-switch" id="app-switch" aria-label="Apps"></nav>
-      <div class="nav-search"><input id="find" type="search" placeholder="Find a menu item…" aria-label="Find a menu item"></div>
-      <nav class="menu" id="menu" aria-label="Menu"></nav>
-      <div class="side-foot"><a href="../index.html">← View website</a><a href="#" id="reset">Reset data</a></div>
-    </aside>
-    <div class="main">
-      <header class="topbar">
-        <button class="menu-btn" id="menu-btn" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-        <div class="crumbs" id="crumbs"></div>
-        <div class="user-chip"><span class="avatar" id="user-initials">AD</span><span id="user-name">Admin Demo</span></div>
-        <a class="btn sm ghost" href="#" id="logout">Logout</a>
-      </header>
-      <main class="content" id="content"></main>
-    </div>
+  <div class="launcher">
+    <header class="launcher-top"><div class="in">
+      <div class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#00AEEF"/><path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#102247"/><path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/></svg><div><strong data-wordmark></strong><span>Admin Tools</span></div></div>
+      <div class="user-chip"><span class="avatar" id="user-initials"></span><span><span id="user-name"></span><small id="user-role"></small></span></div>
+      <a class="btn sm ghost" href="#" id="logout">Logout</a>
+    </div></header>
+    <main class="launcher-main">
+      <div class="page-head"><div><h1 id="greeting">Admin Tools</h1><p class="muted">Choose an app. You see the apps your role allows.</p></div>
+        <div class="actions"><a class="btn ghost" id="site-link" href="../index.html">View website</a></div></div>
+      <div class="banner-note" id="denied" hidden></div>
+      <div class="tiles" id="tiles"></div>
+    </main>
   </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

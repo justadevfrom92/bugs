@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Build Your Own Plan | Energy Texas</title>
   <meta name="description" content="Create a custom Texas electricity plan with Energy Texas — choose your term, savings and perks.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Raleway:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js" defer></script>
+  <script src="shared/boot.js" data-then="js/main.js"></script>
 </head>
 <body>
   <div id="site-header"></div>
@@ -46,14 +43,14 @@
                 <div class="range-labels"><span>1</span><span>6</span><span>12</span><span>18</span><span>24</span><span>30</span><span>36</span></div>
               </div>
               <label class="opt">
-                <input type="checkbox" checked data-adj="-0.3" data-name="AutoPay">
+                <input type="checkbox" checked data-product="autopay">
                 <span><strong>Set it and Forget it With AutoPay</strong><small>Get rid of any worries about making your payments on time.</small></span>
-                <span class="price">−0.3¢</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" checked data-adj="-0.2" data-name="Paperless">
+                <input type="checkbox" checked data-product="paperless">
                 <span><strong>Go Green with Paperless Communications</strong><small>Get less in the mail and receive all communications via email.</small></span>
-                <span class="price">−0.2¢</span>
+                <span class="price"></span>
               </label>
             </div>
 
@@ -61,19 +58,19 @@
             <div class="byop-tab">
               <h2>Let's Talk Ways to Lower Your Bill</h2>
               <label class="opt">
-                <input type="checkbox" checked disabled data-adj="0" data-name="Rangler Rewards">
+                <input type="checkbox" checked disabled data-product="rewards">
                 <span><strong>Earn Rewards Using Energy Texas</strong><small>Every residential member is automatically enrolled in Rangler Rewards at no cost. Earn points and enter giveaways.</small></span>
-                <span class="price">Included</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="-0.4" data-name="Peak Perks">
+                <input type="checkbox" data-product="peakperks">
                 <span><strong>Peak Perks</strong><small>Link your smart thermostat and let it make small adjustments during peak demand. Earn bill credits.</small></span>
-                <span class="price">−0.4¢</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-mo="0" data-name="Giddy Up">
+                <input type="checkbox" data-product="giddyup">
                 <span><strong>Giddy Up Due Date</strong><small>Pick the bill due date that lines up with your paycheck.</small></span>
-                <span class="price">Free</span>
+                <span class="price"></span>
               </label>
             </div>
 
@@ -81,19 +78,19 @@
             <div class="byop-tab">
               <h2>Using Less, Saving More</h2>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-mo="5.99" data-name="Smart Thermostat">
+                <input type="checkbox" data-product="thermostat">
                 <span><strong>ecobee Smart Thermostat</strong><small>Get a smart thermostat installed and pair it with Peak Perks for even more savings.</small></span>
-                <span class="price">+$5.99/mo</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-name="Solar Buy-Back">
+                <input type="checkbox" data-product="solar">
                 <span><strong>Solar Buy-Back</strong><small>Already have solar panels? Get credit for the extra energy you send back to the grid.</small></span>
-                <span class="price">Free</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0.3" data-name="100% Green">
+                <input type="checkbox" data-product="green">
                 <span><strong>Go 100% Renewable</strong><small>Match 100% of your usage with Texas wind and solar renewable energy credits.</small></span>
-                <span class="price">+0.3¢</span>
+                <span class="price"></span>
               </label>
             </div>
 
@@ -101,14 +98,14 @@
             <div class="byop-tab">
               <h2>Ways to Save More</h2>
               <label class="opt">
-                <input type="checkbox" data-adj="-0.2" data-name="Refer a Friend">
+                <input type="checkbox" data-product="refer">
                 <span><strong>Refer a Friend</strong><small>Share your link and earn bonus Rangler Rewards stars for every friend who signs up.</small></span>
-                <span class="price">Bonus stars</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-name="Bill Predictor">
+                <input type="checkbox" data-product="billpredictor">
                 <span><strong>Bill Predictor Alerts</strong><small>Get a heads up by text or email when your bill is trending higher than usual.</small></span>
-                <span class="price">Free</span>
+                <span class="price"></span>
               </label>
             </div>
 
@@ -116,19 +113,19 @@
             <div class="byop-tab">
               <h2>Protectin' What Matters</h2>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-mo="14.99" data-name="AC Warranty">
+                <input type="checkbox" data-product="acwarranty">
                 <span><strong>A/C &amp; Heating Protection</strong><small>Covers repairs to your central air and heating system — because Texas summers don't wait.</small></span>
-                <span class="price">+$14.99/mo</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-mo="5.99" data-name="Line Protection">
+                <input type="checkbox" data-product="linewarranty">
                 <span><strong>Electrical Line Protection</strong><small>Covers repairs to the electrical wiring on your side of the meter.</small></span>
-                <span class="price">+$5.99/mo</span>
+                <span class="price"></span>
               </label>
               <label class="opt">
-                <input type="checkbox" data-adj="0" data-mo="7.99" data-name="EV Charger Protection">
+                <input type="checkbox" data-product="evwarranty">
                 <span><strong>EV Charger Protection</strong><small>Keep your home EV charger covered for repairs and replacement.</small></span>
-                <span class="price">+$7.99/mo</span>
+                <span class="price"></span>
               </label>
             </div>
 

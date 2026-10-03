@@ -4,45 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Sign In · Energy Texas Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css">
-  <script src="js/data.js"></script>
+  <title>Admin Sign In</title>
+  <link rel="stylesheet" href="_app/admin.css">
+  <script src="../shared/boot.js" data-then="_app/login.js"></script>
 </head>
 <body>
   <div class="login-wrap">
     <form class="login" id="login" novalidate>
       <div class="brand">
-        <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#102247"/><path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#00AEEF"/><path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/></svg>
-        <div><strong>ENERGY TEXAS</strong><span>Admin Tools</span></div>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#00AEEF"/><path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#102247"/><path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/></svg>
+        <div><strong data-wordmark></strong><span>Admin Tools</span></div>
       </div>
-      <div class="banner-note">Demo sign-in. There is no real authentication yet: pick a sample user and any password.</div>
-      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" value="admin@example.com" list="users"></div>
+      <div class="banner-note">Demo sign-in. There is no real authentication yet: use a sample user (admin@example.com) and any password.</div>
+      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" list="users"></div>
       <datalist id="users"></datalist>
-      <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" value="demo"></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password"></div>
       <div class="err" id="err" role="alert"></div>
       <button class="btn cyan">Sign In</button>
       <a href="../index.html" class="muted" style="text-align:center;font-size:.85rem">← Back to website</a>
     </form>
   </div>
-  <script>
-  (function () {
-    var users = window.ADMIN_DATA.USERS;
-    document.getElementById('users').innerHTML = users.map(function (u) { return '<option value="' + u.email + '">' + u.name + ' (' + u.role + ')</option>'; }).join('');
-    document.getElementById('login').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var email = document.getElementById('email').value.trim().toLowerCase();
-      var u = users.filter(function (x) { return x.email === email; })[0];
-      var err = document.getElementById('err');
-      if (!u) { err.textContent = 'No user with that email. Try admin@example.com.'; return; }
-      if (!u.active) { err.textContent = 'This account is disabled. Ask an administrator to enable it in Sheriff.'; return; }
-      if (!document.getElementById('pw').value) { err.textContent = 'Enter a password.'; return; }
-      try { sessionStorage.setItem('et_admin_session', JSON.stringify({ name: u.name, role: u.role })); } catch (x) {}
-      location.href = 'index.html#/corral/home';
-    });
-  })();
-  </script>
 </body>
 </html>

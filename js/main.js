@@ -1,6 +1,11 @@
-/* Energy Texas — shared header/footer, plans data and page behaviour */
+/*
+  Website behaviour: header/footer, plan cards, zip lookup, Build Your Own Plan,
+  contact form and the Admin sign-in prompt.
+  Brand details, plans, rates and pricing all come from shared/config (via ET.*).
+*/
 (function () {
   'use strict';
+  var ET = window.ET, B = ET.brand, esc = ET.esc;
   document.documentElement.classList.add('js');
 
   var LOGO =
@@ -9,31 +14,23 @@
     '<path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#00AEEF"/>' +
     '<path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/>' +
     '</svg>' +
-    '<span class="logo-text"><strong>ENERGY TEXAS</strong><span>POWERED BY TEXANS</span></span>';
+    '<span class="logo-text"><strong>' + esc(B.wordmark) + '</strong><span>' + esc(B.tagline) + '</span></span>';
 
-  var PHONE = '1-800-555-0100'; // placeholder — replace with the real customer care number
-  var PHONE_HREF = 'tel:18005550100';
-
-  var NAV = [
-    ['index.html', 'Home'],
-    ['plans.html', 'Plans'],
-    ['build-your-own-plan.html', 'Build Your Own Plan'],
-    ['business.html', 'Business'],
-    ['contact-us.html', 'Contact Us']
-  ];
+  var DEFAULT_MARKET = 'TX-E-ONCOR';
 
   function header() {
-    var here = location.pathname.split('/').pop() || 'index.html';
-    var links = NAV.map(function (n) {
+    var here = ET.page();
+    var links = B.nav.map(function (n) {
       return '<a href="' + n[0] + '"' + (n[0] === here ? ' class="active"' : '') + '>' + n[1] + '</a>';
     }).join('');
     return (
       '<div class="utility"><div class="wrap">' +
-      '<span>Proudly serving deregulated Texas &nbsp;·&nbsp; <a href="' + PHONE_HREF + '">' + PHONE + '</a></span>' +
-      '<nav class="utility-links"><a href="#">Pay My Bill</a><a href="#">Report an Outage</a><a href="#">Español</a></nav>' +
+      '<span>Proudly serving deregulated Texas &nbsp;·&nbsp; <a href="' + B.phoneHref + '">' + esc(B.phone) + '</a></span>' +
+      '<div class="utility-right"><nav class="utility-links"><a href="#">Pay My Bill</a><a href="#">Report an Outage</a><a href="#">Español</a></nav>' +
+      '<button type="button" class="admin-btn" data-admin>Admin</button></div>' +
       '</div></div>' +
       '<header class="site-header"><div class="wrap">' +
-      '<a class="logo" href="index.html" aria-label="Energy Texas home">' + LOGO + '</a>' +
+      '<a class="logo" href="index.html" aria-label="' + esc(B.name) + ' home">' + LOGO + '</a>' +
       '<button class="menu-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>' +
       '<nav class="nav" id="main-nav">' + links +
       '<a class="btn" href="#">My Account</a>' +
@@ -61,7 +58,7 @@
       '<li><a href="plans.html#faq">Electricity Facts Labels</a></li>' +
       '</ul></div>' +
       '<div><h4>Perks</h4><ul>' +
-      '<li><a href="index.html#rewards">Rangler Rewards</a></li>' +
+      '<li><a href="index.html#rewards">' + esc(B.rewards) + '</a></li>' +
       '<li><a href="#">Peak Perks</a></li>' +
       '<li><a href="#">Refer a Friend</a></li>' +
       '<li><a href="#">Military &amp; First Responders</a></li>' +
@@ -73,70 +70,81 @@
       '<li><a href="contact-us.html">Contact Us</a></li>' +
       '</ul></div>' +
       '</div>' +
-      '<div class="footer-bottom"><span>&copy; ' + year + ' Energy Texas. All rights reserved. PUCT Cert. No. XXXXX</span>' +
-      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a><a href="admin/login.html">Employee Login</a></nav></div>' +
+      '<div class="footer-bottom"><span>&copy; ' + year + ' ' + esc(B.name) + '. All rights reserved. PUCT Cert. No. ' + esc(B.puct) + '</span>' +
+      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a></nav></div>' +
       '</div></footer>'
     );
   }
 
-  /* Residential plan lineup (names/terms/ETFs from the active plan list).
-     Rates shown are illustrative averages at 1,000 kWh — swap in live EFL pricing. */
-  var PLANS = [
-    { id: 'JEY', name: "Just Electricity, Y'all", term: 1, rate: 15.9, etf: 0, tags: ['month'],
-      perks: ['No contract, no cancellation fee', 'Month-to-month flexibility', 'Rangler Rewards included'] },
-    { id: 'ETM', name: 'Energy Texas Monthly', term: 1, rate: 15.4, etf: 0, tags: ['month'],
-      perks: ['Leave anytime, no ETF', 'Great for renters & short stays', 'Paperless & AutoPay ready'] },
-    { id: 'MME1', name: 'Moving Made Easy', term: 1, rate: 15.2, etf: 0, tags: ['month'],
-      perks: ['Same-day service available', 'Built for movers', 'Switch to a fixed plan anytime'] },
-    { id: 'CT12', name: 'Come & Take It 12', term: 12, rate: 13.4, etf: 250, tags: ['fixed'], featured: true,
-      perks: ['Fixed rate locked for 12 months', 'Rangler Rewards on every bill', 'Free Peak Perks enrollment'] },
-    { id: 'FreeF12', name: 'Freedom Flex 12', term: 12, rate: 13.9, etf: 250, tags: ['fixed', 'flex'],
-      perks: ['Fixed rate for 12 months', 'Flex your due date', 'Rangler Rewards included'] },
-    { id: 'PP12', name: 'Pardner Preferred 12', term: 12, rate: 13.6, etf: 250, tags: ['fixed'],
-      perks: ['Fixed rate for 12 months', 'Priority customer care line', 'Rangler Rewards included'] },
-    { id: 'G18', name: 'The Gruene 18', term: 18, rate: 13.3, etf: 275, tags: ['fixed', 'green'],
-      perks: ['100% renewable energy', 'Fixed rate for 18 months', 'Rangler Rewards included'] },
-    { id: 'PP18', name: 'Pardner Preferred 18', term: 18, rate: 13.2, etf: 275, tags: ['fixed'],
-      perks: ['Fixed rate for 18 months', 'Priority customer care line', 'Rangler Rewards included'] },
-    { id: 'BTT24', name: 'Bigger Than Texas 24', term: 24, rate: 12.9, etf: 400, tags: ['fixed'], featured: true,
-      perks: ['Fixed rate locked for 2 years', 'Bonus Rangler Rewards stars', 'Free Peak Perks enrollment'] },
-    { id: 'FreeF24', name: 'Freedom Flex 24', term: 24, rate: 13.1, etf: 400, tags: ['fixed', 'flex'],
-      perks: ['Fixed rate for 24 months', 'Flex your due date', 'Rangler Rewards included'] },
-    { id: 'PP24', name: 'Pardner Preferred 24', term: 24, rate: 12.8, etf: 400, tags: ['fixed'],
-      perks: ['Fixed rate for 24 months', 'Priority customer care line', 'Rangler Rewards included'] },
-    { id: '36IF', name: '36 Inflation Fix', term: 36, rate: 12.6, etf: 500, tags: ['fixed'], featured: true,
-      perks: ['Beat inflation for 3 full years', 'Lowest long-term fixed rate', 'Rangler Rewards included'] },
-    { id: 'ECG36', name: 'ecobee Clean & Green 36', term: 36, rate: 12.9, etf: 500, tags: ['fixed', 'green'],
-      perks: ['FREE ecobee smart thermostat', '100% renewable energy', 'Fixed rate for 36 months'] },
-    { id: 'FreeF36', name: 'Freedom Flex 36', term: 36, rate: 12.7, etf: 500, tags: ['fixed', 'flex'],
-      perks: ['Fixed rate for 36 months', 'Flex your due date', 'Rangler Rewards included'] },
-    { id: 'PP36', name: 'Pardner Preferred 36', term: 36, rate: 12.5, etf: 500, tags: ['fixed'],
-      perks: ['Fixed rate for 36 months', 'Priority customer care line', 'Rangler Rewards included'] }
-  ];
+  // Fill any element marked data-brand="phone" (etc.) from the brand config
+  function fillBrand() {
+    document.querySelectorAll('[data-brand]').forEach(function (el) {
+      var k = el.getAttribute('data-brand');
+      if (B[k] == null) return;
+      el.textContent = B[k];
+      if (k === 'phone' && el.tagName === 'A') el.href = B.phoneHref;
+    });
+  }
 
-  function planCard(p) {
+  /* ---------- Admin sign-in prompt ---------- */
+  function openAdmin() {
+    var admin = ET.root + 'admin/';
+    if (ET.auth.user()) { ET.go(admin, true); return; }
+    var bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML =
+      '<form class="modal" role="dialog" aria-modal="true" aria-labelledby="adm-title" novalidate>' +
+      '<h2 id="adm-title">Admin sign in</h2>' +
+      '<p class="modal-note">Employees only. Demo: use admin@example.com and any password.</p>' +
+      '<div class="field"><label for="adm-email">Email</label><input id="adm-email" type="email" autocomplete="username" required></div>' +
+      '<div class="field"><label for="adm-pw">Password</label><input id="adm-pw" type="password" autocomplete="current-password" required></div>' +
+      '<div class="form-msg error" role="alert"></div>' +
+      '<div class="modal-actions"><button type="button" class="btn btn-outline" data-x>Cancel</button><button class="btn">Sign In</button></div>' +
+      '</form>';
+    document.body.appendChild(bg);
+    var form = bg.querySelector('form');
+    function close() { bg.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.hasAttribute('data-x')) close(); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var res = ET.auth.login(form.querySelector('#adm-email').value, form.querySelector('#adm-pw').value);
+      if (res.error) { form.querySelector('.form-msg').textContent = res.error; return; }
+      close();
+      ET.go(admin, true);
+    });
+    form.querySelector('#adm-email').focus();
+  }
+
+  /* ---------- Plan cards ---------- */
+  function etfLabel(p) { return /\d/.test(p.etf) ? p.etf.split('/')[0] + ' ETF' : 'No ETF'; }
+
+  function planCard(p, market, featured) {
     var termLabel = p.term === 1 ? 'Month-to-Month' : p.term + ' Months · Fixed';
+    var price = ET.price(p.internal, market, 1000);
     return (
-      '<article class="plan' + (p.featured ? ' featured' : '') + ' reveal">' +
-      (p.featured ? '<span class="plan-flag">Popular Pick</span>' : '') +
+      '<article class="plan' + (featured ? ' featured' : '') + ' reveal">' +
+      (featured ? '<span class="plan-flag">Popular Pick</span>' : '') +
       '<div class="plan-top">' +
       '<span class="plan-term">' + termLabel + '</span>' +
-      '<h3>' + p.name + '</h3>' +
-      '<div class="plan-rate"><strong>' + p.rate.toFixed(1) + '¢</strong><span>per kWh</span></div>' +
-      '<p class="plan-rate-note">Avg. price at 1,000 kWh · ' + (p.etf ? '$' + p.etf + ' ETF' : 'No ETF') + '</p>' +
+      '<h3>' + esc(p.name) + '</h3>' +
+      '<div class="plan-rate"><strong>' + (price == null ? '—' : price.toFixed(1) + '¢') + '</strong><span>per kWh</span></div>' +
+      '<p class="plan-rate-note">Avg. price at 1,000 kWh · ' + etfLabel(p) + '</p>' +
       '</div>' +
       '<div class="plan-body"><ul class="checks">' +
-      p.perks.map(function (x) { return '<li>' + x + '</li>'; }).join('') +
+      p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') +
       '</ul>' +
-      '<a class="btn btn-block" href="contact-us.html?plan=' + encodeURIComponent(p.id) + '">Sign Up</a>' +
+      '<a class="btn btn-block" href="contact-us.html?plan=' + encodeURIComponent(p.internal) + '">Sign Up</a>' +
       '<div class="plan-links"><a href="#">Electricity Facts Label</a><a href="#">Terms of Service</a><a href="#">YRAC</a></div>' +
       '</div></article>'
     );
   }
 
-  function renderPlans(el, list) {
+  function renderPlans(el, list, market) {
+    var featured = ET.group('featured').map(function (p) { return p.internal; });
     el.innerHTML = list.length
-      ? list.map(planCard).join('')
+      ? list.map(function (p) { return planCard(p, market, featured.indexOf(p.internal) > -1); }).join('')
       : '<p class="center" style="grid-column:1/-1">No plans match that filter, pardner. Try another.</p>';
     observeReveals(el);
   }
@@ -156,19 +164,6 @@
   }
 
   /* ---------- Zip lookup ---------- */
-  var TDSP = [
-    [75000, 76999, 'Oncor'], [77000, 77599, 'CenterPoint'], [78500, 78599, 'AEP Texas Central'],
-    [78300, 78499, 'AEP Texas Central'], [79500, 79699, 'AEP Texas North'], [77600, 77799, 'Entergy / TNMP'],
-    [76500, 76599, 'Oncor'], [79700, 79799, 'Oncor'], [78600, 78699, 'Oncor']
-  ];
-  function lookupZip(zip) {
-    var z = parseInt(zip, 10);
-    for (var i = 0; i < TDSP.length; i++) {
-      if (z >= TDSP[i][0] && z <= TDSP[i][1]) return TDSP[i][2];
-    }
-    return null;
-  }
-
   function initZipForms() {
     document.querySelectorAll('[data-zip-form]').forEach(function (form) {
       var msg = form.querySelector('.form-msg');
@@ -188,40 +183,43 @@
           msg.classList.add('error');
           return;
         }
-        var tdsp = lookupZip(zip);
-        if (!tdsp) {
+        var m = ET.marketForZip(zip);
+        if (!m) {
           msg.textContent = 'Shucks — ' + zip + " isn't in a deregulated area we serve yet.";
           msg.classList.add('error');
           return;
         }
-        msg.textContent = 'Great news! We serve ' + zip + ' (' + tdsp + '). Loading plans…';
+        msg.textContent = 'Great news! We serve ' + zip + ' (' + m.desc + '). Loading plans…';
         msg.classList.add('ok');
-        try { sessionStorage.setItem('et_zip', zip); } catch (err) {}
         setTimeout(function () {
-          location.href = (biz ? 'business.html' : 'plans.html') + '?zip=' + zip;
+          ET.go((biz ? 'business.html' : 'plans.html') + '?zip=' + zip);
         }, 700);
       });
     });
   }
 
-  /* ---------- Plans page ---------- */
+  function marketFromQuery() {
+    var zip = ET.query().get('zip');
+    var m = zip && /^\d{5}$/.test(zip) ? ET.marketForZip(zip) : null;
+    return { zip: zip, market: m };
+  }
+
+  /* ---------- Plans page / featured plans ---------- */
   function initPlans() {
     var grid = document.getElementById('plan-grid');
     if (!grid) return;
-    var limit = parseInt(grid.getAttribute('data-limit') || '0', 10);
-    if (limit) {
-      renderPlans(grid, PLANS.filter(function (p) { return p.featured; }).slice(0, limit));
-      return;
-    }
+    var q = marketFromQuery();
+    var market = q.market ? q.market.name : DEFAULT_MARKET;
+    var group = grid.getAttribute('data-group') || 'resi';
+    var plans = ET.group(group);
     var chips = document.querySelectorAll('[data-filter]');
     function apply(f) {
-      var list = PLANS.filter(function (p) {
+      renderPlans(grid, plans.filter(function (p) {
         if (f === 'all') return true;
         if (f === 'month') return p.term === 1;
         if (/^\d+$/.test(f)) return p.term === +f;
         return p.tags.indexOf(f) > -1;
-      });
-      renderPlans(grid, list);
+      }), market);
     }
     chips.forEach(function (c) {
       c.addEventListener('click', function () {
@@ -232,11 +230,8 @@
     });
     apply('all');
 
-    var zip = new URLSearchParams(location.search).get('zip');
     var zipNote = document.getElementById('zip-note');
-    if (zip && zipNote && /^\d{5}$/.test(zip)) {
-      zipNote.textContent = 'Showing plans for ' + zip + (lookupZip(zip) ? ' · ' + lookupZip(zip) : '');
-    }
+    if (zipNote && q.market) zipNote.textContent = 'Showing plans for ' + q.zip + ' · ' + q.market.desc;
   }
 
   /* ---------- Build Your Own Plan ---------- */
@@ -251,24 +246,38 @@
     var range = document.getElementById('term');
     var termOut = document.getElementById('term-out');
     var TERMS = [1, 6, 12, 18, 24, 30, 36];
+    var mods = ET.data('TERM_MODS');
+    var market = DEFAULT_MARKET;
+    var region = (ET.data('MARKETS').filter(function (m) { return m.name === market; })[0] || {}).region || 'Generic';
+    var base12 = ET.price('BYOP', market, 1000);
+    var products = {};
+    ET.data('BYOP_PRODUCTS').forEach(function (p) { products[p.key] = p; });
 
-    function baseRate(term) { return 16.2 - Math.min(term, 36) * 0.09; }
+    // Show each add-on's price from the catalog and hide ones switched off in Astro
+    root.querySelectorAll('input[data-product]').forEach(function (i) {
+      var p = products[i.getAttribute('data-product')];
+      var opt = i.closest('.opt');
+      if (!p || !p.active) { opt.hidden = true; i.checked = false; return; }
+      var label = p.type === 'Included' ? 'Included' : p.monthly ? '+$' + p.monthly.toFixed(2) + '/mo' : p.adj ? (p.adj < 0 ? '−' : '+') + Math.abs(p.adj).toFixed(1) + '¢' : 'Free';
+      opt.querySelector('.price').textContent = label;
+    });
 
     function update() {
       var term = TERMS[+range.value];
       termOut.textContent = term === 1 ? 'Month-to-Month' : term + ' months';
-      var rate = baseRate(term);
-      var adds = [];
-      var monthly = 4.95;
-      root.querySelectorAll('input[data-adj]:checked').forEach(function (i) {
-        rate += parseFloat(i.getAttribute('data-adj'));
-        monthly += parseFloat(i.getAttribute('data-mo') || 0);
-        adds.push(i.getAttribute('data-name'));
+      var mod = mods[term - 1], mod12 = mods[11];
+      var rate = base12 + (mod12[region] - mod[region]);
+      var monthly = ET.plan('BYOP').mrc, n = 0;
+      root.querySelectorAll('input[data-product]:checked').forEach(function (i) {
+        var p = products[i.getAttribute('data-product')];
+        if (!p || !p.active) return;
+        rate += p.adj; monthly += p.monthly;
+        if (p.type !== 'Included') n++;
       });
       document.getElementById('sum-term').textContent = termOut.textContent;
-      document.getElementById('sum-adds').textContent = adds.length ? adds.length + ' selected' : 'None';
+      document.getElementById('sum-adds').textContent = n ? n + ' selected' : 'None';
       document.getElementById('sum-mo').textContent = '$' + monthly.toFixed(2);
-      document.getElementById('sum-etf').textContent = term === 1 ? '$0' : '$' + (term <= 12 ? 250 : term <= 18 ? 275 : term <= 24 ? 400 : 500);
+      document.getElementById('sum-etf').textContent = '$' + mod.etf;
       document.getElementById('sum-rate').textContent = rate.toFixed(1) + '¢';
       document.getElementById('sum-bill').textContent = '$' + Math.round(rate * 10 + monthly);
     }
@@ -282,34 +291,29 @@
       });
       prev.style.visibility = cur === 0 ? 'hidden' : 'visible';
       next.style.display = cur === tabs.length - 1 ? 'none' : '';
-      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    prev.addEventListener('click', function () { go(cur - 1); });
-    next.addEventListener('click', function () { go(cur + 1); });
+    prev.addEventListener('click', function () { go(cur - 1); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    next.addEventListener('click', function () { go(cur + 1); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     root.addEventListener('input', update);
     root.addEventListener('change', update);
     update();
     go(0);
-    window.scrollTo(0, 0);
   }
 
   /* ---------- Contact form ---------- */
   function initContact() {
     var form = document.getElementById('contact-form');
     if (!form) return;
-    var params = new URLSearchParams(location.search);
-    var plan = params.get('plan');
+    var params = ET.query();
     var topic = params.get('topic');
     if (topic && form.querySelector('[name=topic] option[value="' + topic + '"]')) {
       form.querySelector('[name=topic]').value = topic;
     }
-    if (plan) {
-      var match = PLANS.filter(function (p) { return p.id === plan; })[0];
-      if (match) {
-        form.querySelector('[name=topic]').value = 'signup';
-        form.querySelector('[name=message]').value = "I'd like to sign up for " + match.name + '.';
-      }
+    var p = params.get('plan') && ET.plan(params.get('plan'));
+    if (p) {
+      form.querySelector('[name=topic]').value = 'signup';
+      form.querySelector('[name=message]').value = "I'd like to sign up for " + p.name + '.';
     }
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -325,17 +329,21 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  ET.ready(function () {
     var h = document.getElementById('site-header');
     var f = document.getElementById('site-footer');
     if (h) h.outerHTML = header();
     if (f) f.outerHTML = footer();
+    fillBrand();
 
     var toggle = document.querySelector('.menu-toggle');
     var nav = document.getElementById('main-nav');
     if (toggle) toggle.addEventListener('click', function () {
       var open = nav.classList.toggle('open');
       toggle.setAttribute('aria-expanded', open);
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-admin]')) { e.preventDefault(); openAdmin(); }
     });
 
     initZipForms();

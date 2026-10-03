@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Energy Texas | Texas Electricity Plans &amp; Rates</title>
   <meta name="description" content="Fixed-rate Texas electricity plans, Build Your Own Plan, and Rangler Rewards from Energy Texas.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Raleway:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js" defer></script>
+  <script src="shared/boot.js" data-then="js/main.js"></script>
 </head>
 <body>
   <div id="site-header"></div>
@@ -89,7 +86,7 @@
           </div>
           <a class="btn btn-outline" href="plans.html">See All Plans</a>
         </div>
-        <div class="plan-grid" id="plan-grid" data-limit="3"></div>
+        <div class="plan-grid" id="plan-grid" data-group="featured"></div>
         <p style="font-size:.8rem;color:#96999d;margin-top:24px">Average price per kWh shown at 1,000 kWh monthly usage, includes TDU delivery charges. See the Electricity Facts Label for full pricing details.</p>
       </div>
     </section>
