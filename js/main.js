@@ -74,7 +74,7 @@
       '</ul></div>' +
       '</div>' +
       '<div class="footer-bottom"><span>&copy; ' + year + ' Energy Texas. All rights reserved. PUCT Cert. No. XXXXX</span>' +
-      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a></nav></div>' +
+      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a><a href="admin/login.html">Employee Login</a></nav></div>' +
       '</div></footer>'
     );
   }

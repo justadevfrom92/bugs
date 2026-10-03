@@ -11,6 +11,18 @@ A static, responsive website styled after energytexas.com (navy `#102247`, cyan 
 
 Shared header, footer and plan data live in `js/main.js`; all styles are in `css/style.css`.
 
+## Admin tools (`admin/`)
+Open `admin/login.html` (also linked as **Employee Login** in the site footer). Sign-in is a demo: pick a sample user such as `admin@example.com` with any password.
+
+| App | Screens |
+| --- | --- |
+| **Corral** (customer service) | Customer search with status/exception filters, account detail (service, billing, payments, notes, products), ESIID lookup, create order (resi & biz), renew/change plan, orders report, exception queues |
+| **Lando** (CMS) | Page tree & page editor, templates, content blocks with live preview, plans list/editor, plan groups, rate search with EFL average price, bulk rate editor, TDSP fees, markets |
+| **Astro** (pricing) | Term discount grid by TDSP region, ETF by term, BYOP products |
+| **Sheriff** (settings) | Users, role permissions, API integrations, crons, reference data tables (deposit thresholds, tax rates, blackout days, promos…) |
+
+The admin is front-end only. Edits are saved in the browser's localStorage (use **Reset data** in the sidebar to start over). Every customer and user is fictional sample data in `admin/js/data.js`. API keys are deliberately not stored anywhere in this repo; keep them in server environment variables. To make it real, replace the `persist()` calls in `admin/js/admin.js` with API requests and put the admin behind real authentication.
+
 ## Run locally
 ```sh
 python3 -m http.server 8000
