@@ -9,11 +9,7 @@
   document.documentElement.classList.add('js');
 
   var LOGO =
-    '<svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">' +
-    '<circle cx="24" cy="24" r="23" fill="#102247"/>' +
-    '<path d="M24 7l4.6 10.3 11.2 1.1-8.4 7.5 2.4 11L24 31.3 14.2 37l2.4-11-8.4-7.5 11.2-1.1z" fill="#00AEEF"/>' +
-    '<path d="M26.5 14l-6 11h4.3l-2.3 9 7.5-12.2h-4.6z" fill="#fff"/>' +
-    '</svg>' +
+    '<img class="logo-mark" src="' + ET.root + 'shared/img/logo-mark.svg" alt="" width="44" height="44">' +
     '<span class="logo-text"><strong>' + esc(B.wordmark) + '</strong><span>' + esc(B.tagline) + '</span></span>';
 
   var DEFAULT_MARKET = 'TX-E-ONCOR';

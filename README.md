@@ -16,6 +16,7 @@ Shared code and data live in `shared/`. The website and every admin app read fro
 shared/
   boot.js              one <script> tag per page loads everything below, then the page's own files
   css/tokens.css       brand colors + fonts (website and admin)
+  img/                 logo files
   config/brand.js      company name, phone, hours, PUCT number, site nav
   config/catalog.js    markets, zip ranges, TDSP fees, plans, plan groups, rates, term discounts, BYOP products
   config/access.js     admin users and roles (which apps each role can open)

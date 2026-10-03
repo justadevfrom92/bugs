@@ -45,7 +45,7 @@ h3 { font-size: .95rem; color: var(--navy); margin-bottom: 8px; }
   display: flex; flex-direction: column;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px; border-bottom: 1px solid rgba(255,255,255,.1); }
-.brand svg { width: 36px; height: 36px; flex: none; }
+.brand svg, .brand img { width: 36px; height: 36px; flex: none; }
 .brand strong { display: block; font-size: 1rem; letter-spacing: .04em; }
 .brand span { display: block; font-size: .7rem; opacity: .65; letter-spacing: .12em; text-transform: uppercase; }
 .env { margin: 12px 18px 4px; font-size: .7rem; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px; padding: 3px 8px; align-self: flex-start; letter-spacing: .1em; }
