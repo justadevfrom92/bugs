@@ -49,14 +49,14 @@ h3 { font-size: .95rem; color: var(--navy); margin-bottom: 8px; }
 .brand strong { display: block; font-size: 1rem; letter-spacing: .04em; }
 .brand span { display: block; font-size: .7rem; opacity: .65; letter-spacing: .12em; text-transform: uppercase; }
 .env { margin: 12px 18px 4px; font-size: .7rem; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px; padding: 3px 8px; align-self: flex-start; letter-spacing: .1em; }
-.app-switch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 12px 12px 8px; }
-.app-switch a {
-  color: rgba(255,255,255,.75); text-align: center; font-size: .72rem; padding: 8px 2px; border-radius: 6px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+.admin-home {
+  display: flex; align-items: center; gap: 12px; margin: 12px 12px 8px; padding: 10px 14px;
+  border-radius: 8px; background: var(--cyan); color: #fff; font-size: 1rem;
 }
-.app-switch a svg { width: 20px; height: 20px; }
-.app-switch a:hover { background: var(--navy-2); color: #fff; text-decoration: none; }
-.app-switch a.on { background: var(--cyan); color: #fff; }
+.admin-home svg { width: 22px; height: 22px; flex: none; }
+.admin-home small { display: block; font-size: .72rem; opacity: .85; letter-spacing: .08em; text-transform: uppercase; }
+.admin-home:hover { background: #0099d4; text-decoration: none; }
+.admin-home:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .nav-search { margin: 6px 12px 10px; }
 .nav-search input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 0; background: var(--navy-2); color: #fff; }
 .nav-search input::placeholder { color: rgba(255,255,255,.5); }

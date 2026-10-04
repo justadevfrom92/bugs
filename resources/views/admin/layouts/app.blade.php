@@ -23,13 +23,11 @@
             <div><strong>{{ config('brand.wordmark') }}</strong><span>Admin Tools</span></div>
         </div>
         <span class="env">{{ strtoupper(app()->environment()) }}</span>
-        <nav class="app-switch" aria-label="Apps">
-            @foreach ($user->apps() as $key => $a)
-                <a href="{{ route($a['home']) }}" title="{{ $a['desc'] }}" @class(['on' => $key === $appKey]) @if ($key === $appKey) aria-current="page" @endif>
-                    @include('admin.partials.icon', ['name' => $a['icon']]){{ $a['name'] }}
-                </a>
-            @endforeach
-        </nav>
+        {{-- One Admin button back to the launcher (the same page the website's Admin button opens) --}}
+        <a class="admin-home" href="{{ route('admin.launcher') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            <span>Admin<small>{{ $app['name'] }}</small></span>
+        </a>
         <div class="nav-search"><input id="find" type="search" placeholder="Find a menu item…" aria-label="Find a menu item"></div>
         <nav class="menu" id="menu" aria-label="{{ $app['name'] }} menu">
             @foreach ($sections as $heading => $items)
@@ -40,7 +38,6 @@
             @endforeach
         </nav>
         <div class="side-foot">
-            <a href="{{ route('admin.launcher') }}">← All apps</a>
             <a href="/" target="_blank" rel="noopener">Website</a>
         </div>
     </aside>

@@ -68,6 +68,13 @@ class AdminTest extends TestCase
         }
     }
 
+    public function test_admin_button_in_each_app_leads_back_to_the_launcher(): void
+    {
+        $this->actingAs($this->user())->get('/admin/lando/plans')
+            ->assertSee('class="admin-home" href="'.route('admin.launcher').'"', false)
+            ->assertDontSee('app-switch');
+    }
+
     public function test_roles_limit_which_apps_a_user_can_open(): void
     {
         $this->actingAs($this->user('pricing@example.com'));
