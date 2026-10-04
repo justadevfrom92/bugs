@@ -69,7 +69,7 @@
     });
 
     // Selects that submit their form on change
-    $$('[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
+    $$('[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.requestSubmit ? s.form.requestSubmit() : s.form.submit(); }); });
 
     // Forms that need a confirmation first: data-confirm="Title|Body|Button label"
     $$('form[data-confirm]').forEach(function (form) {
