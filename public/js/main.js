@@ -181,6 +181,8 @@
   /* ---------- Zip lookup ---------- */
   function initZipForms() {
     document.querySelectorAll('[data-zip-form]').forEach(function (form) {
+      if (form.dataset.bound) return;
+      form.dataset.bound = '1';
       var msg = form.querySelector('.form-msg');
       form.querySelectorAll('.toggle-group button').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -222,11 +224,14 @@
   /* ---------- Plans page / featured plans ---------- */
   function initPlans() {
     var grid = document.getElementById('plan-grid');
-    if (!grid) return;
+    if (!grid || grid.dataset.bound) return;
+    grid.dataset.bound = '1';
     var q = marketFromQuery();
     var market = q.market ? q.market.name : DEFAULT_MARKET;
     var group = grid.getAttribute('data-group') || 'resi';
     var plans = ET.group(group);
+    var limit = +grid.getAttribute('data-limit');
+    if (limit) plans = plans.slice(0, limit);
     var chips = document.querySelectorAll('[data-filter]');
     function apply(f) {
       renderPlans(grid, plans.filter(function (p) {
@@ -358,6 +363,26 @@
     });
   }
 
+  /* ---------- Lando page components on built-in pages ---------- */
+  // Empty <div data-zone="top|bottom"> placeholders are filled with the components set for this page in Lando.
+  function loadComponents() {
+    var zones = document.querySelectorAll('div[data-zone]:empty');
+    if (!zones.length) return;
+    var file = location.pathname.split('/').pop() || 'index.html';
+    fetch(ET.root + 'site/components?page=' + encodeURIComponent(file), { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (z) {
+        zones.forEach(function (el) {
+          var html = z[el.getAttribute('data-zone')];
+          if (html) { el.innerHTML = '<div class="wrap">' + html + '</div>'; el.className = 'section cms-zone'; }
+        });
+        // Components can contain widgets (zip form, plan cards)
+        initZipForms();
+        initPlans();
+      })
+      .catch(function () {});
+  }
+
   ET.ready(function () {
     var h = document.getElementById('site-header');
     var f = document.getElementById('site-footer');
@@ -379,6 +404,7 @@
     initPlans();
     initByop();
     initContact();
+    loadComponents();
     observeReveals();
   });
 })();

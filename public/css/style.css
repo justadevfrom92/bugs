@@ -486,3 +486,9 @@ textarea:focus { border-color: var(--cyan); }
   .opt { flex-wrap: wrap; }
   .opt .price { margin-left: 36px; }
 }
+
+/* Lando content blocks */
+.cms-zone.section { padding-top: 28px; padding-bottom: 28px; }
+.cms-content > * + * { margin-top: 1em; }
+.cms-block + .cms-block { margin-top: 16px; }
+.rewards-band { background: var(--navy, #102247); color: #fff; border-radius: 12px; padding: 18px 22px; font-weight: 600; }

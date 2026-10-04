@@ -330,3 +330,7 @@ table.hist td { white-space: normal; }
 .sortable { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: 8px; }
 .sortable li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
 .sortable li:last-child { border-bottom: 0; }
+.menu-list { display: flex; flex-direction: column; }
+.menu-list a { padding: 7px 10px; border-radius: 6px; color: var(--ink); display: flex; justify-content: space-between; }
+.menu-list a:hover { background: var(--row); text-decoration: none; }
+.menu-list a.on { background: var(--info-bg); color: var(--navy); font-weight: 600; }

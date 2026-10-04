@@ -6,7 +6,7 @@
     @include('admin.partials.page-head', ['title' => $group->exists ? 'Edit Group: '.$group->name : 'Add a Group', 'sub' => 'Check the plans this group shows. Plans appear on the website in the order listed here.'])
 
     @php $chosen = collect(old('plans', $group->exists ? $group->plans->pluck('id')->all() : []))->map(fn ($id) => (int) $id); @endphp
-    <form method="post" action="{{ $group->exists ? route('lando.groups.update', $group) : route('lando.groups.store') }}" class="panel"><div class="panel-body">
+    <form method="post" action="{{ $group->exists ? app_route('groups.update', $group) : app_route('groups.store') }}" class="panel"><div class="panel-body">
         @csrf @if ($group->exists) @method('put') @endif
         <div class="form-grid">
             <label for="name">Name</label><input id="name" name="name" required value="{{ old('name', $group->name) }}" data-slug-source>
@@ -20,6 +20,6 @@
                     <span class="actions"><button type="button" class="btn sm ghost" data-move="-1" aria-label="Move {{ $p->name }} up">↑</button><button type="button" class="btn sm ghost" data-move="1" aria-label="Move {{ $p->name }} down">↓</button></span></li>
             @endforeach
         </ol>
-        <div class="actions" style="margin-top:20px"><button class="btn cyan">Save Group</button><a class="btn ghost" href="{{ route('lando.groups.index') }}">Cancel</a></div>
+        <div class="actions" style="margin-top:20px"><button class="btn cyan">Save Group</button><a class="btn ghost" href="{{ app_route('groups.index') }}">Cancel</a></div>
     </div></form>
 @endsection

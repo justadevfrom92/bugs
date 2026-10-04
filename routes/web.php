@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SitePageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +17,7 @@ Route::get('/shared/config/brand.js', [SiteController::class, 'brand']);
 Route::get('/shared/config/catalog.js', [SiteController::class, 'catalog']);
 Route::get('/site/session', [SiteController::class, 'session']);
 Route::post('/contact', [SiteController::class, 'contact'])->middleware('throttle:10,1');
+Route::get('/site/components', [SitePageController::class, 'components']);
 
 /*
 |--------------------------------------------------------------------------
@@ -94,19 +96,29 @@ Route::prefix('admin')->group(function () {
             Route::post('messages/{message}/handled', [Admin\Corral\MessageController::class, 'handled'])->name('messages.handled');
         });
 
-        // Lando — website CMS, plans and rates
-        Route::prefix('lando')->name('lando.')->middleware('app:lando')->group(function () {
-            Route::get('/', fn () => redirect()->route('lando.pages.index'));
+        // Website pages, plan groups and plans: Lando's screens, which Astro's menu also has.
+        // Registered under each app's own URL and route names so neither links into the other.
+        $websiteScreens = function () {
             Route::resource('pages', Admin\Lando\PageController::class)->except('show');
-            Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('pages.sitemap');
-            Route::get('sites', [Admin\Lando\PageController::class, 'sites'])->name('sites.index');
-            Route::resource('templates', Admin\Lando\TemplateController::class)->except(['show', 'destroy']);
-            Route::resource('markets', Admin\Lando\MarketController::class)->except(['show', 'destroy']);
-            Route::resource('blocks', Admin\Lando\BlockController::class)->except(['show', 'destroy']);
+            Route::post('pages/{page}/components', [Admin\Lando\PageController::class, 'addComponent'])->name('pages.components.store');
+            Route::post('page-components/{component}/move', [Admin\Lando\PageController::class, 'moveComponent'])->name('pages.components.move');
+            Route::delete('page-components/{component}', [Admin\Lando\PageController::class, 'removeComponent'])->name('pages.components.destroy');
             Route::resource('plans', Admin\Lando\PlanController::class)->except(['show', 'destroy']);
             Route::resource('groups', Admin\Lando\PlanGroupController::class)->except(['show', 'destroy']);
             Route::post('groups/{group}/plans', [Admin\Lando\PlanGroupController::class, 'attach'])->name('groups.attach');
             Route::delete('groups/{group}/plans/{plan}', [Admin\Lando\PlanGroupController::class, 'detach'])->name('groups.detach');
+        };
+
+        // Lando — website CMS, plans and rates
+        Route::prefix('lando')->name('lando.')->middleware('app:lando')->group(function () use ($websiteScreens) {
+            Route::get('/', fn () => redirect()->route('lando.pages.index'));
+            $websiteScreens();
+            Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('pages.sitemap');
+            Route::resource('sites', Admin\Lando\SiteController::class)->except(['show', 'destroy']);
+            Route::resource('templates', Admin\Lando\TemplateController::class)->except(['show', 'destroy']);
+            Route::resource('markets', Admin\Lando\MarketController::class)->except(['show', 'destroy']);
+            Route::resource('blocks', Admin\Lando\BlockController::class)->except(['show']);
+            Route::post('block-categories', [Admin\Lando\BlockController::class, 'addCategory'])->name('blocks.categories.store');
             Route::get('rates', [Admin\Lando\RateController::class, 'index'])->name('rates.index');
             Route::get('rates/edit', [Admin\Lando\RateController::class, 'edit'])->name('rates.edit');
             Route::put('rates', [Admin\Lando\RateController::class, 'update'])->name('rates.update');
@@ -115,7 +127,7 @@ Route::prefix('admin')->group(function () {
         });
 
         // Astro — pricing modifiers
-        Route::prefix('astro')->name('astro.')->middleware('app:astro')->group(function () {
+        Route::prefix('astro')->name('astro.')->middleware('app:astro')->group(function () use ($websiteScreens) {
             Route::get('/', fn () => redirect()->route('astro.terms.edit'));
             Route::get('terms', [Admin\Astro\PricingController::class, 'terms'])->name('terms.edit');
             Route::put('terms', [Admin\Astro\PricingController::class, 'updateTerms'])->name('terms.update');
@@ -123,6 +135,7 @@ Route::prefix('admin')->group(function () {
             Route::put('etfs', [Admin\Astro\PricingController::class, 'updateEtfs'])->name('etfs.update');
             Route::get('products', [Admin\Astro\PricingController::class, 'products'])->name('products.index');
             Route::put('products', [Admin\Astro\PricingController::class, 'updateProducts'])->name('products.update');
+            $websiteScreens(); // Website → Pages, Groups and Plans → Plans, New Plan, at /admin/astro/…
             Route::get('uploads/byop', [Admin\Astro\PricingController::class, 'byopUpload'])->name('byop.upload');
             Route::post('uploads/byop', [Admin\Astro\PricingController::class, 'byopImport'])->name('byop.import');
         });
@@ -153,3 +166,12 @@ Route::prefix('admin')->group(function () {
         Route::get('{appKey}', [Admin\AppController::class, 'show'])->where('appKey', '[a-z0-9][a-z0-9-]*')->name('custom.show');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Website pages built in Lando
+|--------------------------------------------------------------------------
+| Anything not matched above (and not a file in public/) is looked up as a
+| page on the site for this host name. Kept last so it never shadows a route.
+*/
+Route::get('{path}', [SitePageController::class, 'show'])->where('path', '.*')->name('site.page');

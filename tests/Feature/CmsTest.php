@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\BlockCategory;
 use App\Models\ByopProduct;
+use App\Models\ContentBlock;
 use App\Models\Market;
 use App\Models\Page;
 use App\Models\Plan;
 use App\Models\PlanGroup;
+use App\Models\Site;
 use App\Models\Template;
 use App\Models\User;
 use App\Support\AdminMenu;
@@ -43,12 +46,72 @@ class CmsTest extends TestCase
         $this->get('/admin/sheriff/integrations/nope')->assertNotFound();
     }
 
-    public function test_astro_menu_hides_lando_links_for_roles_without_lando(): void
+    public function test_no_admin_app_links_into_another_app(): void
     {
-        $user = $this->admin();
-        $user->role->update(['perms' => ['astro']]);
-        $this->actingAs($user->fresh())->get('/admin/astro/terms')->assertOk()
-            ->assertDontSee(route('lando.pages.index'))->assertSee(route('astro.byop.upload'));
+        $this->actingAs($this->admin());
+        $apps = array_keys(config('admin.apps'));
+        foreach ($apps as $app) {
+            $urls = collect(AdminMenu::sections($app))->flatten(1)->pluck('url');
+            foreach ($urls as $url) {
+                $this->assertStringStartsWith(url('/admin/'.$app), $url, "$app menu has $url");
+                $html = $this->get($url)->assertOk()->getContent();
+                foreach (array_diff($apps, [$app]) as $other) {
+                    $this->assertStringNotContainsString(url('/admin/'.$other.'/'), $html, "$url links into $other");
+                }
+            }
+        }
+        // Astro's website screens, deeper pages included
+        $page = Page::where('path', 'about-us')->firstOrFail();
+        $html = $this->get('/admin/astro/pages/'.$page->id.'/edit')->assertOk()->getContent();
+        $this->assertStringNotContainsString(url('/admin/lando/'), $html);
+        $this->get('/admin/astro/plans/'.Plan::first()->id.'/edit')->assertOk();
+        $this->get('/admin/astro/groups/'.PlanGroup::first()->id.'/edit')->assertOk();
+    }
+
+    public function test_lando_pages_blocks_and_components_show_on_the_website(): void
+    {
+        $this->actingAs($this->admin());
+        $site = Site::firstOrFail();
+
+        // A widget in a category, used both by code and as a component
+        $this->post('/admin/lando/block-categories', ['name' => 'Promotions'])->assertRedirect();
+        $cat = BlockCategory::where('name', 'Promotions')->firstOrFail();
+        $this->post('/admin/lando/blocks', ['name' => 'Fall Promo', 'slug' => 'fall-promo', 'category_id' => $cat->id, 'html' => '<p class="promo">Fall promo: save 10%</p>'])->assertRedirect();
+        $block = ContentBlock::where('slug', 'fall-promo')->firstOrFail();
+
+        $this->post('/admin/lando/pages', ['site_id' => $site->id, 'title' => 'Fall Savings', 'path' => 'fall-savings', 'status' => 'Draft',
+            'content_primary' => '<p>Intro text.</p>[[block|fall-promo]]', 'page_title' => 'Save This Fall'])->assertRedirect();
+        $page = Page::where('path', 'fall-savings')->firstOrFail();
+        $this->post('/admin/lando/pages/'.$page->id.'/components', ['content_block_id' => ContentBlock::where('slug', 'rewards-promo-band')->value('id'), 'zone' => 'sidebar'])->assertRedirect();
+
+        // Draft: admins can view it, the public can't
+        $this->get('/fall-savings')->assertOk()->assertSee('Save This Fall')->assertSee('Fall promo: save 10%', false)->assertSee('rewards-band', false)->assertSee('Draft');
+        auth()->logout();
+        $this->get('/fall-savings')->assertNotFound();
+
+        $this->actingAs($this->admin())->put('/admin/lando/pages/'.$page->id, ['title' => 'Fall Savings', 'path' => 'fall-savings', 'status' => 'Published',
+            'content_primary' => '<p>Intro text.</p>[[block|fall-promo]] [[unknown|x=1]]', 'canonical' => '1'])->assertRedirect();
+        auth()->logout();
+        $this->get('/fall-savings')->assertOk()->assertSee('Fall promo: save 10%', false)->assertDontSee('[[unknown', false)->assertDontSee('Draft —');
+
+        // Built-in pages get their components through /site/components
+        $this->getJson('/site/components?page=plans.html')->assertOk()->assertJsonPath('top', fn ($html) => str_contains($html, 'rewards-band'));
+        // Redirects and reserved paths
+        $this->get('/epicenter')->assertRedirect('/plans?msid=130001');
+        $this->get('/admin/lando/nope/nope')->assertNotFound(); // never looked up as a website page
+    }
+
+    public function test_sites_answer_on_their_own_domain(): void
+    {
+        $this->actingAs($this->admin());
+        $this->post('/admin/lando/sites', ['name' => 'Business Site', 'domain' => 'business.example.test', 'status' => 'Active'])->assertRedirect();
+        $biz = Site::where('domain', 'business.example.test')->firstOrFail();
+        $this->post('/admin/lando/pages', ['site_id' => $biz->id, 'title' => 'Solar', 'path' => 'solar', 'status' => 'Published', 'content_primary' => '<p>Business solar.</p>'])->assertRedirect();
+        $this->post('/admin/lando/sites', ['name' => 'Bad', 'domain' => 'https://x/y', 'status' => 'Active'])->assertSessionHasErrors('domain');
+        auth()->logout();
+
+        $this->get('http://business.example.test/solar')->assertOk()->assertSee('Business solar.');
+        $this->get('http://localhost/solar')->assertNotFound(); // not a page on the main site
     }
 
     public function test_templates_markets_groups_and_page_settings(): void

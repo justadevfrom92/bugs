@@ -29,7 +29,7 @@ class PlanController extends Controller
     {
         Plan::create($this->validated($request));
 
-        return redirect()->route('lando.plans.index')->with('status', 'Plan created. Add its rates in Update Rates.');
+        return redirect(app_route('plans.index'))->with('status', 'Plan created. Add its rates in Update Rates.');
     }
 
     public function edit(Plan $plan): View
@@ -41,7 +41,7 @@ class PlanController extends Controller
     {
         $plan->update($this->validated($request, $plan));
 
-        return redirect()->route('lando.plans.index')->with('status', 'Plan saved');
+        return redirect(app_route('plans.index'))->with('status', 'Plan saved');
     }
 
     private function rolloffs()

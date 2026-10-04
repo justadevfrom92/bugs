@@ -14,6 +14,7 @@ use App\Models\Plan;
 use App\Models\PlanGroup;
 use App\Models\Rate;
 use App\Models\Role;
+use App\Models\Site;
 use App\Models\TdspFee;
 use App\Models\Template;
 use App\Models\TermDiscount;
@@ -47,6 +48,7 @@ return [
         ByopProduct::class => ['ByopProduct_model', 'Admin Changes'],
         Page::class => ['Page_model', 'Admin Changes'],
         Template::class => ['Template_model', 'Admin Changes'],
+        Site::class => ['Site_model', 'Admin Changes'],
         Market::class => ['Market_model', 'Admin Changes'],
         PlanGroup::class => ['PlanGroup_model', 'Admin Changes'],
         ContentBlock::class => ['ContentBlock_model', 'Admin Changes'],

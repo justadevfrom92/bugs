@@ -3,7 +3,7 @@
 @section('content')
     @include('admin.partials.page-head', ['title' => $plan->exists ? 'Editing '.$plan->name : 'Add a Plan', 'sub' => $plan->exists ? 'Plan ID '.$plan->id : null])
 
-    <form method="post" action="{{ $plan->exists ? route('lando.plans.update', $plan) : route('lando.plans.store') }}" class="panel"><div class="panel-body">
+    <form method="post" action="{{ $plan->exists ? app_route('plans.update', $plan) : app_route('plans.store') }}" class="panel"><div class="panel-body">
         @csrf @if ($plan->exists) @method('put') @endif
         <div class="form-grid">
             <label for="name">Plan Name</label><input id="name" name="name" required value="{{ old('name', $plan->name) }}" @unless ($plan->exists) data-slug-source @endunless>
@@ -22,6 +22,6 @@
             <label for="tags">Website Filters</label><input id="tags" name="tags" value="{{ old('tags', implode(', ', $plan->tags ?? [])) }}" placeholder="fixed, green, flex, month">
             <label for="perks">Website Bullets</label><textarea id="perks" name="perks" style="min-height:100px;font-family:inherit" placeholder="One per line">{{ old('perks', implode("\n", $plan->perks ?? [])) }}</textarea>
         </div>
-        <div class="actions" style="margin-top:20px"><button class="btn cyan">Save Plan</button><a class="btn ghost" href="{{ route('lando.plans.index') }}">Cancel</a></div>
+        <div class="actions" style="margin-top:20px"><button class="btn cyan">Save Plan</button><a class="btn ghost" href="{{ app_route('plans.index') }}">Cancel</a></div>
     </div></form>
 @endsection

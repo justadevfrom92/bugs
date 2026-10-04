@@ -58,9 +58,11 @@ return [
                     ['Add a Page', 'lando.pages.create'],
                     ['Page Templates', 'lando.templates.index'],
                     ['Content Blocks', 'lando.blocks.index'],
+                    ['Add a Content Block', 'lando.blocks.create'],
                 ],
                 'Sites' => [
                     ['Sites', 'lando.sites.index'],
+                    ['New Site', 'lando.sites.create'],
                 ],
                 'Markets' => [
                     ['View Markets', 'lando.markets.index'],
@@ -90,14 +92,14 @@ return [
                     ['ETF', 'astro.etfs.edit'],
                     ['Products', 'astro.products.index'],
                 ],
-                // Same pages, plans and groups as Lando (one copy of the data and screens)
+                // Same pages, plans and groups as Lando (one copy of the data and screens, Astro's own URLs)
                 'Website' => [
-                    ['Pages', 'lando.pages.index'],
-                    ['Groups', 'lando.groups.index'],
+                    ['Pages', 'astro.pages.index'],
+                    ['Groups', 'astro.groups.index'],
                 ],
                 'Plans' => [
-                    ['Plans', 'lando.plans.index'],
-                    ['New Plan', 'lando.plans.create'],
+                    ['Plans', 'astro.plans.index'],
+                    ['New Plan', 'astro.plans.create'],
                 ],
                 'Upload' => [
                     ['BYOP Discounts', 'astro.byop.upload'],

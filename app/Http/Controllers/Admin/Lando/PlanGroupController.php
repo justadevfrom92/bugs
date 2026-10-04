@@ -38,7 +38,7 @@ class PlanGroupController extends Controller
             return $group;
         });
 
-        return redirect()->route('lando.groups.index')->with('status', 'Group '.$group->name.' added');
+        return redirect(app_route('groups.index'))->with('status', 'Group '.$group->name.' added');
     }
 
     public function edit(PlanGroup $group): View
@@ -57,7 +57,7 @@ class PlanGroupController extends Controller
         History::record(['model' => 'PlanGroup_model', 'group' => 'Admin Changes', 'record_id' => $group->id, 'action' => 'updated',
             'summary' => $group->name.' plans set', 'data' => ['group' => $group->slug, 'plans' => $group->plans()->pluck('internal')->implode(', ')]]);
 
-        return redirect()->route('lando.groups.index')->with('status', $group->name.' saved');
+        return redirect(app_route('groups.index'))->with('status', $group->name.' saved');
     }
 
     private function validated(Request $request, ?PlanGroup $group = null): array

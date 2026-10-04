@@ -56,10 +56,6 @@ class AdminMenu
             }
             foreach ($items as $item) {
                 $params = $item[3] ?? [];
-                $target = Str::before($item[1], '.');
-                if ($target !== $app && config()->has('admin.apps.'.$target) && ! auth()->user()?->hasPerm($target)) {
-                    continue;
-                }
                 $sections[$heading][] = [
                     'label' => $item[0],
                     'route' => $item[1],
