@@ -39,10 +39,17 @@ class CustomerSeeder extends Seeder
         $customers = Customer::pluck('id', 'account');
         foreach (DatabaseSeeder::data('customer_activity') as $a) {
             $id = $customers[$a['account']];
+            // Sample activity never runs past today
             foreach ($a['payments'] as $p) {
+                if ($p['date'] > today()->toDateString()) {
+                    continue;
+                }
                 Payment::create(['customer_id' => $id, 'reference' => $p['id'], 'paid_on' => $p['date'], 'amount' => $p['amount'], 'method' => $p['method'], 'source' => $p['source'], 'status' => $p['status']]);
             }
             foreach ($a['bills'] as $b) {
+                if ($b['date'] > today()->toDateString()) {
+                    continue;
+                }
                 Bill::create(['customer_id' => $id, 'reference' => $b['id'], 'billed_on' => $b['date'], 'kwh' => $b['kwh'], 'amount' => $b['amount']]);
             }
             foreach ($a['notes'] as $n) {

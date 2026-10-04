@@ -230,7 +230,7 @@ class AccountSeeder extends Seeder
         ApiLog::create(['customer_id' => $c->id, 'api' => 'Experian', 'action' => 'credit.check', 'status' => '200', 'response_ms' => mt_rand(800, 2500), 'created_at' => $created->copy()->addMinutes(2)]);
         for ($i = 0, $n = mt_rand(0, 3); $i < $n; $i++) {
             Phonecall::create(['customer_id' => $c->id, 'user_id' => $csr?->id, 'agent_id' => 'A'.mt_rand(100, 140), 'phone' => $c->phone,
-                'direction' => mt_rand(0, 3) ? 'inbound' : 'outbound', 'started_at' => $created->copy()->addDays(mt_rand(1, 200))->setTime(mt_rand(8, 17), mt_rand(0, 59)),
+                'direction' => mt_rand(0, 3) ? 'inbound' : 'outbound', 'started_at' => $created->copy()->addDays(mt_rand(1, 200))->setTime(mt_rand(8, 17), mt_rand(0, 59))->min(now()->subHour()),
                 'duration_sec' => mt_rand(45, 1500), 'disposition' => ['Status Inquiry', 'Balance Inquiry', 'Payment Made', 'Change Plan', 'Outage'][mt_rand(0, 4)]]);
         }
         // Text messages for customers with a mobile phone: a bill reminder, sometimes a reply and an answer
