@@ -43,7 +43,12 @@ class AdminMenu
         foreach (config("admin.apps.$app.menu") as $heading => $items) {
             if ($items === 'reference_tables') {
                 $items = collect(config('admin.reference_tables'))
-                    ->map(fn ($t, $key) => [$t[0], 'sheriff.data.show', null, ['table' => $key]])->values()->all();
+                    ->map(fn ($t, $key) => [$t[0], 'sheriff.data.show', null, ['table' => $key]])
+                    ->push(['TDSP Fees', 'sheriff.fees.index'])->sortBy(0)->values()->all();
+            }
+            if ($items === 'integrations') {
+                $items = [['All APIs', 'sheriff.integrations.index'], ...collect(config('admin.integrations'))
+                    ->map(fn ($i, $key) => [$i['name'], 'sheriff.integrations.show', null, ['integration' => $key]])->values()->all()];
             }
             if ($items === 'queues') {
                 $items = [['All Exceptions', 'corral.queues.index', 'queues'], ...collect(config('admin.queues'))
@@ -51,6 +56,10 @@ class AdminMenu
             }
             foreach ($items as $item) {
                 $params = $item[3] ?? [];
+                $target = Str::before($item[1], '.');
+                if ($target !== $app && config()->has('admin.apps.'.$target) && ! auth()->user()?->hasPerm($target)) {
+                    continue;
+                }
                 $sections[$heading][] = [
                     'label' => $item[0],
                     'route' => $item[1],

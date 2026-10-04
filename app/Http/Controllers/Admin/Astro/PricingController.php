@@ -74,11 +74,73 @@ class PricingController extends Controller
             'p.*.rate_adj' => ['required', 'numeric', 'min:-10', 'max:10'],
             'p.*.monthly' => ['required', 'numeric', 'min:0', 'max:500'],
             'p.*.active' => ['required', 'boolean'],
+            'p.*.min_discount' => ['nullable', 'numeric', 'min:-10', 'max:10'],
+            'p.*.max_discount' => ['nullable', 'numeric', 'min:-10', 'max:10'],
         ]);
+        foreach ($data['p'] as $id => $values) {
+            if (isset($values['min_discount'], $values['max_discount']) && $values['min_discount'] < $values['max_discount']) {
+                // Discounts are negative: the "max" discount is the larger cut, so it must be <= the min
+                return back()->withInput()->withErrors(['p' => 'Max Discount must be the same as or a bigger discount (more negative) than Min Discount.']);
+            }
+        }
         foreach ($data['p'] as $id => $values) {
             ByopProduct::whereKey($id)->update($values);
         }
 
         return back()->with('status', 'Products saved. The website uses these prices now.');
+    }
+
+    /** Upload → BYOP Discounts: a CSV of key,rate_adj[,min_discount,max_discount] applied to the BYOP products. */
+    public function byopUpload(): View
+    {
+        return view('admin.astro.byop-upload', ['products' => ByopProduct::orderBy('position')->get(['key', 'name', 'rate_adj', 'min_discount', 'max_discount'])]);
+    }
+
+    public function byopImport(Request $request): RedirectResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'max:512', 'mimes:csv,txt']]);
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\r|\n/', trim($request->file('file')->get())));
+        if ($rows && ! is_numeric($rows[0][1] ?? null)) {
+            array_shift($rows); // header row
+        }
+
+        $products = ByopProduct::pluck('id', 'key');
+        $errors = [];
+        $updates = [];
+        foreach ($rows as $i => $r) {
+            $line = $i + 2;
+            $key = trim($r[0] ?? '');
+            $nums = array_map(fn ($v) => trim((string) $v) === '' ? null : trim($v), array_slice($r, 1, 3)) + [null, null, null];
+            if ($key === '') {
+                continue;
+            }
+            if (! isset($products[$key])) {
+                $errors[] = "Line $line: no product with key \"$key\"";
+
+                continue;
+            }
+            foreach ($nums as $n) {
+                if ($n !== null && (! is_numeric($n) || abs((float) $n) > 10)) {
+                    $errors[] = "Line $line: \"$n\" is not a number between -10 and 10";
+
+                    continue 2;
+                }
+            }
+            $updates[$products[$key]] = array_filter(['rate_adj' => $nums[0], 'min_discount' => $nums[1], 'max_discount' => $nums[2]], fn ($v) => $v !== null);
+        }
+        if ($errors) {
+            return back()->withErrors(['file' => array_slice($errors, 0, 10)]);
+        }
+        if (! $updates) {
+            return back()->withErrors(['file' => 'The file has no product rows.']);
+        }
+
+        DB::transaction(function () use ($updates) {
+            foreach ($updates as $id => $values) {
+                ByopProduct::find($id)->update($values);
+            }
+        });
+
+        return redirect()->route('astro.products.index')->with('status', count($updates).' BYOP products updated from the upload');
     }
 }

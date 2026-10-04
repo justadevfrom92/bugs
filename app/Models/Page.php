@@ -12,6 +12,11 @@ class Page extends Model
 
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return ['no_index' => 'boolean'];
+    }
+
     public function template(): BelongsTo
     {
         return $this->belongsTo(Template::class);

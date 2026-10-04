@@ -46,14 +46,16 @@ class AdminApps
         $screens = [];
         foreach (config('admin.apps') as $app) {
             foreach ($app['menu'] as $heading => $items) {
-                if ($items === 'queues') {
-                    $items = [['Exception Queues', 'corral.queues.index']];
-                }
+                $items = match ($items) {
+                    'queues' => [['Exception Queues', 'corral.queues.index']],
+                    'integrations' => [['APIs', 'sheriff.integrations.index']],
+                    default => $items,
+                };
                 if (! is_array($items)) {
                     continue;
                 }
                 foreach ($items as $item) {
-                    $screens[$item[1]] = $app['name'].' → '.$item[0];
+                    $screens[$item[1]] ??= $app['name'].' → '.$item[0];
                 }
             }
         }

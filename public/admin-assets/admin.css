@@ -327,3 +327,6 @@ table.hist td { white-space: normal; }
 .bubble.in { align-self: flex-start; background: var(--row); color: var(--ink); border-radius: 14px 14px 14px 4px; }
 .bubble small { display: block; font-size: .7rem; opacity: .75; margin-top: 4px; }
 @media (max-width: 900px) { .sms { grid-template-columns: 1fr; } }
+.sortable { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: 8px; }
+.sortable li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.sortable li:last-child { border-bottom: 0; }

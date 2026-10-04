@@ -14,7 +14,7 @@ class BuildSitemap extends TrackedCommand
     protected function work(): array
     {
         $base = rtrim(config('app.url'), '/');
-        $pages = Page::where('status', 'Published')->whereNull('redirect')->where('path', '!=', '404')->orderBy('path')->get();
+        $pages = Page::where('status', 'Published')->where('no_index', false)->whereNull('redirect')->where('path', '!=', '404')->orderBy('path')->get();
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
         foreach ($pages as $p) {

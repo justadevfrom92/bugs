@@ -6,13 +6,16 @@ use App\Models\ByopProduct;
 use App\Models\ContactMessage;
 use App\Models\ContentBlock;
 use App\Models\Customer;
+use App\Models\Market;
 use App\Models\Note;
 use App\Models\Page;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\PlanGroup;
 use App\Models\Rate;
 use App\Models\Role;
 use App\Models\TdspFee;
+use App\Models\Template;
 use App\Models\TermDiscount;
 use App\Models\TermEtf;
 use App\Models\User;
@@ -43,6 +46,9 @@ return [
         TermEtf::class => ['TermEtf_model', 'Admin Changes'],
         ByopProduct::class => ['ByopProduct_model', 'Admin Changes'],
         Page::class => ['Page_model', 'Admin Changes'],
+        Template::class => ['Template_model', 'Admin Changes'],
+        Market::class => ['Market_model', 'Admin Changes'],
+        PlanGroup::class => ['PlanGroup_model', 'Admin Changes'],
         ContentBlock::class => ['ContentBlock_model', 'Admin Changes'],
         User::class => ['User_model', 'Admin Changes'],
         Role::class => ['Role_model', 'Admin Changes'],

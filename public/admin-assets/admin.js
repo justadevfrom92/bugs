@@ -198,6 +198,16 @@
       sync();
     });
 
+    // Plan group order: move a row up or down
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-move]');
+      if (!b) return;
+      var li = b.closest('li');
+      if (b.dataset.move === '-1' && li.previousElementSibling) li.parentNode.insertBefore(li, li.previousElementSibling);
+      if (b.dataset.move === '1' && li.nextElementSibling) li.parentNode.insertBefore(li.nextElementSibling, li);
+      b.focus();
+    });
+
     // Add a row from a <template>: data-clone="#template" data-into="#tbody"; __i__ becomes a unique index
     $$('[data-clone]').forEach(function (btn) {
       btn.addEventListener('click', function () {

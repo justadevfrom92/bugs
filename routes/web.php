@@ -99,10 +99,12 @@ Route::prefix('admin')->group(function () {
             Route::get('/', fn () => redirect()->route('lando.pages.index'));
             Route::resource('pages', Admin\Lando\PageController::class)->except('show');
             Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('pages.sitemap');
-            Route::get('templates', [Admin\Lando\PageController::class, 'templates'])->name('templates.index');
+            Route::get('sites', [Admin\Lando\PageController::class, 'sites'])->name('sites.index');
+            Route::resource('templates', Admin\Lando\TemplateController::class)->except(['show', 'destroy']);
+            Route::resource('markets', Admin\Lando\MarketController::class)->except(['show', 'destroy']);
             Route::resource('blocks', Admin\Lando\BlockController::class)->except(['show', 'destroy']);
             Route::resource('plans', Admin\Lando\PlanController::class)->except(['show', 'destroy']);
-            Route::get('groups', [Admin\Lando\PlanGroupController::class, 'index'])->name('groups.index');
+            Route::resource('groups', Admin\Lando\PlanGroupController::class)->except(['show', 'destroy']);
             Route::post('groups/{group}/plans', [Admin\Lando\PlanGroupController::class, 'attach'])->name('groups.attach');
             Route::delete('groups/{group}/plans/{plan}', [Admin\Lando\PlanGroupController::class, 'detach'])->name('groups.detach');
             Route::get('rates', [Admin\Lando\RateController::class, 'index'])->name('rates.index');
@@ -110,7 +112,6 @@ Route::prefix('admin')->group(function () {
             Route::put('rates', [Admin\Lando\RateController::class, 'update'])->name('rates.update');
             Route::get('fees', [Admin\Lando\FeeController::class, 'index'])->name('fees.index');
             Route::put('fees', [Admin\Lando\FeeController::class, 'update'])->name('fees.update');
-            Route::get('markets', [Admin\Lando\FeeController::class, 'markets'])->name('markets.index');
         });
 
         // Astro — pricing modifiers
@@ -122,6 +123,8 @@ Route::prefix('admin')->group(function () {
             Route::put('etfs', [Admin\Astro\PricingController::class, 'updateEtfs'])->name('etfs.update');
             Route::get('products', [Admin\Astro\PricingController::class, 'products'])->name('products.index');
             Route::put('products', [Admin\Astro\PricingController::class, 'updateProducts'])->name('products.update');
+            Route::get('uploads/byop', [Admin\Astro\PricingController::class, 'byopUpload'])->name('byop.upload');
+            Route::post('uploads/byop', [Admin\Astro\PricingController::class, 'byopImport'])->name('byop.import');
         });
 
         // Sheriff — users, roles, integrations, jobs, reference data
@@ -135,6 +138,11 @@ Route::prefix('admin')->group(function () {
             Route::get('roles', [Admin\Sheriff\RoleController::class, 'index'])->name('roles.index');
             Route::put('roles', [Admin\Sheriff\RoleController::class, 'update'])->name('roles.update');
             Route::get('integrations', [Admin\Sheriff\SystemController::class, 'integrations'])->name('integrations.index');
+            Route::get('integrations/{integration}', [Admin\Sheriff\SystemController::class, 'integration'])->name('integrations.show');
+            Route::get('sitemap', [Admin\Sheriff\SystemController::class, 'sitemap'])->name('sitemap');
+            Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('sitemap.run');
+            Route::get('fees', [Admin\Lando\FeeController::class, 'index'])->name('fees.index');
+            Route::put('fees', [Admin\Lando\FeeController::class, 'update'])->name('fees.update');
             Route::get('jobs', [Admin\Sheriff\SystemController::class, 'jobs'])->name('jobs.index');
             Route::post('jobs/run', [Admin\Sheriff\SystemController::class, 'runJob'])->name('jobs.run');
             Route::get('data/{table}', [Admin\Sheriff\SystemController::class, 'table'])->name('data.show');

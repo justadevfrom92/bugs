@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <form method="post" action="{{ route('lando.fees.update') }}" style="display:flex;flex-direction:column;gap:20px">
+    <form method="post" action="{{ $action }}" style="display:flex;flex-direction:column;gap:20px">
         @csrf @method('put')
         @include('admin.partials.page-head', ['title' => 'TDSP Fees', 'sub' => 'Utility delivery charges passed through on every bill. Changing a value unlocks its effective date.', 'actions' => '<button class="btn cyan">Save Fees</button>'])
         <div class="panel"><div class="table-wrap"><table>

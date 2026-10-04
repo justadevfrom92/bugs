@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin\Sheriff;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApiLog;
 use App\Models\JobRun;
 use App\Models\ReferenceRow;
 use App\Support\History;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -25,6 +27,32 @@ class SystemController extends Controller
         ]);
 
         return view('admin.sheriff.integrations', ['integrations' => $integrations]);
+    }
+
+    /** One integration: which settings are present and its recent calls. */
+    public function integration(string $integration): View
+    {
+        abort_unless(config()->has('admin.integrations.'.$integration), 404);
+        $i = config('admin.integrations.'.$integration);
+
+        return view('admin.sheriff.integration', [
+            'i' => $i + ['set' => collect($i['env'])->map(fn ($v) => filled($v))->all(), 'configured' => collect($i['env'])->every(fn ($v) => filled($v))],
+            'calls' => ApiLog::where('api', $i['name'])->with('customer')->latest('created_at')->latest('id')->limit(50)->get(),
+            'stats' => ApiLog::where('api', $i['name'])->where('created_at', '>=', now()->subDays(30))
+                ->selectRaw("count(*) as total, sum(case when status like '2%' then 1 else 0 end) as ok, avg(response_ms) as avg_ms")->first(),
+        ]);
+    }
+
+    /** Config → Update Sitemap */
+    public function sitemap(): View
+    {
+        $file = public_path('sitemap.xml');
+
+        return view('admin.sheriff.sitemap', [
+            'builtAt' => is_file($file) ? Carbon::createFromTimestamp(filemtime($file)) : null,
+            'urls' => is_file($file) ? substr_count((string) file_get_contents($file), '<url>') : 0,
+            'last' => JobRun::where('command', 'et:sitemap')->latest('started_at')->first(),
+        ]);
     }
 
     public function jobs(): View

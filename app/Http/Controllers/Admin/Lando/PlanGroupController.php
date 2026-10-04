@@ -8,6 +8,8 @@ use App\Models\PlanGroup;
 use App\Support\History;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Groups decide which plans each website section shows, e.g. "featured" on the home page. */
@@ -19,6 +21,53 @@ class PlanGroupController extends Controller
             'groups' => PlanGroup::with('plans')->orderBy('id')->get(),
             'plans' => Plan::where('active', true)->orderBy('type')->orderBy('term')->get(),
         ]);
+    }
+
+    public function create(): View
+    {
+        return view('admin.lando.groups-form', ['group' => new PlanGroup, 'plans' => Plan::where('active', true)->orderBy('type')->orderBy('term')->get()]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $this->validated($request);
+        $group = DB::transaction(function () use ($data) {
+            $group = PlanGroup::create(['name' => $data['name'], 'slug' => $data['slug']]);
+            $group->plans()->sync(collect($data['plans'] ?? [])->values()->mapWithKeys(fn ($id, $i) => [$id => ['position' => $i]])->all());
+
+            return $group;
+        });
+
+        return redirect()->route('lando.groups.index')->with('status', 'Group '.$group->name.' added');
+    }
+
+    public function edit(PlanGroup $group): View
+    {
+        return view('admin.lando.groups-form', ['group' => $group->load('plans'), 'plans' => Plan::where('active', true)->orderBy('type')->orderBy('term')->get()]);
+    }
+
+    /** Rename the group and set which plans it shows, in order. */
+    public function update(Request $request, PlanGroup $group): RedirectResponse
+    {
+        $data = $this->validated($request, $group);
+        DB::transaction(function () use ($group, $data) {
+            $group->update(['name' => $data['name'], 'slug' => $data['slug']]);
+            $group->plans()->sync(collect($data['plans'] ?? [])->values()->mapWithKeys(fn ($id, $i) => [$id => ['position' => $i]])->all());
+        });
+        History::record(['model' => 'PlanGroup_model', 'group' => 'Admin Changes', 'record_id' => $group->id, 'action' => 'updated',
+            'summary' => $group->name.' plans set', 'data' => ['group' => $group->slug, 'plans' => $group->plans()->pluck('internal')->implode(', ')]]);
+
+        return redirect()->route('lando.groups.index')->with('status', $group->name.' saved');
+    }
+
+    private function validated(Request $request, ?PlanGroup $group = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:60'],
+            'slug' => ['required', 'string', 'max:60', 'regex:/^[a-z0-9][a-z0-9-]*$/', Rule::unique('plan_groups')->ignore($group)],
+            'plans' => ['nullable', 'array'],
+            'plans.*' => ['integer', 'distinct', 'exists:plans,id'],
+        ], ['slug.regex' => 'Use lowercase letters, numbers and dashes. The website looks groups up by this.']);
     }
 
     public function attach(Request $request, PlanGroup $group): RedirectResponse

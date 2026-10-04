@@ -51,10 +51,16 @@ class RateController extends Controller
         return view('admin.lando.rates.index', ['f' => $f, 'kwh' => $kwh, 'markets' => $markets, 'rows' => $rows]);
     }
 
-    public function edit(Catalog $catalog): View
+    /** ?plan=ID shows one plan's rates (the "rates" link on View Plans); ?all=1 includes inactive plans. */
+    public function edit(Request $request, Catalog $catalog): View
     {
+        $plan = $request->integer('plan') ?: null;
+
         return view('admin.lando.rates.edit', [
-            'plans' => Plan::where('active', true)->orderBy('type')->orderBy('term')->orderBy('name')->get(),
+            'plans' => Plan::when(! $request->boolean('all') && ! $plan, fn ($q) => $q->where('active', true))
+                ->when($plan, fn ($q, $id) => $q->whereKey($id))->orderBy('type')->orderBy('term')->orderBy('name')->get(),
+            'onePlan' => $plan ? Plan::find($plan) : null,
+            'showAll' => $request->boolean('all'),
             'markets' => Market::orderBy('name')->get(),
             'rates' => $catalog->latestRates(),
             'pending' => Rate::whereDate('effective_on', '>', today())->count(),
@@ -91,6 +97,6 @@ class RateController extends Controller
             }
         });
 
-        return redirect()->route('lando.rates.edit')->with('status', $changed ? $changed.' rates saved, effective '.$data['effective_on'] : 'No changes to save');
+        return redirect()->route('lando.rates.edit', array_filter(['plan' => $request->integer('plan') ?: null]))->with('status', $changed ? $changed.' rates saved, effective '.$data['effective_on'] : 'No changes to save');
     }
 }

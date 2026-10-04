@@ -54,22 +54,28 @@ return [
             'home' => 'lando.pages.index',
             'menu' => [
                 'Pages' => [
-                    ['Pages List', 'lando.pages.index'],
+                    ['List Pages', 'lando.pages.index'],
+                    ['Add a Page', 'lando.pages.create'],
                     ['Page Templates', 'lando.templates.index'],
                     ['Content Blocks', 'lando.blocks.index'],
+                ],
+                'Sites' => [
+                    ['Sites', 'lando.sites.index'],
+                ],
+                'Markets' => [
+                    ['View Markets', 'lando.markets.index'],
+                    ['Add a Market', 'lando.markets.create'],
                 ],
                 'Plans' => [
                     ['View Plans', 'lando.plans.index'],
                     ['Add a Plan', 'lando.plans.create'],
                     ['Plan Groups', 'lando.groups.index'],
+                    ['Add a Group', 'lando.groups.create'],
                 ],
                 'Rates' => [
                     ['View Rates', 'lando.rates.index'],
                     ['Update Rates', 'lando.rates.edit'],
                     ['TDSP Fees', 'lando.fees.index'],
-                ],
-                'Markets' => [
-                    ['View Markets', 'lando.markets.index'],
                 ],
             ],
         ],
@@ -80,9 +86,21 @@ return [
             'home' => 'astro.terms.edit',
             'menu' => [
                 'Modifiers' => [
-                    ['Term & Discounts', 'astro.terms.edit'],
-                    ['ETF by Term', 'astro.etfs.edit'],
-                    ['BYOP Products', 'astro.products.index'],
+                    ['Term', 'astro.terms.edit'],
+                    ['ETF', 'astro.etfs.edit'],
+                    ['Products', 'astro.products.index'],
+                ],
+                // Same pages, plans and groups as Lando (one copy of the data and screens)
+                'Website' => [
+                    ['Pages', 'lando.pages.index'],
+                    ['Groups', 'lando.groups.index'],
+                ],
+                'Plans' => [
+                    ['Plans', 'lando.plans.index'],
+                    ['New Plan', 'lando.plans.create'],
+                ],
+                'Upload' => [
+                    ['BYOP Discounts', 'astro.byop.upload'],
                 ],
             ],
         ],
@@ -96,11 +114,12 @@ return [
                     ['Users', 'sheriff.users.index'],
                     ['Roles', 'sheriff.roles.index'],
                 ],
-                'System' => [
-                    ['APIs', 'sheriff.integrations.index'],
+                'Config' => [
                     ['Crons', 'sheriff.jobs.index', 'failed_jobs'],
+                    ['Update Sitemap', 'sheriff.sitemap'],
                 ],
-                'Data' => 'reference_tables', // expanded from the list below
+                'APIs' => 'integrations',        // one page per integration below, plus the overview
+                'Data' => 'reference_tables',    // one page per table below, plus TDSP Fees
             ],
         ],
     ],
@@ -158,6 +177,9 @@ return [
         'fraud-indicators' => ['Fraud Indicators', ['Rule', 'Action']],
         'note-dispositions' => ['CIS Note Dispositions', ['Code', 'Label']],
         'charge-codes' => ['Charge Codes', ['Code', 'Description']],
+        'ips' => ['IPs', ['IP Address', 'Action', 'Note']],
+        'monthly-drawing' => ['Monthly Drawing', ['Month', 'Prize', 'Winner Account', 'Drawn On']],
+        'rate-exports' => ['Rate Exports', ['Email', 'Customer Type', 'Markets', 'Frequency']],
     ],
 
     // Scheduled jobs (registered in routes/console.php). Run them on Linux with:

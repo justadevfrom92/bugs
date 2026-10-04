@@ -209,5 +209,79 @@
     "Late fee"
    ]
   ]
+ },
+ "IPs": {
+  "cols": [
+   "IP Address",
+   "Action",
+   "Note"
+  ],
+  "rows": [
+   [
+    "203.0.113.45",
+    "Block orders",
+    "Repeated fraudulent orders"
+   ],
+   [
+    "198.51.100.0/24",
+    "Review orders",
+    "Reseller test range"
+   ],
+   [
+    "192.0.2.10",
+    "Allow",
+    "Office network"
+   ]
+  ]
+ },
+ "Monthly Drawing": {
+  "cols": [
+   "Month",
+   "Prize",
+   "Winner Account",
+   "Drawn On"
+  ],
+  "rows": [
+   [
+    "2026-07",
+    "$100 Bill Credit",
+    "1219001373",
+    "2026-08-01"
+   ],
+   [
+    "2026-08",
+    "$100 Bill Credit",
+    "1219049428",
+    "2026-09-01"
+   ],
+   [
+    "2026-09",
+    "ecobee Smart Thermostat",
+    "",
+    ""
+   ]
+  ]
+ },
+ "Rate Exports": {
+  "cols": [
+   "Email",
+   "Customer Type",
+   "Markets",
+   "Frequency"
+  ],
+  "rows": [
+   [
+    "broker-desk@example.com",
+    "Small Business",
+    "All",
+    "Daily"
+   ],
+   [
+    "partner-rates@example.com",
+    "Residential",
+    "TX-E-ONCOR, TX-E-CENTERPOINT",
+    "Weekly"
+   ]
+  ]
  }
 }
