@@ -17,7 +17,7 @@
   function header() {
     var here = ET.page();
     var links = B.nav.map(function (n) {
-      return '<a href="' + n[0] + '"' + (n[0] === here ? ' class="active"' : '') + '>' + n[1] + '</a>';
+      return '<a href="' + ET.root + n[0] + '"' + (n[0] === here ? ' class="active"' : '') + '>' + n[1] + '</a>';
     }).join('');
     return (
       '<div class="utility"><div class="wrap">' +
@@ -26,7 +26,7 @@
       '<button type="button" class="admin-btn" data-admin>Admin</button></div>' +
       '</div></div>' +
       '<header class="site-header"><div class="wrap">' +
-      '<a class="logo" href="index.html" aria-label="' + esc(B.name) + ' home">' + LOGO + '</a>' +
+      '<a class="logo" href="' + ET.root + 'index.html" aria-label="' + esc(B.name) + ' home">' + LOGO + '</a>' +
       '<button class="menu-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>' +
       '<nav class="nav" id="main-nav">' + links +
       '<a class="btn" href="#">My Account</a>' +
@@ -39,7 +39,7 @@
     return (
       '<footer class="site-footer"><div class="wrap">' +
       '<div class="footer-cols">' +
-      '<div><a class="logo" href="index.html">' + LOGO + '</a>' +
+      '<div><a class="logo" href="' + ET.root + 'index.html">' + LOGO + '</a>' +
       '<p style="margin-top:18px">Texas-sized service, honest electricity plans and rewards just for keepin\' the lights on.</p>' +
       '<div class="footer-social">' +
       '<a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8h3V4h-3c-2.8 0-4 1.8-4 4.3V10H7v4h3v8h4v-8h3l1-4h-4V8.6c0-.4.2-.6.6-.6z"/></svg></a>' +
@@ -48,22 +48,22 @@
       '<a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3a2 2 0 110 4 2 2 0 010-4zM3 9h3v12H3zm6 0h3v1.7c.5-.9 1.7-2 3.6-2 3.4 0 4.4 2.1 4.4 5.3V21h-3v-6.2c0-1.6-.3-3-2-3s-2.3 1.3-2.3 3V21H9z"/></svg></a>' +
       '</div></div>' +
       '<div><h4>Electricity</h4><ul>' +
-      '<li><a href="plans.html">Residential Plans</a></li>' +
-      '<li><a href="build-your-own-plan.html">Build Your Own Plan</a></li>' +
-      '<li><a href="business.html">Business Plans</a></li>' +
-      '<li><a href="plans.html#faq">Electricity Facts Labels</a></li>' +
+      '<li><a href="' + ET.root + 'plans.html">Residential Plans</a></li>' +
+      '<li><a href="' + ET.root + 'build-your-own-plan.html">Build Your Own Plan</a></li>' +
+      '<li><a href="' + ET.root + 'business.html">Business Plans</a></li>' +
+      '<li><a href="' + ET.root + 'plans.html#faq">Electricity Facts Labels</a></li>' +
       '</ul></div>' +
       '<div><h4>Perks</h4><ul>' +
-      '<li><a href="index.html#rewards">' + esc(B.rewards) + '</a></li>' +
-      '<li><a href="#">Peak Perks</a></li>' +
-      '<li><a href="#">Refer a Friend</a></li>' +
-      '<li><a href="#">Military &amp; First Responders</a></li>' +
+      '<li><a href="' + ET.root + 'index.html#rewards">' + esc(B.rewards) + '</a></li>' +
+      '<li><a href="' + ET.root + 'experience-energy-savings-with-peak-perks-plus">Peak Perks</a></li>' +
+      '<li><a href="' + ET.root + 'refer-a-friend">Refer a Friend</a></li>' +
+      '<li><a href="' + ET.root + 'military-and-first-responders">Military &amp; First Responders</a></li>' +
       '</ul></div>' +
       '<div><h4>Company</h4><ul>' +
-      '<li><a href="#">About Us</a></li>' +
-      '<li><a href="index.html#learn">Get to Learnin\'</a></li>' +
-      '<li><a href="#">Careers</a></li>' +
-      '<li><a href="contact-us.html">Contact Us</a></li>' +
+      '<li><a href="' + ET.root + 'about-us">About Us</a></li>' +
+      '<li><a href="' + ET.root + 'get-to-learnin">Get to Learnin\'</a></li>' +
+      '<li><a href="' + ET.root + 'careers">Careers</a></li>' +
+      '<li><a href="' + ET.root + 'contact-us.html">Contact Us</a></li>' +
       '</ul></div>' +
       '</div>' +
       '<div class="footer-bottom"><span>&copy; ' + year + ' ' + esc(B.name) + '. All rights reserved. PUCT Cert. No. ' + esc(B.puct) + '</span>' +
@@ -150,7 +150,7 @@
       '<div class="plan-body"><ul class="checks">' +
       p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') +
       '</ul>' +
-      '<a class="btn btn-block" href="contact-us.html?plan=' + encodeURIComponent(p.internal) + '">Sign Up</a>' +
+      '<a class="btn btn-block" href="' + ET.root + 'contact-us.html?plan=' + encodeURIComponent(p.internal) + '">Sign Up</a>' +
       '<div class="plan-links"><a href="#">Electricity Facts Label</a><a href="#">Terms of Service</a><a href="#">YRAC</a></div>' +
       '</div></article>'
     );
@@ -209,7 +209,7 @@
         msg.textContent = 'Great news! We serve ' + zip + ' (' + m.desc + '). Loading plans…';
         msg.classList.add('ok');
         setTimeout(function () {
-          ET.go((biz ? 'business.html' : 'plans.html') + '?zip=' + zip);
+          ET.go(ET.root + (biz ? 'business.html' : 'plans.html') + '?zip=' + zip);
         }, 700);
       });
     });
