@@ -105,7 +105,7 @@ class AccountActions
         $integration = $channel === 'SMS' ? 'sms' : 'salesforce';
         $ready = $this->configured($integration);
         ContactLog::create(['customer_id' => $this->c->id, 'channel' => $channel, 'template' => $template, 'body' => $body,
-            'status' => $ready ? 'queued' : 'not sent', 'sent_at' => null, 'user_id' => $this->user->id]);
+            'phone' => $channel === 'SMS' ? $this->c->phone : null, 'status' => $ready ? 'queued' : 'not sent', 'sent_at' => null, 'user_id' => $this->user->id]);
 
         return $ready
             ? $channel.' "'.$template.'" queued for '.$this->integrationName($integration).'.'

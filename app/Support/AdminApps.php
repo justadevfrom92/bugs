@@ -46,6 +46,9 @@ class AdminApps
         $screens = [];
         foreach (config('admin.apps') as $app) {
             foreach ($app['menu'] as $heading => $items) {
+                if ($items === 'queues') {
+                    $items = [['Exception Queues', 'corral.queues.index']];
+                }
                 if (! is_array($items)) {
                     continue;
                 }

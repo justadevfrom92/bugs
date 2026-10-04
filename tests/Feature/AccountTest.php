@@ -105,4 +105,34 @@ class AccountTest extends TestCase
         $this->actingAs($csr)->post(route('corral.customers.action.run', [$c, 'delete-order']))->assertForbidden();
         $this->assertNotNull($c->fresh());
     }
+
+    public function test_corral_reports_sms_ercot_and_exception_menu(): void
+    {
+        $this->actingAs($this->admin());
+
+        foreach (['orders', 'notes', 'phonecalls'] as $report) {
+            foreach (['screen', 'summary'] as $output) {
+                $this->get('/admin/corral/reports/'.$report.'?run=1&start=2020-01-01&output='.$output)->assertOk();
+            }
+            $this->get('/admin/corral/reports/'.$report.'?run=1&start=2020-01-01&output=csv')->assertOk()->assertHeader('content-type', 'text/csv; charset=utf-8');
+            $this->get('/admin/corral/reports/'.$report)->assertOk()->assertSee('Recent Results')->assertSee('Run again');
+        }
+        $this->get('/admin/corral/reports/notes?run=1&start=2020-01-01&priorities[]=System')->assertOk()->assertSee('Enrollment submitted');
+
+        $this->get('/admin/corral/ercot')->assertOk()->assertSee('814_16');
+        $this->get('/admin/corral/ercot?type=814_16&status=linked')->assertOk();
+
+        $c = Customer::whereHas('contactLogs', fn ($q) => $q->where('channel', 'SMS'))->firstOrFail();
+        $this->get('/admin/corral/sms')->assertOk()->assertSee($c->name);
+        $this->get('/admin/corral/sms?account='.$c->account)->assertOk()->assertSee('Your');
+        $this->post('/admin/corral/sms', ['account' => $c->account, 'message' => 'Hello from the test'])->assertRedirect('/admin/corral/sms?account='.$c->account);
+        $this->assertTrue($c->contactLogs()->where('channel', 'SMS')->where('body', 'Hello from the test')->where('status', 'not sent')->exists());
+
+        // Every exception queue is its own menu item
+        $page = $this->get('/admin/corral/queues/duplicate-ips')->assertOk();
+        foreach (config('admin.queues') as $key => [$label]) {
+            $page->assertSee(route('corral.queues.show', $key));
+        }
+        $page->assertSee('aria-current="page" >Duplicate IPs', false);
+    }
 }

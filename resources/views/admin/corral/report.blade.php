@@ -7,10 +7,7 @@
         <div class="form-row">
             <div class="field"><label for="start">Start</label><input id="start" name="start" type="date" value="{{ $f['start'] }}"></div>
             <div class="field"><label for="end">End</label><input id="end" name="end" type="date" value="{{ $f['end'] }}"></div>
-            <div class="field"><label for="output">Output</label><select id="output" name="output">
-                @foreach (['screen' => 'On-Screen', 'summary' => 'On-Screen - Summary', 'csv' => 'CSV download'] as $v => $l)<option value="{{ $v }}" @selected($f['output'] === $v)>{{ $l }}</option>@endforeach
-            </select></div>
-            <button class="btn" name="run" value="1">Run Report</button>
+            @include('admin.corral.reports._output')
         </div>
         <div class="actions">
             @foreach ($statuses as $s)
@@ -33,4 +30,6 @@
             @endif
         </div>
     @endif
+
+    @include('admin.corral.reports._recent', ['route' => 'corral.reports.orders'])
 @endsection

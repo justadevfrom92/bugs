@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\ContactLog;
 use App\Models\ContactMessage;
 use App\Models\JobRun;
 use App\Models\WorkItem;
@@ -26,7 +27,6 @@ class AdminMenu
     public static function sections(string $app): array
     {
         $current = (string) Route::currentRouteName();
-        $currentTable = request()->route('table');
         $sections = [];
 
         // Apps created from the launcher: plain links, none of them is the current page
@@ -45,13 +45,17 @@ class AdminMenu
                 $items = collect(config('admin.reference_tables'))
                     ->map(fn ($t, $key) => [$t[0], 'sheriff.data.show', null, ['table' => $key]])->values()->all();
             }
+            if ($items === 'queues') {
+                $items = [['All Exceptions', 'corral.queues.index', 'queues'], ...collect(config('admin.queues'))
+                    ->map(fn ($q, $key) => [$q[0], 'corral.queues.show', 'queue:'.$key, ['queue' => $key]])->values()->all()];
+            }
             foreach ($items as $item) {
                 $params = $item[3] ?? [];
                 $sections[$heading][] = [
                     'label' => $item[0],
                     'route' => $item[1],
                     'url' => route($item[1], $params),
-                    'exact' => $current === $item[1] && (! $params || $params['table'] === $currentTable),
+                    'exact' => $current === $item[1] && collect($params)->every(fn ($v, $k) => (string) request()->route($k) === (string) $v),
                     'badge' => isset($item[2]) ? self::badge($item[2]) : null,
                 ];
             }
@@ -71,14 +75,30 @@ class AdminMenu
 
     public static function badge(string $key): ?int
     {
-        $n = match ($key) {
-            'queues' => WorkItem::open()->count(),
-            'messages' => ContactMessage::open()->count(),
-            'failed_jobs' => self::failedJobs(),
+        $n = match (true) {
+            str_starts_with($key, 'queue:') => self::queueCounts()[substr($key, 6)] ?? 0,
+            $key === 'queues' => WorkItem::open()->count(),
+            $key === 'sms' => self::unansweredTexts(),
+            $key === 'messages' => ContactMessage::open()->count(),
+            $key === 'failed_jobs' => self::failedJobs(),
             default => 0,
         };
 
         return $n ?: null;
+    }
+
+    /** Open work items per queue, counted once per request. */
+    private static function queueCounts(): array
+    {
+        return once(fn () => WorkItem::open()->selectRaw('queue, count(*) as n')->groupBy('queue')->pluck('n', 'queue')->all());
+    }
+
+    /** Customers whose latest text is from them (waiting on a reply). */
+    public static function unansweredTexts(): int
+    {
+        $latest = ContactLog::where('channel', 'SMS')->selectRaw('max(id)')->groupBy('customer_id');
+
+        return ContactLog::whereIn('id', $latest)->where('direction', 'in')->count();
     }
 
     /** Number of jobs whose most recent run failed. */

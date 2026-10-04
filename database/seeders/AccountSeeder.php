@@ -233,6 +233,17 @@ class AccountSeeder extends Seeder
                 'direction' => mt_rand(0, 3) ? 'inbound' : 'outbound', 'started_at' => $created->copy()->addDays(mt_rand(1, 200))->setTime(mt_rand(8, 17), mt_rand(0, 59)),
                 'duration_sec' => mt_rand(45, 1500), 'disposition' => ['Status Inquiry', 'Balance Inquiry', 'Payment Made', 'Change Plan', 'Outage'][mt_rand(0, 4)]]);
         }
+        // Text messages for customers with a mobile phone: a bill reminder, sometimes a reply and an answer
+        if ($c->phone_type === 'mobile' && $flowing) {
+            $at = $created->copy()->addDays(mt_rand(20, 90))->setTime(mt_rand(9, 18), mt_rand(0, 59))->min(now()->subHours(3));
+            ContactLog::create(['customer_id' => $c->id, 'channel' => 'SMS', 'direction' => 'out', 'phone' => $c->phone, 'template' => 'Bill Ready',
+                'body' => 'Your '.config('brand.name').' bill is ready. Reply HELP for help or STOP to opt out.', 'sent_at' => $at, 'created_at' => $at]);
+            if (mt_rand(0, 2) === 0) {
+                $reply = $at->copy()->addMinutes(mt_rand(3, 90));
+                ContactLog::create(['customer_id' => $c->id, 'channel' => 'SMS', 'direction' => 'in', 'phone' => $c->phone, 'template' => 'Reply',
+                    'body' => ['Can I set up autopay by text?', 'When is my bill due?', 'Thanks!', 'Is there an outage in my area?'][mt_rand(0, 3)], 'status' => 'received', 'sent_at' => $reply, 'created_at' => $reply]);
+            }
+        }
         foreach ($c->notes as $note) {
             if ($note->author !== 'System') {
                 $note->forceFill(['category' => 'Order', 'action' => 'Status Inquiry', 'priority' => 'Low'])->saveQuietly();

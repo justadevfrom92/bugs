@@ -1,0 +1,45 @@
+@extends('admin.layouts.app')
+
+@section('content')
+    @include('admin.partials.page-head', ['title' => 'Notes Report', 'sub' => 'Account notes by agent, date, text and priority. "System" notes are the ones written automatically.'])
+
+    <form method="get" class="panel"><div class="panel-body" style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-row">
+            <div class="field"><label for="user">Username</label><select id="user" name="user"><option value="">-- Anyone --</option>
+                @foreach ($users as $u)<option value="{{ $u->id }}" @selected($f['user'] == $u->id)>{{ $u->name }}</option>@endforeach</select></div>
+            <div class="field"><label for="start">Start</label><input id="start" name="start" type="date" value="{{ $f['start'] }}"></div>
+            <div class="field"><label for="end">End</label><input id="end" name="end" type="date" value="{{ $f['end'] }}"></div>
+            <div class="field grow"><label for="contains">Note Contains</label><input id="contains" name="contains" value="{{ $f['contains'] }}" maxlength="100"></div>
+        </div>
+        <div class="form-row">
+            <div class="field"><label>Priority</label><div class="actions">
+                @foreach ($priorities as $p)<label class="check" style="margin-right:10px"><input type="checkbox" name="priorities[]" value="{{ $p }}" @checked(in_array($p, $f['priorities']))> {{ $p }}</label>@endforeach
+            </div></div>
+            @include('admin.corral.reports._output')
+        </div>
+    </div></form>
+
+    @if ($notes !== null)
+        <div class="panel">
+            @if ($f['output'] === 'summary')
+                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $notes->count() }} notes</span></div>
+                <div class="table-wrap"><table><thead><tr><th>Author</th><th>Category</th><th class="num">Notes</th></tr></thead><tbody>
+                    @forelse ($summary as $r)<tr><td>{{ $r['author'] }}</td><td>{{ $r['category'] }}</td><td class="num">{{ $r['notes'] }}</td></tr>
+                    @empty <tr><td colspan="3" class="empty">No notes match.</td></tr> @endforelse
+                </tbody></table></div>
+            @else
+                <div class="panel-head"><h2>Notes</h2><span class="muted">{{ $notes->count() }} notes</span></div>
+                <div class="table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Author</th><th>Category / Action</th><th>Priority</th><th>Note</th></tr></thead><tbody>
+                    @forelse ($notes as $n)
+                        <tr><td>{{ $n->created_at->format('n/j/Y g:i A') }}</td>
+                            <td>@if ($n->customer)<a href="{{ route('corral.customers.show', $n->customer) }}#notes">{{ $n->customer->account }}</a><br><span class="help">{{ $n->customer->name }}</span>@endif</td>
+                            <td>{{ $n->author ?? 'System' }}</td><td>{{ $n->category ?? '—' }}@if ($n->action)<br><span class="help">{{ $n->action }}</span>@endif</td>
+                            <td>{{ $n->user_id ? ($n->priority ?? '—') : 'System' }}</td><td>{{ $n->body }}</td></tr>
+                    @empty <tr><td colspan="6" class="empty">No notes match.</td></tr> @endforelse
+                </tbody></table></div>
+            @endif
+        </div>
+    @endif
+
+    @include('admin.corral.reports._recent', ['route' => 'corral.reports.notes'])
+@endsection
