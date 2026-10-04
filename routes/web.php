@@ -50,6 +50,33 @@ Route::prefix('admin')->group(function () {
             Route::post('customers/{customer}/notes', [Admin\Corral\CustomerController::class, 'addNote'])->name('customers.notes');
             Route::post('payments/{payment}/reverse', [Admin\Corral\CustomerController::class, 'reversePayment'])->name('payments.reverse');
             Route::get('history/{item}', [Admin\HistoryController::class, 'show'])->name('history.show');
+            Route::get('customers/{customer}/ticket', [Admin\HistoryController::class, 'ticket'])->name('customers.ticket');
+            Route::get('customers/{customer}/logs/{log}', [Admin\HistoryController::class, 'log'])->name('customers.log');
+
+            // Account page sections
+            Route::get('customers/{customer}/actions/{action}', [Admin\Corral\AccountController::class, 'actionForm'])->name('customers.action');
+            Route::post('customers/{customer}/actions/{action}', [Admin\Corral\AccountController::class, 'runAction'])->name('customers.action.run');
+            Route::post('customers/{customer}/flags', [Admin\Corral\AccountController::class, 'addFlag'])->name('customers.flags.add');
+            Route::delete('flags/{flag}', [Admin\Corral\AccountController::class, 'removeFlag'])->name('flags.remove');
+            Route::post('customers/{customer}/products', [Admin\Corral\AccountController::class, 'addProduct'])->name('customers.products.add');
+            Route::delete('products/{product}', [Admin\Corral\AccountController::class, 'removeProduct'])->name('products.remove');
+            Route::delete('ledger/{entry}', [Admin\Corral\AccountController::class, 'deleteLedger'])->name('ledger.delete');
+            Route::post('payment-methods/{method}/autopay', [Admin\Corral\AccountController::class, 'setAutopay'])->name('methods.autopay');
+            Route::delete('payment-methods/{method}', [Admin\Corral\AccountController::class, 'removeMethod'])->name('methods.remove');
+            Route::post('customers/{customer}/files', [Admin\Corral\AccountController::class, 'uploadFile'])->name('customers.files.upload');
+            Route::get('files/{file}', [Admin\Corral\AccountController::class, 'downloadFile'])->name('files.download');
+            Route::patch('customers/{customer}/marketing', [Admin\Corral\AccountController::class, 'updateMarketing'])->name('customers.marketing');
+            Route::get('customers/{customer}/stars', [Admin\Corral\AccountController::class, 'stars'])->name('customers.stars');
+            Route::post('customers/{customer}/stars', [Admin\Corral\AccountController::class, 'redeem'])->name('customers.stars.redeem');
+            Route::post('customers/{customer}/stars/recalculate', [Admin\Corral\AccountController::class, 'recalculateStars'])->name('customers.stars.recalculate');
+            Route::post('customers/{customer}/queues', [Admin\Corral\AccountController::class, 'addQueue'])->name('customers.queues.add');
+            Route::patch('queue-logs/{log}', [Admin\Corral\AccountController::class, 'moveQueue'])->name('queues.move');
+            Route::post('plan-terms/{term}', [Admin\Corral\AccountController::class, 'planTermAction'])->name('plan-terms.action');
+            Route::patch('addresses/{address}', [Admin\Corral\AccountController::class, 'updateAddress'])->name('addresses.update');
+            Route::post('ercot/{tx}', [Admin\Corral\AccountController::class, 'ercotAction'])->name('ercot.action');
+            Route::get('customers/{customer}/contact-log', [Admin\Corral\AccountController::class, 'contactLog'])->name('customers.contact-log');
+            Route::post('customers/{customer}/contact-log/marketing', [Admin\Corral\AccountController::class, 'toggleMarketing'])->name('customers.marketing-toggle');
+            Route::get('customers/{customer}/api-log', [Admin\Corral\AccountController::class, 'apiLog'])->name('customers.api-log');
             Route::get('esiid', [Admin\Corral\EsiidController::class, 'index'])->name('esiid');
             Route::get('orders/create', [Admin\Corral\OrderController::class, 'create'])->name('orders.create');
             Route::get('orders/create-biz', [Admin\Corral\OrderController::class, 'createBiz'])->name('orders.create-biz');

@@ -9,7 +9,8 @@
         'title' => $item->model,
         'sub' => e($item->summary).' — '.e($item->action).' '.$item->created_at->format('F jS, Y @ g:i:s A'),
         'actions' => $item->customer && auth()->user()->hasPerm('corral')
-            ? '<a class="btn ghost" href="'.route('corral.customers.show', $item->customer).'#history">Back to account</a>'
+            ? ($logKey ? '<a class="btn ghost" href="'.route('corral.customers.log', [$item->customer, $logKey]).'">Back to ticket</a>' : '')
+              .'<a class="btn ghost" href="'.route('corral.customers.show', $item->customer).'">Back to account</a>'
             : ($item->user ? '<a class="btn ghost" href="'.route('sheriff.users.history', $item->user).'">'.e($item->user->name).'\'s history</a>' : ''),
     ])
 
@@ -40,8 +41,10 @@
 
             <div class="panel"><div class="panel-head"><h2>Parent Tickets</h2></div><div class="panel-body">
                 @if ($item->customer)
-                    <dl class="kv"><dt>Account</dt><dd>
-                        @if (auth()->user()->hasPerm('corral'))<a href="{{ route('corral.customers.show', $item->customer) }}#history">{{ $item->customer->account }}</a>@else{{ $item->customer->account }}@endif
+                    <dl class="kv">
+                        @if ($logKey)<dt>Log ticket</dt><dd>@if (auth()->user()->hasPerm('corral'))<a href="{{ route('corral.customers.log', [$item->customer, $logKey]) }}">{{ $logTitle }}</a>@else{{ $logTitle }}@endif</dd>@endif
+                        <dt>Account</dt><dd>
+                        @if (auth()->user()->hasPerm('corral'))<a href="{{ route('corral.customers.ticket', $item->customer) }}">{{ $item->customer->account }}</a>@else{{ $item->customer->account }}@endif
                         · {{ $item->customer->name }}</dd>
                         <dt>Ticket</dt><dd class="mono">{{ $item->customer->ticket }}</dd></dl>
                 @else
@@ -49,6 +52,11 @@
                 @endif
             </div></div>
         </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="panel"><div class="panel-head"><h2>Child Tickets</h2></div><div class="panel-body muted">None.</div></div>
+        <div class="panel"><div class="panel-head"><h2>Child Items</h2></div><div class="panel-body muted">None.</div></div>
     </div>
 
     <div class="panel"><div class="panel-head"><h2>Process Logs</h2><span class="muted">other {{ $item->model }} entries{{ $item->customer ? ' on this account' : ' for this record' }}</span></div>

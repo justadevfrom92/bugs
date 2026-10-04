@@ -168,6 +168,36 @@
       if (rm) rm.closest('tr').remove();
     });
 
+    // Account actions menus: go to the chosen action's page
+    $$('form[data-action-form]').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var v = $('select', form).value;
+        if (v) location.href = form.dataset.actionForm.replace('__action__', encodeURIComponent(v));
+      });
+    });
+
+    // Notes: the Action list only shows the actions for the chosen Category
+    $$('[data-note-category]').forEach(function (cat) {
+      var act = $('[data-note-action]', cat.form);
+      if (!act) return;
+      function filter() {
+        $$('optgroup', act).forEach(function (g) { g.hidden = !!cat.value && g.label !== cat.value; g.disabled = g.hidden; });
+        var sel = act.selectedOptions[0];
+        if (sel && sel.parentNode.disabled) act.value = '';
+      }
+      cat.addEventListener('change', filter);
+      filter();
+    });
+
+    // A select that shows its form's extra input only for one choice
+    $$('select[data-reveal-when]').forEach(function (s) {
+      var input = $('input:not([type=hidden])', s.form);
+      function sync() { if (input) { input.hidden = s.value !== s.dataset.revealWhen; input.required = !input.hidden; } }
+      s.addEventListener('change', sync);
+      sync();
+    });
+
     // Add a row from a <template>: data-clone="#template" data-into="#tbody"; __i__ becomes a unique index
     $$('[data-clone]').forEach(function (btn) {
       btn.addEventListener('click', function () {

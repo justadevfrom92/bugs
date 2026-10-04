@@ -6,7 +6,8 @@ use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Bill extends Model
+/** A document on the account: EFL, YRAC, TOS, welcome packet, invoice or upload. */
+class CustomerFile extends Model
 {
     use RecordsHistory;
 
@@ -14,12 +15,17 @@ class Bill extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'float', 'kwh' => 'integer', 'billed_on' => 'date', 'period_start' => 'date', 'period_end' => 'date',
-            'due_on' => 'date', 'paid_on' => 'date', 'amount_paid' => 'float', 'balance_after' => 'float', 'ontime' => 'boolean'];
+        return [];
     }
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /** [model name, log group] for History. */
+    public function historyName(): array
+    {
+        return ['ItemFile_model', 'Billing & Files'];
     }
 }

@@ -49,10 +49,25 @@ return [
         AdminApp::class => ['AdminApp_model', 'Admin Changes'],
     ],
 
-    // Display order of the log groups on a customer's History tab
+    // Each log ticket on an account (its own page, like the original "Logs - Products"): key => [title, groups]
+    'logs' => [
+        'attributes' => ['Logs - Account Attributes', ['Account Attributes']],
+        'products' => ['Logs - Products', ['Products']],
+        'payments' => ['Logs - Payments', ['Payments']],
+        'files' => ['Logs - Files & Usage', ['Billing & Files', 'Usage']],
+        'ercot' => ['Logs - EDI Transactions', ['EDI Transactions']],
+        'emails' => ['Logs - Emails', ['Emails']],
+        'contents' => ['Logs - ItemContents', ['Content']],
+        'notes' => ['Logs - Notes', ['Notes']],
+        'contact' => ['Logs - Phone Calls', ['Contact']],
+        'logins' => ['Logs - Logins', ['Logins']],
+        'queues' => ['Logs - Queues', ['Queues']],
+    ],
+
+    // Display order of the log groups
     'groups' => [
         'Account Attributes', 'Products', 'Payments', 'Billing & Files', 'Usage', 'EDI Transactions',
-        'Emails', 'Notes', 'Content', 'Logins', 'Queues', 'Admin Changes',
+        'Emails', 'Notes', 'Content', 'Contact', 'Logins', 'Queues', 'Admin Changes',
     ],
 
     // Fields never stored in snapshots or change lists

@@ -91,8 +91,13 @@ class AdminTest extends TestCase
         $this->assertSame($admin->id, $item->user_id);
         $this->assertTrue(HistoryItem::where('customer_id', $c->id)->where('model', 'ItemNote_model')->where('action', 'created')->exists());
 
-        $this->get('/admin/corral/customers/'.$c->account)->assertOk()->assertSee('TicketCustomer_model')->assertSee('ItemErcot81405_model');
-        $this->get('/admin/corral/customers/'.$c->account.'?hmodel=TicketCustomer_model')->assertOk();
+        // The account page links to the ticket and to each log, and each of those is its own page
+        $this->get('/admin/corral/customers/'.$c->account)->assertOk()
+            ->assertSee(route('corral.customers.ticket', $c))->assertSee(route('corral.customers.log', [$c, 'attributes']));
+        $this->get('/admin/corral/customers/'.$c->account.'/ticket')->assertOk()->assertSee('TicketCustomer_model')->assertSee('Child Tickets');
+        $this->get('/admin/corral/customers/'.$c->account.'/logs/attributes')->assertOk()->assertSee('TicketCustomer_model');
+        $this->get('/admin/corral/customers/'.$c->account.'/logs/ercot')->assertOk()->assertSee('ItemErcot81405_model');
+        $this->get('/admin/corral/customers/'.$c->account.'/logs/not-a-log')->assertNotFound();
         $this->get('/admin/corral/history/'.$item->id)->assertOk()->assertSee('Good - On Flow')->assertSee('Process Logs');
         $this->get('/admin/sheriff/users/'.$admin->id.'/history')->assertOk()->assertSee('TicketCustomer_model');
         $this->get('/admin/sheriff/history/'.$item->id)->assertOk();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAppAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('admin.login'));
         $middleware->redirectUsersTo(fn () => route('admin.launcher'));
         $middleware->alias([
-            'app' => \App\Http\Middleware\EnsureAppAccess::class,
+            'app' => EnsureAppAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

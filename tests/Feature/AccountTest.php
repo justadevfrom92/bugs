@@ -1,0 +1,108 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Customer;
+use App\Models\CustomerFlag;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/** The Corral account page and everything it links to. */
+class AccountTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected bool $seed = true;
+
+    private function admin(): User
+    {
+        return User::where('email', 'admin@example.com')->firstOrFail();
+    }
+
+    /** A valid value for each field type an action form can have. */
+    private function input(Customer $c, array $fields): array
+    {
+        $other = Customer::where('id', '!=', $c->id)->first();
+
+        return collect($fields)->map(fn ($f, $name) => match ($f[1]) {
+            'money' => 12.5,
+            'number' => 3,
+            'date' => today()->addDays(7)->toDateString(),
+            'textarea' => 'Test message',
+            'method' => $c->paymentMethods()->whereNull('removed_at')->value('id'),
+            'payment' => $c->payments()->value('id'),
+            'template' => config('corral.email_templates')[0],
+            default => $name === 'account' ? $other->account : 'Test '.$name,
+        })->all();
+    }
+
+    public function test_every_account_section_and_page_renders(): void
+    {
+        $c = Customer::has('paymentMethods')->has('payments')->firstOrFail();
+        $this->actingAs($this->admin());
+
+        $this->get('/admin/corral/customers/'.$c->account)->assertOk()
+            ->assertSee('Flags')->assertSee('Balances')->assertSee('Contact Information')->assertSee('Products')
+            ->assertSee('Billing Summary')->assertSee('Payment Methods')->assertSee('Plan Change Log')->assertSee('Warehouse');
+        $this->get(route('corral.customers.stars', $c))->assertOk()->assertSee('Rangler Rewards');
+        $this->get(route('corral.customers.contact-log', $c))->assertOk()->assertSee('Phone Calls');
+        $this->get(route('corral.customers.api-log', $c))->assertOk();
+        $this->get(route('corral.customers.ticket', $c))->assertOk();
+        foreach (array_keys(config('history.logs')) as $log) {
+            $this->get(route('corral.customers.log', [$c, $log]))->assertOk();
+        }
+    }
+
+    public function test_every_account_action_opens_and_runs(): void
+    {
+        $this->actingAs($this->admin());
+        $actions = config('corral.actions.status') + config('corral.actions.service');
+
+        foreach ($actions as $key => $def) {
+            // A fresh account for each so one action (cancel, delete…) can't affect the next
+            $c = Customer::has('paymentMethods')->has('payments')->whereNotIn('status', ['Cancelled'])->inRandomOrder()->firstOrFail();
+            $this->get(route('corral.customers.action', [$c, $key]))->assertOk()->assertSee($def[0]);
+            $res = $this->post(route('corral.customers.action.run', [$c, $key]), $this->input($c, $def[1]));
+            $this->assertTrue($res->isRedirect(), $key.': '.$res->exception?->getMessage());
+            $res->assertSessionHasNoErrors();
+        }
+
+        $this->get('/admin/corral/customers/1/actions/not-an-action')->assertNotFound();
+    }
+
+    public function test_flags_products_stars_and_notes(): void
+    {
+        $c = Customer::firstOrFail();
+        $this->actingAs($this->admin());
+
+        $this->post(route('corral.customers.flags.add', $c), ['flag' => 'SOLAR CUSTOMER'])->assertRedirect();
+        $this->get('/admin/corral/customers/'.$c->account)->assertSee('Handle with care!');
+        $flag = CustomerFlag::where('customer_id', $c->id)->where('flag', 'SOLAR CUSTOMER')->firstOrFail();
+        $this->delete(route('corral.flags.remove', $flag))->assertRedirect();
+        $this->assertNotNull($flag->fresh()->removed_at);
+        $this->post(route('corral.customers.flags.add', $c), ['flag' => 'made up'])->assertSessionHasErrors('flag');
+
+        $this->post(route('corral.customers.products.add', $c), ['product' => 'Paperless Billing'])->assertRedirect();
+        $this->assertTrue($c->fresh()->paperless);
+
+        $c->update(['stars' => 0]);
+        $c->starEntries()->delete();
+        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => 1])->assertSessionHasErrors('offer');
+        $c->starEntries()->create(['reason' => 'Test', 'stars' => 60]);
+        $c->syncStars();
+        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => 1])->assertRedirect();
+        $this->assertSame(10, $c->fresh()->stars);
+
+        $this->post(route('corral.customers.notes', $c), ['category' => 'Billing', 'action' => 'Balance Inquiry', 'priority' => 'Low', 'body' => 'Called about the bill'])->assertRedirect();
+        $this->assertTrue($c->notes()->where('body', 'Called about the bill')->where('category', 'Billing')->exists());
+    }
+
+    public function test_csr_cannot_delete_orders(): void
+    {
+        $csr = User::where('email', 'csr@example.com')->firstOrFail();
+        $c = Customer::firstOrFail();
+        $this->actingAs($csr)->post(route('corral.customers.action.run', [$c, 'delete-order']))->assertForbidden();
+        $this->assertNotNull($c->fresh());
+    }
+}

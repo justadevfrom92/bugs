@@ -114,6 +114,10 @@ return [
         'Good - On Flow' => 'ok',
         'Rejected - By Utility' => 'bad',
         'Dropped - Churned' => 'bad',
+        'Pending - Disconnect' => 'warn',
+        'Disconnected' => 'bad',
+        'Moved Out' => 'bad',
+        'Cancelled' => 'bad',
     ],
 
     'exceptions' => [
@@ -177,6 +181,7 @@ return [
         'salesforce' => $integration('SalesForce', 'Marketing Cloud email', ['SALESFORCE_SUBDOMAIN', 'SALESFORCE_CLIENT_ID', 'SALESFORCE_CLIENT_SECRET']),
         'stripe' => $integration('Stripe', 'Card & ACH payments', ['STRIPE_KEY', 'STRIPE_SECRET', 'STRIPE_WEBHOOK_SECRET']),
         'utilibill' => $integration('Utilibill', 'Billing system (UB)', ['UTILIBILL_ENDPOINT', 'UTILIBILL_USERNAME', 'UTILIBILL_PASSWORD']),
+        'sms' => $integration('Twilio', 'Text messages (SMS)', ['TWILIO_SID', 'TWILIO_TOKEN', 'TWILIO_FROM']),
     ],
 
 ];

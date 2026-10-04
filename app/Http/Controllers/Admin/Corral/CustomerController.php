@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin\Corral;
 use App\Http\Controllers\Admin\HistoryController;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\LedgerEntry;
 use App\Models\Payment;
-use App\Models\ReferenceRow;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,16 +78,53 @@ class CustomerController extends Controller
         }
     }
 
+    /** The account page: every section of the original Corral account, top to bottom. */
     public function show(Request $request, Customer $customer): View
     {
-        $customer->load(['plan', 'market', 'payments', 'bills', 'notes']);
+        $customer->load(['plan', 'market', 'payments.paymentMethod', 'bills', 'notes', 'flags', 'products', 'planTerms.plan', 'addresses',
+            'ercotTransactions', 'queueLogs', 'files', 'starEntries', 'paymentMethods']);
+        $showAllPayments = $request->boolean('all_payments');
+        $showAllMethods = $request->boolean('all_methods');
+
+        // Billing summary: bills and payments together, newest first
+        $summary = collect()
+            ->concat($customer->bills->map(fn ($b) => ['date' => $b->billed_on, 'billed' => $b->amount, 'paid' => null, 'note' => $b->invoice]))
+            ->concat($customer->payments->where('status', 'Success')->map(fn ($p) => ['date' => $p->paid_on, 'billed' => null, 'paid' => $p->amount, 'note' => $p->confirmation]))
+            ->sortByDesc(fn ($r) => $r['date']->format('Y-m-d').($r['paid'] === null ? '0' : '1'))->values();
+
+        $usage = $customer->bills->groupBy(fn ($b) => $b->billed_on->copy()->subMonth()->year)
+            ->map(fn ($bills) => $bills->mapWithKeys(fn ($b) => [$b->billed_on->copy()->subMonth()->month => $b->kwh]))->sortKeysDesc();
+
+        $net = 0;
+        $rewards = $customer->starEntries->sortBy(fn ($e) => $e->created_at->format('U').str_pad((string) $e->id, 8, '0', STR_PAD_LEFT))
+            ->map(function ($e) use (&$net) {
+                $net += $e->stars;
+
+                return ['date' => $e->created_at, 'reason' => $e->reason, 'stars' => $e->stars, 'net' => $net];
+            })->reverse()->values();
+
+        $banners = $customer->flags->map(fn ($f) => config('corral.flag_banners.'.$f->flag))->filter()->unique()->values();
+        $hasProtection = $customer->products->contains(fn ($p) => str_contains($p->product, 'Protection') || str_contains($p->product, 'Warranty'));
 
         return view('admin.corral.customers.show', [
             'c' => $customer,
             'bookmarked' => $request->user()->bookmarks()->whereKey($customer->id)->exists(),
-            'dispositions' => ReferenceRow::where('table_key', 'note-dispositions')->orderBy('position')->get()->pluck('cells.1')->filter(),
             'canRefund' => Gate::allows('refunds'),
-        ] + HistoryController::forCustomer($request, $customer));
+            'banners' => $banners,
+            'crossSell' => ! $hasProtection && $customer->type === 'Residential',
+            'pending' => LedgerEntry::where('customer_id', $customer->id)->where('status', 'pending')->get(),
+            'summary' => $summary,
+            'payments' => $showAllPayments ? $customer->payments->sortByDesc('paid_on') : $customer->payments->whereNotIn('status', ['Failed'])->sortByDesc('paid_on'),
+            'showAllPayments' => $showAllPayments,
+            'methods' => $showAllMethods ? $customer->paymentMethods : $customer->paymentMethods->whereNull('removed_at'),
+            'showAllMethods' => $showAllMethods,
+            'methodTotals' => $customer->payments->where('status', 'Success')->groupBy('payment_method_id')->map->sum('amount'),
+            'usage' => $usage,
+            'rewards' => $rewards,
+            'currentQueues' => $customer->queueLogs->whereNull('exited_at'),
+            'warehouse' => AccountController::warehouse($customer),
+            'logs' => HistoryController::logsFor($customer),
+        ]);
     }
 
     public function updateStatus(Request $request, Customer $customer): RedirectResponse
@@ -110,11 +147,18 @@ class CustomerController extends Controller
 
     public function addNote(Request $request, Customer $customer): RedirectResponse
     {
+        $categories = config('corral.note_categories');
         $data = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
-            'disposition' => ['nullable', 'string', 'max:100'],
+            'category' => ['nullable', Rule::in(array_keys($categories))],
+            'action' => ['nullable', 'string', Rule::in($categories[$request->input('category')] ?? [])],
+            'priority' => ['nullable', Rule::in(config('corral.priorities'))],
         ]);
-        $this->note($request, $customer, $data['body'], $data['disposition'] ?? null);
+        $customer->notes()->create([
+            'user_id' => $request->user()->id, 'author' => $request->user()->name, 'body' => $data['body'],
+            'category' => $data['category'] ?? null, 'action' => $data['action'] ?? null, 'priority' => $data['priority'] ?? null,
+            'disposition' => $data['action'] ?? null,
+        ]);
 
         return redirect(route('corral.customers.show', $customer).'#notes')->with('status', 'Note added');
     }

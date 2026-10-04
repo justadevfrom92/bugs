@@ -14,39 +14,60 @@ use Illuminate\View\View;
 /** History: per customer (Corral), per admin user (Sheriff), and a detail page for each entry. */
 class HistoryController extends Controller
 {
-    /** Data for a customer's History tab. */
-    public static function forCustomer(Request $request, Customer $customer): array
+    /** The account's log tickets that have entries: [key, title, count, first, last]. */
+    public static function logsFor(Customer $customer): Collection
     {
-        $base = HistoryItem::where('customer_id', $customer->id);
-        $filters = $request->only(['hmodel', 'hgroup']);
+        $byGroup = HistoryItem::where('customer_id', $customer->id)->select('group')
+            ->selectRaw('count(*) as n, min(created_at) as first_at, max(created_at) as last_at')->groupBy('group')->get()->keyBy('group');
 
-        $items = self::filtered(clone $base, $filters)->with('user')->latest('created_at')->latest('id')
-            ->limit($request->boolean('hall') ? 5000 : 200)->get();
+        return collect(config('history.logs'))->map(function ($log, $key) use ($byGroup) {
+            $rows = collect($log[1])->map(fn ($g) => $byGroup[$g] ?? null)->filter();
 
-        // Running star total, oldest first, like the original Rewards History
-        $net = 0;
-        $rewards = (clone $base)->where('model', 'ItemProductReward_model')->oldest('created_at')->get()
-            ->filter(fn ($i) => isset($i->data['stars']))
-            ->map(function ($i) use (&$net) {
-                $net += (float) $i->data['stars'];
+            return ['key' => $key, 'title' => $log[0], 'count' => (int) $rows->sum('n'),
+                'first' => $rows->min('first_at'), 'last' => $rows->max('last_at')];
+        })->filter(fn ($l) => $l['count'] > 0)->values();
+    }
 
-                return ['date' => $i->created_at, 'reason' => $i->data['reason'] ?? $i->data['product'] ?? 'Stars', 'stars' => (float) $i->data['stars'], 'net' => $net];
-            })->reverse()->values();
+    /** The account ticket: every child item on the account, grouped by model, plus its log tickets. */
+    public function ticket(Customer $customer): View
+    {
+        $items = HistoryItem::where('customer_id', $customer->id)->with('user')->oldest('created_at')->oldest('id')->get();
 
-        // kWh by year and month from the bills
-        $usage = $customer->bills->groupBy(fn ($b) => $b->billed_on->copy()->subMonth()->year)
-            ->map(fn ($bills) => $bills->mapWithKeys(fn ($b) => [$b->billed_on->copy()->subMonth()->month => $b->kwh]))
-            ->sortKeysDesc();
+        return view('admin.history.ticket', [
+            'c' => $customer,
+            'title' => 'Account - '.$customer->account,
+            'created' => $customer->created_at,
+            'ticketId' => $customer->ticket,
+            'groups' => $items->groupBy('model')->sortKeys(),
+            'childTickets' => self::logsFor($customer),
+            'parents' => collect(),
+            'processLogs' => $customer->queueLogs()->get(),
+            'currentQueues' => $customer->queueLogs()->whereNull('exited_at')->get(),
+            'items' => $items,
+            'log' => null,
+        ]);
+    }
 
-        return [
-            'historyItems' => $items,
-            'historyTotal' => (clone $base)->count(),
-            'historyShown' => self::filtered(clone $base, $filters)->count(),
-            'historyCounts' => self::counts(clone $base),
-            'historyFilters' => $filters,
-            'rewardsHistory' => $rewards,
-            'usageHistory' => $usage,
-        ];
+    /** One log ticket, e.g. "Logs - Products": that log's items grouped by model. */
+    public function log(Customer $customer, string $log): View
+    {
+        abort_unless(config()->has('history.logs.'.$log), 404);
+        [$title, $groups] = config('history.logs.'.$log);
+        $items = HistoryItem::where('customer_id', $customer->id)->whereIn('group', $groups)->with('user')->oldest('created_at')->oldest('id')->get();
+
+        return view('admin.history.ticket', [
+            'c' => $customer,
+            'title' => $title,
+            'created' => $items->first()?->created_at ?? $customer->created_at,
+            'ticketId' => $customer->ticket.'-'.str_pad((string) (array_search($log, array_keys(config('history.logs'))) + 1), 2, '0', STR_PAD_LEFT),
+            'groups' => $items->groupBy('model')->sortKeys(),
+            'childTickets' => collect(),
+            'parents' => collect([['title' => 'Account '.$customer->account, 'created' => $customer->created_at, 'url' => route('corral.customers.ticket', $customer), 'id' => $customer->ticket]]),
+            'processLogs' => collect(),
+            'currentQueues' => collect(),
+            'items' => $items,
+            'log' => $log,
+        ]);
     }
 
     /** Sheriff → Users → History: everything one admin user did. */
@@ -74,7 +95,10 @@ class HistoryController extends Controller
                 : $q->where('record_id', $item->record_id))
             ->latest('created_at')->limit(50)->get();
 
-        return view('admin.history.show', ['item' => $item, 'related' => $related]);
+        $logKey = collect(config('history.logs'))->search(fn ($l) => in_array($item->group, $l[1], true));
+
+        return view('admin.history.show', ['item' => $item, 'related' => $related, 'logKey' => $logKey ?: null,
+            'logTitle' => $logKey ? config('history.logs.'.$logKey)[0] : null]);
     }
 
     private static function filtered(Builder $q, array $f): Builder

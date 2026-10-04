@@ -18,6 +18,8 @@ class Customer extends Model
         return [
             'autopay' => 'boolean', 'paperless' => 'boolean', 'peak_perks' => 'boolean',
             'balance' => 'float', 'stars' => 'integer', 'start_date' => 'date',
+            'requested_start' => 'date', 'actual_start' => 'date', 'due_date' => 'date', 'marketing_opt_in' => 'boolean',
+            'authorized_users' => 'array', 'linked_accounts' => 'array',
         ];
     }
 
@@ -49,6 +51,88 @@ class Customer extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class)->latest()->latest('id');
+    }
+
+    public function flags(): HasMany
+    {
+        return $this->hasMany(CustomerFlag::class)->whereNull('removed_at')->oldest();
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(CustomerProduct::class)->whereNull('removed_at')->oldest();
+    }
+
+    public function ledger(): HasMany
+    {
+        return $this->hasMany(LedgerEntry::class)->latest();
+    }
+
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(PaymentMethod::class)->latest();
+    }
+
+    public function planTerms(): HasMany
+    {
+        return $this->hasMany(PlanTerm::class)->orderBy('ordered_at')->orderBy('id');
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(ServiceAddress::class)->orderBy('ordered_at');
+    }
+
+    public function ercotTransactions(): HasMany
+    {
+        return $this->hasMany(ErcotTransaction::class)->orderBy('created_at');
+    }
+
+    public function queueLogs(): HasMany
+    {
+        return $this->hasMany(QueueLog::class)->orderBy('entered_at')->orderBy('id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(CustomerFile::class)->oldest();
+    }
+
+    public function contactLogs(): HasMany
+    {
+        return $this->hasMany(ContactLog::class)->latest();
+    }
+
+    public function starEntries(): HasMany
+    {
+        return $this->hasMany(StarEntry::class)->latest()->latest('id');
+    }
+
+    public function apiLogs(): HasMany
+    {
+        return $this->hasMany(ApiLog::class)->latest('created_at');
+    }
+
+    public function phonecalls(): HasMany
+    {
+        return $this->hasMany(Phonecall::class)->latest('started_at');
+    }
+
+    public function hasProduct(string $name): bool
+    {
+        return $this->products()->where('product', $name)->exists();
+    }
+
+    /** Queues the account is in now (queue log rows not yet exited). */
+    public function currentQueues()
+    {
+        return $this->queueLogs()->whereNull('exited_at')->get();
+    }
+
+    /** Recompute the stars balance from the ledger. */
+    public function syncStars(): void
+    {
+        $this->forceFill(['stars' => (int) round($this->starEntries()->sum('stars'))])->saveQuietly();
     }
 
     /** Pill color for the status, from config('admin.customer_statuses'). */

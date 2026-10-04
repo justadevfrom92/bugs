@@ -17,6 +17,16 @@ class Payment extends Model
         return ['amount' => 'float', 'paid_on' => 'date', 'reversed_at' => 'datetime'];
     }
 
+    public function historyLabel(): string
+    {
+        return 'Payment - '.$this->status.': $'.number_format($this->amount, 2);
+    }
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);

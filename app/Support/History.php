@@ -13,7 +13,9 @@ class History
     /** Called by the RecordsHistory trait. */
     public static function forModel(Model $model, string $action): void
     {
-        [$name, $group] = config('history.models.'.$model::class, [class_basename($model).'_model', 'Admin Changes']);
+        [$name, $group] = method_exists($model, 'historyName')
+            ? $model->historyName()
+            : config('history.models.'.$model::class, [class_basename($model).'_model', 'Admin Changes']);
         $hidden = config('history.hidden');
 
         $changes = null;
@@ -40,7 +42,8 @@ class History
         };
 
         self::record([
-            'customer_id' => $model instanceof Customer ? $model->getKey() : $model->historyCustomerId(),
+            // A deleted account keeps its audit row, no longer linked to the account
+            'customer_id' => $model instanceof Customer ? ($action === 'deleted' ? null : $model->getKey()) : $model->historyCustomerId(),
             'model' => $name,
             'group' => $group,
             'record_id' => $model->getKey(),
