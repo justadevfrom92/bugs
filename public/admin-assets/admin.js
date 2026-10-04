@@ -167,5 +167,16 @@
       var rm = e.target.closest('[data-remove-row]');
       if (rm) rm.closest('tr').remove();
     });
+
+    // Add a row from a <template>: data-clone="#template" data-into="#tbody"; __i__ becomes a unique index
+    $$('[data-clone]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tpl = $(btn.dataset.clone), into = $(btn.dataset.into);
+        var html = tpl.innerHTML.replace(/__i__/g, 'n' + Date.now());
+        into.insertAdjacentHTML('beforeend', html);
+        var first = into.lastElementChild && $('input, select', into.lastElementChild);
+        if (first) first.focus();
+      });
+    });
   });
 })();

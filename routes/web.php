@@ -34,6 +34,13 @@ Route::prefix('admin')->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('admin.logout');
         Route::get('/', Admin\LauncherController::class)->name('admin.launcher');
 
+        // Admin apps created from the launcher's "New Admin App" button
+        Route::get('apps/create', [Admin\AppController::class, 'create'])->name('apps.create');
+        Route::post('apps', [Admin\AppController::class, 'store'])->name('apps.store');
+        Route::get('apps/{app}/edit', [Admin\AppController::class, 'edit'])->name('apps.edit');
+        Route::put('apps/{app}', [Admin\AppController::class, 'update'])->name('apps.update');
+        Route::delete('apps/{app}', [Admin\AppController::class, 'destroy'])->name('apps.destroy');
+
         // Corral — customer service
         Route::prefix('corral')->name('corral.')->middleware('app:corral')->group(function () {
             Route::get('/', [Admin\Corral\CustomerController::class, 'index'])->name('customers.index');
@@ -101,5 +108,8 @@ Route::prefix('admin')->group(function () {
             Route::get('data/{table}', [Admin\Sheriff\SystemController::class, 'table'])->name('data.show');
             Route::put('data/{table}', [Admin\Sheriff\SystemController::class, 'updateTable'])->name('data.update');
         });
+
+        // A custom app's home page, e.g. /admin/marketing (built-in app routes above take priority)
+        Route::get('{appKey}', [Admin\AppController::class, 'show'])->where('appKey', '[a-z0-9][a-z0-9-]*')->name('custom.show');
     });
 });

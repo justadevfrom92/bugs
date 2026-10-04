@@ -8,12 +8,15 @@ use App\Models\WorkItem;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-/** Builds an app's sidebar from config('admin.apps.<key>.menu') for the admin layout. */
+/** Builds an app's sidebar (from config('admin.apps.<key>.menu') or a custom app's links) for the admin layout. */
 class AdminMenu
 {
     /** App key of the current page, from the route name ("corral.customers.show" → "corral"). */
     public static function currentApp(): ?string
     {
+        if (Route::currentRouteName() === 'custom.show') {
+            return request()->route('appKey');
+        }
         $key = Str::before((string) Route::currentRouteName(), '.');
 
         return config()->has('admin.apps.'.$key) ? $key : null;
@@ -25,6 +28,17 @@ class AdminMenu
         $current = (string) Route::currentRouteName();
         $currentTable = request()->route('table');
         $sections = [];
+
+        // Apps created from the launcher: plain links, none of them is the current page
+        if (! config()->has("admin.apps.$app")) {
+            foreach (AdminApps::get($app)['menu'] ?? [] as $heading => $items) {
+                foreach ($items as $it) {
+                    $sections[$heading][] = $it + ['active' => false, 'badge' => null];
+                }
+            }
+
+            return $sections;
+        }
 
         foreach (config("admin.apps.$app.menu") as $heading => $items) {
             if ($items === 'reference_tables') {

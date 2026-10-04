@@ -4,7 +4,7 @@
 --}}
 @php
     $appKey = \App\Support\AdminMenu::currentApp();
-    $app = config('admin.apps.'.$appKey);
+    $app = \App\Support\AdminApps::get($appKey);
     $sections = \App\Support\AdminMenu::sections($appKey);
     $activeLabel = collect($sections)->flatten(1)->firstWhere('active', true)['label'] ?? '';
     $user = auth()->user();

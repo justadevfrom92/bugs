@@ -276,3 +276,16 @@ tr.on td { background: var(--info-bg); }
 /* History tables: let long model names wrap instead of widening the table */
 table.hist td.mono { white-space: normal; word-break: break-all; min-width: 12ch; }
 table.hist td { white-space: normal; }
+
+/* Launcher "New Admin App" tile and the icon picker */
+.tile-new { border-style: dashed; border-width: 2px; }
+.tile-new .ico { background: var(--cyan); font-size: 1.6rem; line-height: 1; }
+.icon-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.icon-pick label { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 8px; border: 2px solid var(--line); border-radius: 8px; width: 78px; }
+.icon-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.icon-pick .ico { width: 36px; height: 36px; border-radius: 8px; background: var(--navy); color: #fff; display: grid; place-items: center; }
+.icon-pick .ico svg { width: 20px; height: 20px; }
+.icon-pick small { font-size: .72rem; color: var(--muted); }
+.icon-pick label:has(input:checked) { border-color: var(--cyan); background: var(--info-bg); }
+.icon-pick label:has(input:focus-visible) { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.panel-body .tiles { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }

@@ -25,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
         foreach (array_keys(config('admin.permissions')) as $perm) {
             Gate::define($perm, fn (User $user) => $user->hasPerm($perm));
         }
+
+        // Creating, editing and deleting admin apps from the launcher
+        Gate::define('manage-apps', fn (User $user) => $user->hasPerm('sheriff'));
     }
 }

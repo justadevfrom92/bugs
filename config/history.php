@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AdminApp;
 use App\Models\Bill;
 use App\Models\ByopProduct;
 use App\Models\ContactMessage;
@@ -45,6 +46,7 @@ return [
         ContentBlock::class => ['ContentBlock_model', 'Admin Changes'],
         User::class => ['User_model', 'Admin Changes'],
         Role::class => ['Role_model', 'Admin Changes'],
+        AdminApp::class => ['AdminApp_model', 'Admin Changes'],
     ],
 
     // Display order of the log groups on a customer's History tab

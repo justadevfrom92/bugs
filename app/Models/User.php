@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\RecordsHistory;
+use App\Support\AdminApps;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -50,10 +51,10 @@ class User extends Authenticatable
         return $this->active && in_array($perm, $this->role?->perms ?? [], true);
     }
 
-    /** The admin apps from config/admin.php this user can open, keyed by app key. */
+    /** The admin apps (built-in and custom) this user can open, keyed by app key. */
     public function apps(): array
     {
-        return array_filter(config('admin.apps'), fn ($app, $key) => $this->hasPerm($key), ARRAY_FILTER_USE_BOTH);
+        return array_filter(AdminApps::all(), fn ($app, $key) => $this->hasPerm($key), ARRAY_FILTER_USE_BOTH);
     }
 
     public function initials(): string

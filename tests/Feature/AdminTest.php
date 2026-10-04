@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AdminApp;
 use App\Models\ByopProduct;
 use App\Models\ContactMessage;
 use App\Models\Customer;
@@ -9,6 +10,7 @@ use App\Models\HistoryItem;
 use App\Models\Market;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -106,6 +108,55 @@ class AdminTest extends TestCase
         $this->assertSame(['(hidden)', '(changed)'], $item->changes['password']);
         $this->assertArrayNotHasKey('password', $item->data);
         $this->assertStringNotContainsString('a-brand-new-password', json_encode($item->toArray()));
+    }
+
+    public function test_new_admin_app_can_be_created_opened_edited_and_deleted(): void
+    {
+        $admin = $this->user();
+        $this->actingAs($admin)->get('/admin')->assertSee('New Admin App');
+        $this->get('/admin/apps/create')->assertOk();
+
+        $finance = Role::where('name', 'Finance')->first();
+        $this->post('/admin/apps', [
+            'name' => 'Marketing', 'description' => 'Campaign tools', 'icon' => 'bolt', 'roles' => [$finance->id],
+            'menu' => [
+                ['heading' => 'Website', 'label' => 'Content Blocks', 'route' => 'lando.blocks.index', 'url' => ''],
+                ['heading' => 'Links', 'label' => 'Analytics', 'route' => '', 'url' => 'https://example.com/analytics'],
+                ['heading' => '', 'label' => '', 'route' => '', 'url' => ''],
+            ],
+        ])->assertRedirect('/admin/marketing');
+
+        $app = AdminApp::where('key', 'marketing')->firstOrFail();
+        $this->assertCount(2, $app->menu);
+        $this->assertContains('marketing', Role::where('name', 'Administrator')->first()->perms);
+        $this->assertContains('marketing', $finance->fresh()->perms);
+        $this->assertTrue(HistoryItem::where('model', 'AdminApp_model')->where('action', 'created')->exists());
+
+        $this->actingAs($admin = $admin->fresh()); // each real request loads the user (and role) fresh
+        $this->get('/admin')->assertSee('Marketing')->assertSee('Campaign tools');
+        $this->get('/admin/marketing')->assertOk()->assertSee('Content Blocks')->assertSee(route('lando.blocks.index'))->assertSee('https://example.com/analytics');
+        $this->get('/admin/sheriff/roles')->assertSee('Marketing');
+
+        // Roles without it are sent back to the launcher
+        $this->actingAs($this->user('csr@example.com'))->get('/admin/marketing')->assertRedirect('/admin?denied=marketing');
+
+        // Edit, then delete
+        $this->actingAs($admin)->put('/admin/apps/marketing', ['name' => 'Marketing Team', 'description' => 'Campaigns', 'icon' => 'star', 'roles' => [], 'menu' => []])
+            ->assertRedirect('/admin/marketing');
+        $this->assertNotContains('marketing', $finance->fresh()->perms);
+        $this->delete('/admin/apps/marketing')->assertRedirect('/admin');
+        $this->assertNull(AdminApp::where('key', 'marketing')->first());
+        $this->assertNotContains('marketing', Role::where('name', 'Administrator')->first()->perms);
+    }
+
+    public function test_new_apps_cannot_reuse_built_in_addresses_and_need_sheriff(): void
+    {
+        $this->actingAs($this->user())->post('/admin/apps', ['name' => 'Corral', 'description' => 'x', 'icon' => 'folder'])->assertSessionHasErrors('key');
+        $this->post('/admin/apps', ['name' => 'Bad link', 'description' => 'x', 'icon' => 'folder', 'menu' => [['label' => 'x', 'url' => 'javascript:alert(1)']]])
+            ->assertSessionHasErrors('menu.0.url');
+
+        $this->actingAs($this->user('pricing@example.com'))->get('/admin')->assertDontSee('New Admin App');
+        $this->get('/admin/apps/create')->assertForbidden();
     }
 
     public function test_roles_limit_which_apps_a_user_can_open(): void

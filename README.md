@@ -63,6 +63,9 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 | **Astro** | Term discounts by region, ETF by term, Build Your Own Plan products (price and whether the website shows them) |
 | **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables |
 
+## Adding an admin app
+On the launcher, **+ New Admin App** (roles with Sheriff, e.g. Administrator) creates a new app: name, description, icon, which roles can open it, and its sidebar links. Each link points to any existing admin screen or to a URL, grouped under headings. The app gets a tile on the launcher, opens at `/admin/<address>` in the shared admin layout, and appears as a column in Sheriff → Roles. Edit or delete it from its **Edit App** button. These apps are stored in the `admin_apps` table; the four built-in apps stay in `config/admin.php`.
+
 ## History
 Every change to accounts, payments, bills, notes, queues, plans, rates, fees, pricing, pages, blocks, users and roles is recorded automatically in `history_items`: who, when, the record's model name (the original system's naming, e.g. `ItemPayment_model`), each field's old → new value and a snapshot of the record. Sign-ins, plan-group edits, reference-table saves and job runs are recorded too. Passwords are never stored in history.
 

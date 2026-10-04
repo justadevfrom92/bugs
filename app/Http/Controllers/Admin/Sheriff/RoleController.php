@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Sheriff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Support\AdminApps;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,7 +14,7 @@ class RoleController extends Controller
 {
     public static function perms(): array
     {
-        return collect(config('admin.apps'))->map(fn ($a) => $a['name'].' ('.explode(':', $a['desc'])[0].')')
+        return collect(AdminApps::all())->map(fn ($a) => $a['custom'] ? $a['name'] : $a['name'].' ('.explode(':', $a['desc'])[0].')')
             ->merge(config('admin.permissions'))->all();
     }
 
