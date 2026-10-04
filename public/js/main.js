@@ -368,7 +368,7 @@
   function loadComponents() {
     var zones = document.querySelectorAll('div[data-zone]:empty');
     if (!zones.length) return;
-    var file = location.pathname.split('/').pop() || 'index.html';
+    var file = ET.page();
     fetch(ET.root + 'site/components?page=' + encodeURIComponent(file), { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (z) {
