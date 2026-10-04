@@ -41,13 +41,13 @@ return [
                     ['Notes', 'corral.reports.notes'],
                     ['Phonecalls', 'corral.reports.phonecalls'],
                 ],
+                'Website' => [
+                    ['Web Messages', 'corral.messages.index', 'messages'], // contact form inbox (not in the original menu)
+                ],
                 1 => [
                     ['ERCOT', 'corral.ercot'],
                 ],
                 'Exceptions' => 'queues', // one menu item per queue below, plus the overview
-                'Website' => [
-                    ['Web Messages', 'corral.messages.index', 'messages'], // contact form inbox (not in the original menu)
-                ],
             ],
         ],
         'lando' => [
