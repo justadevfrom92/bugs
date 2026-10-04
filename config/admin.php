@@ -90,7 +90,7 @@ return [
                 'Modifiers' => [
                     ['Term', 'astro.terms.edit'],
                     ['ETF', 'astro.etfs.edit'],
-                    ['Products', 'astro.products.index'],
+                    ['Products', 'astro.modifiers.products'],
                 ],
                 // Same pages, plans and groups as Lando (one copy of the data and screens, Astro's own URLs)
                 'Website' => [
@@ -100,6 +100,9 @@ return [
                 'Plans' => [
                     ['Plans', 'astro.plans.index'],
                     ['New Plan', 'astro.plans.create'],
+                ],
+                'BYOP' => [
+                    ['Products', 'astro.products.index'],
                 ],
                 'Upload' => [
                     ['BYOP Discounts', 'astro.byop.upload'],

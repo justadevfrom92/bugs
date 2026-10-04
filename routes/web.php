@@ -84,6 +84,7 @@ Route::prefix('admin')->group(function () {
             Route::get('orders/create-biz', [Admin\Corral\OrderController::class, 'createBiz'])->name('orders.create-biz');
             Route::post('orders', [Admin\Corral\OrderController::class, 'store'])->name('orders.store');
             Route::get('reports/orders', [Admin\Corral\ReportController::class, 'orders'])->name('reports.orders');
+            Route::get('reports/download/{run}', [Admin\Corral\ReportController::class, 'download'])->name('reports.download');
             Route::get('reports/notes', [Admin\Corral\ReportController::class, 'notes'])->name('reports.notes');
             Route::get('reports/phonecalls', [Admin\Corral\ReportController::class, 'phonecalls'])->name('reports.phonecalls');
             Route::get('sms', [Admin\Corral\SmsController::class, 'index'])->name('sms');
@@ -135,6 +136,8 @@ Route::prefix('admin')->group(function () {
             Route::put('etfs', [Admin\Astro\PricingController::class, 'updateEtfs'])->name('etfs.update');
             Route::get('products', [Admin\Astro\PricingController::class, 'products'])->name('products.index');
             Route::put('products', [Admin\Astro\PricingController::class, 'updateProducts'])->name('products.update');
+            Route::get('modifiers/products', [Admin\Astro\PricingController::class, 'modifierProducts'])->name('modifiers.products');
+            Route::put('modifiers/products', [Admin\Astro\PricingController::class, 'updateModifierProducts'])->name('modifiers.products.update');
             $websiteScreens(); // Website → Pages, Groups and Plans → Plans, New Plan, at /admin/astro/…
             Route::get('uploads/byop', [Admin\Astro\PricingController::class, 'byopUpload'])->name('byop.upload');
             Route::post('uploads/byop', [Admin\Astro\PricingController::class, 'byopImport'])->name('byop.import');
@@ -174,4 +177,5 @@ Route::prefix('admin')->group(function () {
 | Anything not matched above (and not a file in public/) is looked up as a
 | page on the site for this host name. Kept last so it never shadows a route.
 */
+Route::get('amp/{path}', [SitePageController::class, 'amp'])->where('path', '.*')->name('site.amp');
 Route::get('{path}', [SitePageController::class, 'show'])->where('path', '.*')->name('site.page');

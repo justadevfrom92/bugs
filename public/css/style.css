@@ -492,3 +492,9 @@ textarea:focus { border-color: var(--cyan); }
 .cms-content > * + * { margin-top: 1em; }
 .cms-block + .cms-block { margin-top: 16px; }
 .rewards-band { background: var(--navy, #102247); color: #fff; border-radius: 12px; padding: 18px 22px; font-weight: 600; }
+.price-grid { margin-top: 32px; }
+.price-grid h2 { margin-bottom: 18px; }
+.price-table { width: 100%; border-collapse: collapse; }
+.price-table th, .price-table td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.price-table th { font: 700 .78rem var(--font-display); text-transform: uppercase; letter-spacing: .08em; color: var(--grey); }
+.price-note { font-size: .8rem; color: var(--grey); margin-top: 14px; }

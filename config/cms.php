@@ -28,7 +28,26 @@ return [
         'contact-us' => 'contact-us.html',
     ],
 
+    // Price Grid Type: how a page lists the plans in its price grid group
+    'price_grids' => [
+        'cards' => 'Plan cards',
+        'table' => 'Price table (500 / 1,000 / 2,000 kWh)',
+    ],
+
+    // Rating Formula: which price the price grid shows for each plan
+    'rating_formulas' => [
+        'avg_1000' => 'Average price at 1,000 kWh',
+        'avg_500' => 'Average price at 500 kWh',
+        'avg_2000' => 'Average price at 2,000 kWh',
+        'energy' => 'Energy charge only',
+    ],
+
+    // REP ID: the retail electric provider a page sells for (sent with orders started on it)
+    'reps' => [
+        1 => env('BRAND_NAME', 'Energy Texas'),
+    ],
+
     // Paths a website page can never use (the admin, Laravel's own endpoints)
-    'reserved' => ['admin', 'site', 'shared', 'admin-assets', 'css', 'js', 'contact', 'up', 'storage'],
+    'reserved' => ['admin', 'site', 'shared', 'admin-assets', 'css', 'js', 'contact', 'up', 'storage', 'amp'],
 
 ];

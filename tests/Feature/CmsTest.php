@@ -153,7 +153,7 @@ class CmsTest extends TestCase
         $this->assertEquals($before, $p->fresh()->rate_adj);
 
         $good = UploadedFile::fake()->createWithContent('d.csv', "key,rate_adj,min_discount,max_discount\n{$p->key},-0.25,0,-0.5\n");
-        $this->post('/admin/astro/uploads/byop', ['file' => $good])->assertRedirect('/admin/astro/products');
+        $this->post('/admin/astro/uploads/byop', ['file' => $good])->assertRedirect('/admin/astro/modifiers/products');
         $p->refresh();
         $this->assertEquals([-0.25, 0.0, -0.5], [(float) $p->rate_adj, (float) $p->min_discount, (float) $p->max_discount]);
     }

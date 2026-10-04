@@ -8,6 +8,7 @@ use App\Models\HistoryItem;
 use App\Models\Market;
 use App\Models\Page;
 use App\Models\PageComponent;
+use App\Models\PlanGroup;
 use App\Models\Site;
 use App\Models\Template;
 use Illuminate\Http\RedirectResponse;
@@ -141,6 +142,7 @@ class PageController extends Controller
             'sites' => Site::orderBy('name')->get(),
             'templates' => Template::orderBy('name')->get(),
             'markets' => Market::where('status', 'Active')->orderBy('name')->get(),
+            'groups' => PlanGroup::orderBy('name')->get(),
             'components' => $page->exists ? $page->components()->with('block.category')->get()->groupBy('zone') : collect(),
             'blocks' => ContentBlock::with('category')->where(fn ($q) => $q->whereNull('site_id')->orWhere('site_id', $page->site_id))->orderBy('name')->get(),
             'zones' => $page->file ? array_intersect_key(config('cms.zones'), array_flip(['top', 'bottom'])) : config('cms.zones'),
@@ -156,6 +158,7 @@ class PageController extends Controller
             'path' => trim((string) $request->input('path'), '/ ') ?: '/',
             'no_index' => $request->boolean('no_index'),
             'canonical' => $request->boolean('canonical'),
+            'hard_cache' => $request->boolean('hard_cache'),
         ]);
         $siteId = $page?->site_id ?? $request->integer('site_id');
 
@@ -188,11 +191,41 @@ class PageController extends Controller
             'content_secondary' => ['nullable', 'string', 'max:200000'],
             'content_parent' => ['nullable', 'string', 'max:50000'],
             'content_auxiliary' => ['nullable', 'string', 'max:200000'],
+            'content_amp' => ['nullable', 'string', 'max:200000'],
+            'address_box_title' => ['nullable', 'string', 'max:120'],
+            'market_label' => ['nullable', 'string', 'max:60'],
+            'rep_id' => ['nullable', 'integer', Rule::in(array_keys(config('cms.reps')))],
+            'hard_cache' => ['boolean'],
+            'pricegrid_type' => ['nullable', Rule::in(array_keys(config('cms.price_grids')))],
+            'pricegrid_header' => ['nullable', 'string', 'max:150'],
+            'pricegrid_group_id' => ['nullable', 'required_with:pricegrid_type', 'exists:plan_groups,id'],
+            'rating_formula' => ['nullable', Rule::in(array_keys(config('cms.rating_formulas')))],
+            'copy_from_id' => ['nullable', 'integer', Rule::exists('pages', 'id')->whereNull('file'), Rule::notIn(array_filter([$page?->id]))],
+            'copy_mode' => ['required_with:copy_from_id', 'nullable', Rule::in(['once', 'sync'])],
         ], [
+            'copy_from_id.not_in' => 'A page can\'t copy itself.',
+            'copy_from_id.exists' => 'Enter the ID of a page built in Lando (not a built-in file page).',
+            'pricegrid_group_id.required_with' => 'Pick the plan group the price grid lists.',
             'path.regex' => 'Use lowercase letters, numbers, dashes and slashes in the URL path.',
             'redirect.regex' => 'Start the redirect with / or http(s)://.',
         ]);
         unset($data['site_id']);
+
+        // Copy From Page ID: "copy contents one time" copies now; "keep contents in sync" shows that page's content
+        $mode = $data['copy_mode'] ?? null;
+        unset($data['copy_mode']);
+        if (! empty($data['copy_from_id'])) {
+            $source = Page::findOrFail($data['copy_from_id'])->contentSource();
+            abort_if($source->id === $page?->id, 422, 'Those pages would copy each other.');
+            if ($mode === 'once') {
+                $data = array_merge($data, $source->only(Page::CONTENT_FIELDS));
+                $data['copy_from_id'] = null;
+            } else {
+                $data['copy_from_id'] = $source->id;
+            }
+        } else {
+            $data['copy_from_id'] = null;
+        }
 
         return $page ? $data : $data + ['site_id' => $siteId];
     }

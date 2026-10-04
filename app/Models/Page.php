@@ -15,7 +15,7 @@ class Page extends Model
 
     protected function casts(): array
     {
-        return ['no_index' => 'boolean', 'canonical' => 'boolean'];
+        return ['no_index' => 'boolean', 'canonical' => 'boolean', 'hard_cache' => 'boolean'];
     }
 
     public function template(): BelongsTo
@@ -26,6 +26,30 @@ class Page extends Model
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    /** Content fields that "Copy From Page ID" copies or keeps in sync. */
+    public const CONTENT_FIELDS = ['page_title', 'content_primary', 'content_secondary', 'content_parent', 'content_auxiliary', 'content_amp'];
+
+    public function copyFrom(): BelongsTo
+    {
+        return $this->belongsTo(Page::class, 'copy_from_id');
+    }
+
+    public function pricegridGroup(): BelongsTo
+    {
+        return $this->belongsTo(PlanGroup::class, 'pricegrid_group_id');
+    }
+
+    public function market(): BelongsTo
+    {
+        return $this->belongsTo(Market::class);
+    }
+
+    /** The page whose content is shown: the synced page, else this one. */
+    public function contentSource(): Page
+    {
+        return $this->copy_from_id && $this->copyFrom ? $this->copyFrom : $this;
     }
 
     public function components(): HasMany

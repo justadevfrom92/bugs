@@ -57,6 +57,7 @@ class SiteController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'domain' => ['required', 'string', 'max:190', 'regex:/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/', Rule::unique('sites')->ignore($site)],
             'phone' => ['nullable', 'string', 'max:20'],
+            'address_box_title' => ['nullable', 'string', 'max:120'],
             'status' => ['required', Rule::in(['Active', 'Inactive'])],
         ], ['domain.regex' => 'Enter just the host name, e.g. www.example.com (no https:// or slashes).']);
     }

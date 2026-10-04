@@ -334,3 +334,4 @@ table.hist td { white-space: normal; }
 .menu-list a { padding: 7px 10px; border-radius: 6px; color: var(--ink); display: flex; justify-content: space-between; }
 .menu-list a:hover { background: var(--row); text-decoration: none; }
 .menu-list a.on { background: var(--info-bg); color: var(--navy); font-weight: 600; }
+tr.saved-report td { background: var(--ok-bg); }

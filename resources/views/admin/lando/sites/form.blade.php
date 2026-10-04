@@ -12,6 +12,7 @@
             <label for="name">Site Name</label><input id="name" name="name" required value="{{ old('name', $site->name) }}">
             <label for="domain">Domain</label><input id="domain" name="domain" required class="mono" value="{{ old('domain', $site->domain) }}" placeholder="www.example.com">
             <label for="phone">Phone</label><input id="phone" name="phone" value="{{ old('phone', $site->phone) }}" placeholder="Leave blank to use the brand phone">
+            <label for="address_box_title">Address Box Title</label><input id="address_box_title" name="address_box_title" value="{{ old('address_box_title', $site->address_box_title) }}" placeholder="Heading of the zip code box; blank: “Find your plan”">
             <label for="status">Status</label>
             <select id="status" name="status">@foreach (['Active', 'Inactive'] as $s)<option @selected(old('status', $site->status) === $s)>{{ $s }}</option>@endforeach</select>
         </div>

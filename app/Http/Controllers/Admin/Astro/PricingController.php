@@ -74,20 +74,38 @@ class PricingController extends Controller
             'p.*.rate_adj' => ['required', 'numeric', 'min:-10', 'max:10'],
             'p.*.monthly' => ['required', 'numeric', 'min:0', 'max:500'],
             'p.*.active' => ['required', 'boolean'],
+        ]);
+        foreach ($data['p'] as $id => $values) {
+            ByopProduct::whereKey($id)->first()?->update($values);
+        }
+
+        return back()->with('status', 'Products saved. The website uses these prices now.');
+    }
+
+    /** Modifiers → Products: how far each add-on can be discounted (¢/kWh). */
+    public function modifierProducts(): View
+    {
+        return view('admin.astro.modifier-products', ['products' => ByopProduct::orderBy('position')->get()]);
+    }
+
+    public function updateModifierProducts(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'p' => ['required', 'array'],
             'p.*.min_discount' => ['nullable', 'numeric', 'min:-10', 'max:10'],
             'p.*.max_discount' => ['nullable', 'numeric', 'min:-10', 'max:10'],
         ]);
-        foreach ($data['p'] as $id => $values) {
+        foreach ($data['p'] as $values) {
             if (isset($values['min_discount'], $values['max_discount']) && $values['min_discount'] < $values['max_discount']) {
                 // Discounts are negative: the "max" discount is the larger cut, so it must be <= the min
                 return back()->withInput()->withErrors(['p' => 'Max Discount must be the same as or a bigger discount (more negative) than Min Discount.']);
             }
         }
         foreach ($data['p'] as $id => $values) {
-            ByopProduct::whereKey($id)->update($values);
+            ByopProduct::whereKey($id)->first()?->update(['min_discount' => $values['min_discount'] ?? null, 'max_discount' => $values['max_discount'] ?? null]);
         }
 
-        return back()->with('status', 'Products saved. The website uses these prices now.');
+        return back()->with('status', 'Discount limits saved');
     }
 
     /** Upload → BYOP Discounts: a CSV of key,rate_adj[,min_discount,max_discount] applied to the BYOP products. */
@@ -141,6 +159,6 @@ class PricingController extends Controller
             }
         });
 
-        return redirect()->route('astro.products.index')->with('status', count($updates).' BYOP products updated from the upload');
+        return redirect()->route('astro.modifiers.products')->with('status', count($updates).' BYOP products updated from the upload');
     }
 }
