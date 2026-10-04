@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\History;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,12 +33,16 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         $request->user()->forceFill(['last_login_at' => now()])->save();
+        History::record(['model' => 'AdminLogin_model', 'group' => 'Logins', 'record_id' => $request->user()->id,
+            'action' => 'logged', 'summary' => 'Signed in to the admin', 'data' => ['user_agent' => substr((string) $request->userAgent(), 0, 250)]]);
 
         return redirect()->intended(route('admin.launcher'));
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        History::record(['model' => 'AdminLogin_model', 'group' => 'Logins', 'record_id' => $request->user()->id,
+            'action' => 'logged', 'summary' => 'Signed out of the admin']);
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

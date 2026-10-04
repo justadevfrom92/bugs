@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Sheriff;
 use App\Http\Controllers\Controller;
 use App\Models\JobRun;
 use App\Models\ReferenceRow;
+use App\Support\History;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -41,6 +42,8 @@ class SystemController extends Controller
         $data = $request->validate(['command' => ['required', Rule::in(array_keys(config('admin.jobs')))]]);
         Artisan::call($data['command'], ['--user' => $request->user()->id]);
         $run = JobRun::where('command', $data['command'])->latest('id')->first();
+        History::record(['model' => 'JobRun_model', 'group' => 'Admin Changes', 'record_id' => $run?->id, 'action' => 'logged',
+            'summary' => 'Ran '.$data['command'].': '.($run?->status ?? 'done'), 'data' => $run?->only(['command', 'status', 'message', 'duration_ms'])]);
 
         return back()->with('status', config('admin.jobs.'.$data['command'])[0].': '.($run?->status ?? 'done').($run?->message ? ' — '.$run->message : ''));
     }
@@ -73,6 +76,10 @@ class SystemController extends Controller
                 ReferenceRow::create(['table_key' => $table, 'position' => $i, 'cells' => array_map(fn ($v) => (string) $v, $cells)]);
             }
         });
+
+        History::record(['model' => 'ReferenceTable_model', 'group' => 'Admin Changes', 'action' => 'updated',
+            'summary' => $name.' saved ('.ReferenceRow::where('table_key', $table)->count().' rows)',
+            'data' => ['table' => $table, 'rows' => ReferenceRow::where('table_key', $table)->orderBy('position')->pluck('cells')->map(fn ($c) => implode(' | ', $c))->implode("\n")]]);
 
         return back()->with('status', $name.' saved');
     }

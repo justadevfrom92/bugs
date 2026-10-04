@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Utility delivery charges. Each change adds a row; the current one is the latest effective_on <= today. */
 class TdspFee extends Model
 {
+    use RecordsHistory;
+
     protected $guarded = ['id'];
 
     protected function casts(): array

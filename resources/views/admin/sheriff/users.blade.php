@@ -18,7 +18,8 @@
                 <td>{{ collect($u->apps())->pluck('name')->implode(', ') ?: '—' }}</td>
                 <td>{{ $u->last_login_at?->format('Y-m-d H:i') ?? 'Never' }}</td>
                 <td>@include('admin.partials.pill', $u->active ? ['text' => 'Active', 'tone' => 'ok'] : ['text' => 'Disabled'])</td>
-                <td>@unless ($u->is(auth()->user()))
+                <td><a class="btn sm ghost" href="{{ route('sheriff.users.history', $u) }}">History</a>
+                    @unless ($u->is(auth()->user()))
                     <form method="post" action="{{ route('sheriff.users.update', $u) }}" class="inline">@csrf @method('patch')
                         <input type="hidden" name="active" value="{{ $u->active ? 0 : 1 }}"><button class="btn sm ghost">{{ $u->active ? 'Disable' : 'Enable' }}</button>
                     </form>

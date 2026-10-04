@@ -63,6 +63,15 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 | **Astro** | Term discounts by region, ETF by term, Build Your Own Plan products (price and whether the website shows them) |
 | **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables |
 
+## History
+Every change to accounts, payments, bills, notes, queues, plans, rates, fees, pricing, pages, blocks, users and roles is recorded automatically in `history_items`: who, when, the record's model name (the original system's naming, e.g. `ItemPayment_model`), each field's old → new value and a snapshot of the record. Sign-ins, plan-group edits, reference-table saves and job runs are recorded too. Passwords are never stored in history.
+
+- **Corral → account → History:** counts per model grouped like the old *Logs* pages (Products, Payments, EDI Transactions, Emails…), the full timeline (filter by clicking a model), Usage History by month and Rewards History.
+- **Each entry** has a detail page: its fields, changes, parent account and other entries of the same model (*Process Logs*).
+- **Sheriff → Users → History:** everything one admin user did.
+
+Which models are tracked, their model names and groups are set in `config/history.php`.
+
 ## Security
 - Passwords are hashed; sign-in is rate limited; all forms are CSRF protected; app access and the *delete*/*refunds* rights are checked on the server.
 - API keys go in `.env` only. Sheriff → APIs shows whether each is set, never the value.

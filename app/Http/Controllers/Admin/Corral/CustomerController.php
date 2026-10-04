@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Corral;
 
+use App\Http\Controllers\Admin\HistoryController;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Payment;
@@ -86,7 +87,7 @@ class CustomerController extends Controller
             'bookmarked' => $request->user()->bookmarks()->whereKey($customer->id)->exists(),
             'dispositions' => ReferenceRow::where('table_key', 'note-dispositions')->orderBy('position')->get()->pluck('cells.1')->filter(),
             'canRefund' => Gate::allows('refunds'),
-        ]);
+        ] + HistoryController::forCustomer($request, $customer));
     }
 
     public function updateStatus(Request $request, Customer $customer): RedirectResponse

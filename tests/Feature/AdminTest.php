@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ByopProduct;
 use App\Models\ContactMessage;
 use App\Models\Customer;
+use App\Models\HistoryItem;
 use App\Models\Market;
 use App\Models\Payment;
 use App\Models\Plan;
@@ -58,7 +59,7 @@ class AdminTest extends TestCase
             '/admin/lando/plans/create', '/admin/lando/plans/'.$plan->id.'/edit', '/admin/lando/groups',
             '/admin/lando/rates', '/admin/lando/rates?plan=JEY&kwh=500', '/admin/lando/rates/edit', '/admin/lando/fees', '/admin/lando/markets',
             '/admin/astro/terms', '/admin/astro/etfs', '/admin/astro/products',
-            '/admin/sheriff/users', '/admin/sheriff/roles', '/admin/sheriff/integrations', '/admin/sheriff/jobs'];
+            '/admin/sheriff/users', '/admin/sheriff/users/1/history', '/admin/sheriff/users/1/history?hgroup=Logins', '/admin/sheriff/roles', '/admin/sheriff/integrations', '/admin/sheriff/jobs'];
         foreach (array_keys(config('admin.reference_tables')) as $table) {
             $urls[] = '/admin/sheriff/data/'.$table;
         }
@@ -74,6 +75,37 @@ class AdminTest extends TestCase
             ->assertSee('class="admin-home" href="'.route('admin.launcher').'"', false)
             ->assertDontSee('app-switch')
             ->assertDontSee('Find a menu item');
+    }
+
+    public function test_changes_are_recorded_in_history_with_old_and_new_values(): void
+    {
+        $admin = $this->user();
+        $c = Customer::where('status', 'Submitted')->firstOrFail();
+
+        $this->actingAs($admin)->patch('/admin/corral/customers/'.$c->account.'/status', ['status' => 'Good - On Flow'])->assertRedirect();
+
+        $item = HistoryItem::where('customer_id', $c->id)->where('model', 'TicketCustomer_model')->where('action', 'updated')->latest('id')->firstOrFail();
+        $this->assertSame(['Submitted', 'Good - On Flow'], $item->changes['status']);
+        $this->assertSame($admin->id, $item->user_id);
+        $this->assertTrue(HistoryItem::where('customer_id', $c->id)->where('model', 'ItemNote_model')->where('action', 'created')->exists());
+
+        $this->get('/admin/corral/customers/'.$c->account)->assertOk()->assertSee('TicketCustomer_model')->assertSee('ItemErcot81405_model');
+        $this->get('/admin/corral/customers/'.$c->account.'?hmodel=TicketCustomer_model')->assertOk();
+        $this->get('/admin/corral/history/'.$item->id)->assertOk()->assertSee('Good - On Flow')->assertSee('Process Logs');
+        $this->get('/admin/sheriff/users/'.$admin->id.'/history')->assertOk()->assertSee('TicketCustomer_model');
+        $this->get('/admin/sheriff/history/'.$item->id)->assertOk();
+    }
+
+    public function test_password_changes_are_not_stored_in_history(): void
+    {
+        $admin = $this->user();
+        $csr = $this->user('csr@example.com');
+        $this->actingAs($admin)->patch('/admin/sheriff/users/'.$csr->id, ['password' => 'a-brand-new-password'])->assertRedirect();
+
+        $item = HistoryItem::where('model', 'User_model')->where('record_id', $csr->id)->latest('id')->firstOrFail();
+        $this->assertSame(['(hidden)', '(changed)'], $item->changes['password']);
+        $this->assertArrayNotHasKey('password', $item->data);
+        $this->assertStringNotContainsString('a-brand-new-password', json_encode($item->toArray()));
     }
 
     public function test_roles_limit_which_apps_a_user_can_open(): void

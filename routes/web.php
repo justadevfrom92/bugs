@@ -42,6 +42,7 @@ Route::prefix('admin')->group(function () {
             Route::post('customers/{customer}/bookmark', [Admin\Corral\CustomerController::class, 'bookmark'])->name('customers.bookmark');
             Route::post('customers/{customer}/notes', [Admin\Corral\CustomerController::class, 'addNote'])->name('customers.notes');
             Route::post('payments/{payment}/reverse', [Admin\Corral\CustomerController::class, 'reversePayment'])->name('payments.reverse');
+            Route::get('history/{item}', [Admin\HistoryController::class, 'show'])->name('history.show');
             Route::get('esiid', [Admin\Corral\EsiidController::class, 'index'])->name('esiid');
             Route::get('orders/create', [Admin\Corral\OrderController::class, 'create'])->name('orders.create');
             Route::get('orders/create-biz', [Admin\Corral\OrderController::class, 'createBiz'])->name('orders.create-biz');
@@ -90,6 +91,8 @@ Route::prefix('admin')->group(function () {
             Route::get('users', [Admin\Sheriff\UserController::class, 'index'])->name('users.index');
             Route::post('users', [Admin\Sheriff\UserController::class, 'store'])->name('users.store');
             Route::patch('users/{user}', [Admin\Sheriff\UserController::class, 'update'])->name('users.update');
+            Route::get('users/{user}/history', [Admin\HistoryController::class, 'user'])->name('users.history');
+            Route::get('history/{item}', [Admin\HistoryController::class, 'show'])->name('history.show');
             Route::get('roles', [Admin\Sheriff\RoleController::class, 'index'])->name('roles.index');
             Route::put('roles', [Admin\Sheriff\RoleController::class, 'update'])->name('roles.update');
             Route::get('integrations', [Admin\Sheriff\SystemController::class, 'integrations'])->name('integrations.index');

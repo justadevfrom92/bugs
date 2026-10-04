@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /** A message sent from the website's Contact Us form. */
 class ContactMessage extends Model
 {
+    use RecordsHistory;
+
     protected $guarded = ['id'];
 
     protected function casts(): array

@@ -270,3 +270,9 @@ dl.kv dd { color: var(--ink); overflow-wrap: anywhere; }
 .help { color: var(--muted); font-size: .8rem; }
 .secret-set { color: var(--ok); }
 .cell-input { width: 100%; min-width: 110px; text-align: left !important; }
+
+tr.on td { background: var(--info-bg); }
+[data-pane][hidden] { display: none !important; }
+/* History tables: let long model names wrap instead of widening the table */
+table.hist td.mono { white-space: normal; word-break: break-all; min-width: 12ch; }
+table.hist td { white-space: normal; }

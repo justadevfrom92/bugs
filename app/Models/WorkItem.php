@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** An item in one of Corral's exception queues (queue keys live in config/admin.php). */
 class WorkItem extends Model
 {
+    use RecordsHistory;
+
     protected $guarded = ['id'];
 
     protected function casts(): array

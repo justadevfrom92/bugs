@@ -20,7 +20,7 @@
 
     <div class="panel" data-tabs>
         <div class="tabs" role="tablist">
-            @foreach (['account' => 'Account', 'service' => 'Service', 'billing' => 'Billing', 'payments' => 'Payments', 'notes' => 'Notes', 'products' => 'Products'] as $key => $label)
+            @foreach (['account' => 'Account', 'service' => 'Service', 'billing' => 'Billing', 'payments' => 'Payments', 'notes' => 'Notes', 'products' => 'Products', 'history' => 'History ('.number_format($historyTotal).')'] as $key => $label)
                 <button type="button" role="tab" data-tab="{{ $key }}">{{ $label }}</button>
             @endforeach
         </div>
@@ -87,6 +87,40 @@
                     @endforeach
                 </tbody>
             </table></div></div>
+
+            <div data-pane="history" hidden style="display:flex;flex-direction:column;gap:20px">
+                @include('admin.history._counts', ['counts' => $historyCounts, 'filters' => $historyFilters, 'anchor' => '#history'])
+
+                <div class="panel">
+                    <div class="panel-head"><h2>Timeline</h2>
+                        <span class="actions">
+                            <span class="muted">Showing {{ $historyItems->count() }} of {{ number_format($historyShown) }}</span>
+                            @if ($historyFilters)<a class="btn sm ghost" href="{{ route('corral.customers.show', $c) }}#history">Clear filter ({{ $historyFilters['hmodel'] ?? $historyFilters['hgroup'] }})</a>@endif
+                            @if ($historyItems->count() < $historyShown)<a class="btn sm ghost" href="{{ request()->fullUrlWithQuery(['hall' => 1]) }}#history">Show all</a>@endif
+                        </span>
+                    </div>
+                    @include('admin.history._list', ['items' => $historyItems, 'route' => 'corral.history.show'])
+                </div>
+
+                <div class="grid-2">
+                    <div class="panel"><div class="panel-head"><h2>Usage History</h2><span class="muted">kWh by month</span></div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th>Year</th>@foreach (range(1, 12) as $m)<th class="num">{{ date('M', mktime(0, 0, 0, $m, 1)) }}</th>@endforeach</tr></thead>
+                            <tbody>@forelse ($usageHistory as $year => $months)
+                                <tr><td><b>{{ $year }}</b></td>@foreach (range(1, 12) as $m)<td class="num">{{ isset($months[$m]) ? number_format($months[$m]) : '-' }}</td>@endforeach</tr>
+                            @empty <tr><td colspan="13" class="empty">No usage yet.</td></tr> @endforelse</tbody>
+                        </table></div>
+                    </div>
+                    <div class="panel"><div class="panel-head"><h2>Rewards History</h2><span class="muted">{{ config('brand.rewards') }}</span></div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th>Date</th><th>Reward</th><th class="num">Stars</th><th class="num">Net</th></tr></thead>
+                            <tbody>@forelse ($rewardsHistory as $r)
+                                <tr><td>{{ $r['date']->format('n/j/Y') }}</td><td>{{ $r['reason'] }}</td><td class="num">+{{ rtrim(rtrim(number_format($r['stars'], 1), '0'), '.') }}</td><td class="num">{{ number_format($r['net'], 1) }}</td></tr>
+                            @empty <tr><td colspan="4" class="empty">No stars earned yet.</td></tr> @endforelse</tbody>
+                        </table></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

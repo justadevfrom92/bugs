@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             CmsSeeder::class,
             CustomerSeeder::class,
+            HistorySeeder::class,
             SystemSeeder::class,
         ]);
     }
