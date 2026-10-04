@@ -72,7 +72,8 @@ class AdminTest extends TestCase
     {
         $this->actingAs($this->user())->get('/admin/lando/plans')
             ->assertSee('class="admin-home" href="'.route('admin.launcher').'"', false)
-            ->assertDontSee('app-switch');
+            ->assertDontSee('app-switch')
+            ->assertDontSee('Find a menu item');
     }
 
     public function test_roles_limit_which_apps_a_user_can_open(): void

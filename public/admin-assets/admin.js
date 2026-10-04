@@ -39,14 +39,9 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    // Mobile menu and menu search
+    // Mobile menu
     var menuBtn = $('#menu-btn');
     if (menuBtn) menuBtn.addEventListener('click', function () { $('#sidebar').classList.toggle('open'); });
-    var find = $('#find');
-    if (find) find.addEventListener('input', function () {
-      var v = find.value.toLowerCase();
-      $$('#menu a').forEach(function (a) { a.hidden = !!v && a.textContent.toLowerCase().indexOf(v) < 0; });
-    });
 
     // Flash message from the server
     var t = $('#toast');
