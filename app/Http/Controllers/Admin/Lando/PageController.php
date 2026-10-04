@@ -161,6 +161,8 @@ class PageController extends Controller
             'hard_cache' => $request->boolean('hard_cache'),
         ]);
         $siteId = $page?->site_id ?? $request->integer('site_id');
+        // Content areas pick from the predefined content blocks for this site (or for every site)
+        $blockRule = ['nullable', Rule::exists('content_blocks', 'id')->where(fn ($q) => $q->whereNull('site_id')->orWhere('site_id', $siteId))];
 
         $data = $request->validate([
             'site_id' => [$page ? 'prohibited' : 'required', 'exists:sites,id'],
@@ -187,11 +189,11 @@ class PageController extends Controller
             'no_index' => ['boolean'],
             'canonical' => ['boolean'],
             'page_title' => ['nullable', 'string', 'max:200'],
-            'content_primary' => ['nullable', 'string', 'max:200000'],
-            'content_secondary' => ['nullable', 'string', 'max:200000'],
-            'content_parent' => ['nullable', 'string', 'max:50000'],
-            'content_auxiliary' => ['nullable', 'string', 'max:200000'],
-            'content_amp' => ['nullable', 'string', 'max:200000'],
+            'content_primary_id' => $blockRule,
+            'content_secondary_id' => $blockRule,
+            'content_parent_id' => $blockRule,
+            'content_auxiliary_id' => $blockRule,
+            'content_amp_id' => $blockRule,
             'address_box_title' => ['nullable', 'string', 'max:120'],
             'market_label' => ['nullable', 'string', 'max:60'],
             'rep_id' => ['nullable', 'integer', Rule::in(array_keys(config('cms.reps')))],

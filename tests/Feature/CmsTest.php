@@ -76,11 +76,11 @@ class CmsTest extends TestCase
         // A widget in a category, used both by code and as a component
         $this->post('/admin/lando/block-categories', ['name' => 'Promotions'])->assertRedirect();
         $cat = BlockCategory::where('name', 'Promotions')->firstOrFail();
-        $this->post('/admin/lando/blocks', ['name' => 'Fall Promo', 'slug' => 'fall-promo', 'category_id' => $cat->id, 'html' => '<p class="promo">Fall promo: save 10%</p>'])->assertRedirect();
+        $this->post('/admin/lando/blocks', ['name' => 'Fall Promo', 'slug' => 'fall-promo', 'category_id' => $cat->id, 'html' => '<p class="promo">Fall promo: save 10%</p>[[block|rewards-promo-band]] [[unknown|x=1]]'])->assertRedirect();
         $block = ContentBlock::where('slug', 'fall-promo')->firstOrFail();
 
         $this->post('/admin/lando/pages', ['site_id' => $site->id, 'title' => 'Fall Savings', 'path' => 'fall-savings', 'status' => 'Draft',
-            'content_primary' => '<p>Intro text.</p>[[block|fall-promo]]', 'page_title' => 'Save This Fall'])->assertRedirect();
+            'content_primary_id' => $block->id, 'page_title' => 'Save This Fall'])->assertRedirect();
         $page = Page::where('path', 'fall-savings')->firstOrFail();
         $this->post('/admin/lando/pages/'.$page->id.'/components', ['content_block_id' => ContentBlock::where('slug', 'rewards-promo-band')->value('id'), 'zone' => 'sidebar'])->assertRedirect();
 
@@ -90,7 +90,7 @@ class CmsTest extends TestCase
         $this->get('/fall-savings')->assertNotFound();
 
         $this->actingAs($this->admin())->put('/admin/lando/pages/'.$page->id, ['title' => 'Fall Savings', 'path' => 'fall-savings', 'status' => 'Published',
-            'content_primary' => '<p>Intro text.</p>[[block|fall-promo]] [[unknown|x=1]]', 'canonical' => '1'])->assertRedirect();
+            'content_primary_id' => $block->id, 'canonical' => '1'])->assertRedirect();
         auth()->logout();
         $this->get('/fall-savings')->assertOk()->assertSee('Fall promo: save 10%', false)->assertDontSee('[[unknown', false)->assertDontSee('Draft —');
 
@@ -106,7 +106,13 @@ class CmsTest extends TestCase
         $this->actingAs($this->admin());
         $this->post('/admin/lando/sites', ['name' => 'Business Site', 'domain' => 'business.example.test', 'status' => 'Active'])->assertRedirect();
         $biz = Site::where('domain', 'business.example.test')->firstOrFail();
-        $this->post('/admin/lando/pages', ['site_id' => $biz->id, 'title' => 'Solar', 'path' => 'solar', 'status' => 'Published', 'content_primary' => '<p>Business solar.</p>'])->assertRedirect();
+        $this->post('/admin/lando/blocks', ['name' => 'Biz Solar', 'slug' => 'biz-solar', 'site_id' => $biz->id, 'html' => '<p>Business solar.</p>']);
+        $solar = ContentBlock::where('slug', 'biz-solar')->firstOrFail();
+        $this->post('/admin/lando/pages', ['site_id' => $biz->id, 'title' => 'Solar', 'path' => 'solar', 'status' => 'Published', 'content_primary_id' => $solar->id])->assertRedirect();
+        // A block that belongs to another site isn't offered (or accepted) on the main site
+        $this->post('/admin/lando/pages', ['site_id' => Site::first()->id, 'title' => 'Solar', 'path' => 'solar-x', 'status' => 'Published', 'content_primary_id' => $solar->id])->assertSessionHasErrors('content_primary_id');
+        // Content is chosen from the list, not typed in
+        $this->get('/admin/lando/pages/create')->assertOk()->assertSee('<select id="content_primary_id"', false)->assertDontSee('<textarea id="content_primary"', false);
         $this->post('/admin/lando/sites', ['name' => 'Bad', 'domain' => 'https://x/y', 'status' => 'Active'])->assertSessionHasErrors('domain');
         auth()->logout();
 

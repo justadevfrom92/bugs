@@ -52,9 +52,10 @@ class SitePageController extends Controller
     {
         $page = $this->find($request, $path);
         $source = $page->contentSource();
-        abort_if($page->redirect || $page->file || blank($source->content_amp), 404);
+        $amp = $source->areaBlock('amp');
+        abort_if($page->redirect || $page->file || ! $amp, 404);
 
-        return response()->view('site.amp', ['page' => $page, 'site' => $page->site, 'content' => SiteContent::expand($source->content_amp, $page->site)]);
+        return response()->view('site.amp', ['page' => $page, 'site' => $page->site, 'content' => SiteContent::expand($amp->html, $page->site)]);
     }
 
     private function render(Page $page): string
@@ -67,13 +68,9 @@ class SitePageController extends Controller
             'page' => $page,
             'site' => $site,
             'title' => $source->page_title ?: $page->title,
-            'content' => [
-                'primary' => SiteContent::expand($source->content_primary, $site),
-                'secondary' => SiteContent::expand($source->content_secondary, $site),
-                'parent' => SiteContent::expand($source->content_parent, $site),
-                'auxiliary' => SiteContent::expand($source->content_auxiliary, $site),
-            ],
-            'hasAmp' => filled($source->content_amp),
+            'content' => collect(['primary', 'secondary', 'parent', 'auxiliary'])
+                ->mapWithKeys(fn ($area) => [$area => SiteContent::expand($source->areaBlock($area)?->html, $site)])->all(),
+            'hasAmp' => (bool) $source->content_amp_id,
             'grid' => SiteContent::priceGrid($page),
             'zones' => SiteContent::zones($page),
         ])->render();

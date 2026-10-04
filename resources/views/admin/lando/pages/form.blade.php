@@ -64,11 +64,21 @@
         </div></div>
 
         @unless ($page->file)
-            <div class="panel" id="content"><div class="panel-head"><h2>Content</h2><span class="muted">HTML. Insert a content block with its code, e.g. <span class="mono">[[block|rewards-promo-band]]</span>; widgets: <span class="mono">[[zip_form]] [[plans|group=featured|limit=3]] [[phone]] [[year]]</span></span></div>
+            <div class="panel" id="content"><div class="panel-head"><h2>Content</h2><span class="muted">Pick predefined content for each area. Content is written in Lando → Content Blocks.</span></div>
                 <div class="panel-body form-grid" style="grid-template-columns:1fr">
                     <label for="page_title">Page Title (the banner heading; blank uses Title)</label><input id="page_title" name="page_title" value="{{ old('page_title', $page->contentSource()->page_title) }}" @disabled($page->copyFrom)>
-                    @foreach (['content_primary' => 'Primary Content', 'content_secondary' => 'Secondary Content', 'content_parent' => 'Parent Content (shown under the banner heading, and for short blurbs)', 'content_auxiliary' => 'Auxiliary Content', 'content_amp' => 'AMP Content (served at /amp/'.ltrim($page->path ?? 'path', '/').'; must be valid AMP HTML)'] as $f => $l)
-                        <label for="{{ $f }}">{{ $l }}</label><textarea id="{{ $f }}" name="{{ $f }}" spellcheck="false" @if ($f !== 'content_primary') style="min-height:120px" @endif @disabled($page->copyFrom)>{{ old($f, $page->contentSource()->$f) }}</textarea>
+                    @foreach (\App\Models\Page::AREAS as $area => $areaLabel)
+                        @php $f = 'content_'.$area.'_id'; $chosen = old($f, $page->contentSource()->$f); @endphp
+                        <label for="{{ $f }}">{{ $areaLabel }}@if ($area === 'parent') (shown under the banner heading)@elseif ($area === 'amp') (served at /amp/{{ ltrim($page->path ?? 'path', '/') }})@endif</label>
+                        <div class="form-row">
+                            <select id="{{ $f }}" name="{{ $f }}" @disabled($page->copyFrom) style="flex:1">
+                                <option value="">-- None --</option>
+                                @foreach ($blocks->groupBy(fn ($b) => $b->category?->name ?? 'Uncategorized') as $cat => $list)
+                                    <optgroup label="{{ $cat }}">@foreach ($list as $b)<option value="{{ $b->id }}" @selected($chosen == $b->id)>{{ $b->name }}</option>@endforeach</optgroup>
+                                @endforeach
+                            </select>
+                            @if ($chosen && ($editUrl = app_route('blocks.edit', $chosen)))<a class="btn sm ghost" href="{{ $editUrl }}">Edit content</a>@endif
+                        </div>
                     @endforeach
                 </div>
             </div>

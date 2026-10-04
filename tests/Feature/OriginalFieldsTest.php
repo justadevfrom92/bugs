@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ByopProduct;
+use App\Models\ContentBlock;
 use App\Models\Market;
 use App\Models\Page;
 use App\Models\PlanGroup;
@@ -26,6 +27,11 @@ class OriginalFieldsTest extends TestCase
         return User::where('email', 'admin@example.com')->firstOrFail();
     }
 
+    private function block(string $slug, string $html): int
+    {
+        return ContentBlock::create(['name' => $slug, 'slug' => $slug, 'html' => $html])->id;
+    }
+
     private function page(array $fields): Page
     {
         $this->post('/admin/lando/pages', $fields + ['site_id' => Site::first()->id, 'status' => 'Published'])->assertSessionHasNoErrors()->assertRedirect();
@@ -38,7 +44,7 @@ class OriginalFieldsTest extends TestCase
         $this->actingAs($this->admin());
         $group = PlanGroup::where('slug', 'featured')->firstOrFail();
         $this->page(['title' => 'Houston Plans', 'path' => 'houston-plans', 'market_label' => 'Houston', 'rep_id' => 1, 'address_box_title' => 'Check your Houston address',
-            'content_primary' => '[[zip_form]]', 'pricegrid_type' => 'table', 'pricegrid_group_id' => $group->id, 'rating_formula' => 'avg_2000',
+            'content_primary_id' => $this->block('zip-box', '[[zip_form]]'), 'pricegrid_type' => 'table', 'pricegrid_group_id' => $group->id, 'rating_formula' => 'avg_2000',
             'market_id' => Market::where('name', 'TX-E-CENTERPOINT')->value('id')]);
 
         $html = $this->get('/houston-plans')->assertOk()->getContent();
@@ -56,15 +62,16 @@ class OriginalFieldsTest extends TestCase
     public function test_copy_from_page_once_or_in_sync_and_amp_and_hard_cache(): void
     {
         $this->actingAs($this->admin());
-        $source = $this->page(['title' => 'Source', 'path' => 'source-page', 'content_primary' => '<p>Original words</p>', 'content_amp' => '<p>AMP words</p>']);
+        [$original, $updated, $amp] = [$this->block('orig', '<p>Original words</p>'), $this->block('upd', '<p>Updated words</p>'), $this->block('amp', '<p>AMP words</p>')];
+        $source = $this->page(['title' => 'Source', 'path' => 'source-page', 'content_primary_id' => $original, 'content_amp_id' => $amp]);
 
         $once = $this->page(['title' => 'Once', 'path' => 'once-page', 'copy_from_id' => $source->id, 'copy_mode' => 'once']);
         $this->assertNull($once->copy_from_id);
-        $this->assertSame('<p>Original words</p>', $once->content_primary);
+        $this->assertSame($original, $once->content_primary_id);
 
         $sync = $this->page(['title' => 'Synced', 'path' => 'synced-page', 'copy_from_id' => $source->id, 'copy_mode' => 'sync', 'hard_cache' => '1']);
         $this->assertSame($source->id, $sync->copy_from_id);
-        $this->put('/admin/lando/pages/'.$source->id, ['title' => 'Source', 'path' => 'source-page', 'status' => 'Published', 'content_primary' => '<p>Updated words</p>', 'content_amp' => '<p>AMP words</p>']);
+        $this->put('/admin/lando/pages/'.$source->id, ['title' => 'Source', 'path' => 'source-page', 'status' => 'Published', 'content_primary_id' => $updated, 'content_amp_id' => $amp]);
 
         $this->get('/synced-page')->assertOk()->assertSee('Updated words')->assertHeader('X-Page-Cache', 'hard');
         $this->get('/once-page')->assertSee('Original words')->assertSee('rel="amphtml"', false);

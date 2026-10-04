@@ -32,7 +32,7 @@ class SiteController extends Controller
     {
         $site = Site::create($this->validated($request));
         // Every site starts with a home page
-        $site->pages()->create(['path' => '/', 'title' => 'Home', 'status' => 'Draft', 'content_primary' => '[[zip_form]]']);
+        $site->pages()->create(['path' => '/', 'title' => 'Home', 'status' => 'Draft']);
 
         return redirect()->route('lando.pages.index', ['site' => $site->id])->with('status', 'Site added with a draft home page. Point '.$site->domain.' at this server to serve it.');
     }

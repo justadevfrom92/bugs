@@ -29,7 +29,18 @@ class Page extends Model
     }
 
     /** Content fields that "Copy From Page ID" copies or keeps in sync. */
-    public const CONTENT_FIELDS = ['page_title', 'content_primary', 'content_secondary', 'content_parent', 'content_auxiliary', 'content_amp'];
+    public const CONTENT_FIELDS = ['page_title', 'content_primary_id', 'content_secondary_id', 'content_parent_id', 'content_auxiliary_id', 'content_amp_id'];
+
+    /** Content areas: each shows one predefined content block. area => label */
+    public const AREAS = ['primary' => 'Primary Content', 'secondary' => 'Secondary Content', 'parent' => 'Parent Content', 'auxiliary' => 'Auxiliary Content', 'amp' => 'AMP Content'];
+
+    /** The content block chosen for an area (primary, secondary, parent, auxiliary, amp). */
+    public function areaBlock(string $area): ?ContentBlock
+    {
+        $id = $this->{'content_'.$area.'_id'};
+
+        return $id ? ContentBlock::find($id) : null;
+    }
 
     public function copyFrom(): BelongsTo
     {

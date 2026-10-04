@@ -24,19 +24,23 @@ class CmsSeeder extends Seeder
         $templates = Template::pluck('id', 'name');
         $files = config('cms.files');
 
-        foreach (DatabaseSeeder::data('pages') as $p) {
-            Page::create([
-                'site_id' => $site->id, 'path' => $p['path'], 'title' => $p['title'], 'template_id' => $templates[$p['template']] ?? null,
-                'redirect' => isset($files[$p['path']]) ? null : ($p['redirect'] ?: null), 'status' => $p['status'], 'file' => $files[$p['path']] ?? null,
-                'content_primary' => $p['content'] ?? null,
-            ]);
-        }
-
         // Categories come from the block name prefix ("Home - Hero" → Home)
         foreach (DatabaseSeeder::data('blocks') as $b) {
             $category = BlockCategory::firstOrCreate(['name' => Str::before($b['name'], ' - ')]);
             $block = ContentBlock::create(['name' => $b['name'], 'slug' => Str::slug($b['name']), 'category_id' => $category->id, 'html' => $b['html']]);
             $block->forceFill(['id' => $b['id'], 'updated_at' => $b['updated'], 'created_at' => $b['updated']])->save();
+        }
+
+        $pageContent = BlockCategory::create(['name' => 'Page Content']);
+        foreach (DatabaseSeeder::data('pages') as $p) {
+            $content = isset($p['content'])
+                ? ContentBlock::create(['name' => $p['title'].' - Primary', 'slug' => 'page-'.Str::slug($p['path']).'-primary', 'html' => $p['content'], 'category_id' => $pageContent->id, 'site_id' => $site->id])
+                : null;
+            Page::create([
+                'content_primary_id' => $content?->id,
+                'site_id' => $site->id, 'path' => $p['path'], 'title' => $p['title'], 'template_id' => $templates[$p['template']] ?? null,
+                'redirect' => isset($files[$p['path']]) ? null : ($p['redirect'] ?: null), 'status' => $p['status'], 'file' => $files[$p['path']] ?? null,
+            ]);
         }
 
         // The rewards band as a component on the plans page and the About Us sidebar

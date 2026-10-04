@@ -30,7 +30,7 @@
         </a>
         <nav class="menu" id="menu" aria-label="{{ $app['name'] }} menu">
             @foreach ($sections as $heading => $items)
-                <h4>{{ $heading }}</h4>
+                @if (is_string($heading))<h4>{{ $heading }}</h4>@elseif (! $loop->first)<div class="menu-gap"></div>@endif
                 @foreach ($items as $it)
                     <a href="{{ $it['url'] }}" @class(['on' => $it['active']]) @if ($it['active']) aria-current="page" @endif>{{ $it['label'] }}@if ($it['badge'])<span class="count hot">{{ $it['badge'] }}</span>@endif</a>
                 @endforeach

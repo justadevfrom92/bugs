@@ -27,24 +27,27 @@ return [
             'desc' => 'Customer service: search accounts, create orders, work exception queues.',
             'icon' => 'users',
             'home' => 'corral.customers.index',
+            // Same order as the original Corral menu. Unnamed (numbered) groups have no heading.
             'menu' => [
-                'Customers' => [
+                0 => [
                     ['Customer Search', 'corral.customers.index'],
                     ['ESIID Lookup', 'corral.esiid'],
                     ['Create Order', 'corral.orders.create'],
                     ['Create Order - Biz', 'corral.orders.create-biz'],
                     ['SMS', 'corral.sms', 'sms'],
-                    ['Web Messages', 'corral.messages.index', 'messages'],
                 ],
                 'Reports' => [
                     ['Orders', 'corral.reports.orders'],
                     ['Notes', 'corral.reports.notes'],
                     ['Phonecalls', 'corral.reports.phonecalls'],
                 ],
-                'ERCOT' => [
-                    ['ERCOT Search', 'corral.ercot'],
+                1 => [
+                    ['ERCOT', 'corral.ercot'],
                 ],
                 'Exceptions' => 'queues', // one menu item per queue below, plus the overview
+                'Website' => [
+                    ['Web Messages', 'corral.messages.index', 'messages'], // contact form inbox (not in the original menu)
+                ],
             ],
         ],
         'lando' => [
