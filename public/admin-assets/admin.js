@@ -63,6 +63,27 @@
       show(buttons.some(function (b) { return b.dataset.tab === initial; }) ? initial : buttons[0].dataset.tab);
     });
 
+    // Multi-select dropdowns: the closed field lists what's ticked
+    $$('[data-multi]').forEach(function (box) {
+      var boxes = $$('input[type=checkbox]', box), text = $('[data-multi-text]', box);
+      function update() {
+        var on = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.parentNode.textContent.trim(); });
+        text.textContent = on.length ? (on.length > 3 ? on.length + ' selected: ' + on.join(', ') : on.join(', ')) : box.dataset.placeholder;
+      }
+      boxes.forEach(function (b) { b.addEventListener('change', update); });
+      var all = $('[data-multi-all]', box), none = $('[data-multi-none]', box);
+      if (all) all.addEventListener('click', function () { boxes.forEach(function (b) { b.checked = true; }); update(); });
+      if (none) none.addEventListener('click', function () { boxes.forEach(function (b) { b.checked = false; }); update(); });
+      update();
+    });
+    // Close an open dropdown when clicking elsewhere or pressing Escape
+    document.addEventListener('click', function (e) {
+      $$('[data-multi][open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') $$('[data-multi][open]').forEach(function (d) { d.open = false; d.querySelector('summary').focus(); });
+    });
+
     // Clickable table rows
     $$('tr[data-href]').forEach(function (tr) {
       tr.addEventListener('click', function (e) {

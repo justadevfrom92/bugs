@@ -20,7 +20,7 @@
         </div>
         <div class="panel-head"><h2>Audience</h2></div>
         <div class="panel-body form-grid">
-            <label>Account Status</label><div class="actions">@foreach (array_keys(config('admin.customer_statuses')) as $s)<label class="check" style="margin-right:10px"><input type="checkbox" name="audience[statuses][]" value="{{ $s }}" @checked(in_array($s, $a['statuses'] ?? []))> {{ $s }}</label>@endforeach</div>
+            <label>Account Status</label>@include('admin.partials.multiselect', ['id' => 'a-status', 'name' => 'audience[statuses][]', 'label' => 'Account Status', 'options' => array_keys(config('admin.customer_statuses')), 'selected' => $a['statuses'] ?? [], 'placeholder' => 'Any status', 'disabled' => $sent])
             <label for="a-type">Customer Type</label><select id="a-type" name="audience[type]"><option value="">Any</option>@foreach (['Residential', 'Small Business'] as $t)<option @selected(($a['type'] ?? '') === $t)>{{ $t }}</option>@endforeach</select>
             <label for="a-market">Market</label><select id="a-market" name="audience[market_id]"><option value="">Any</option>@foreach ($markets as $m)<option value="{{ $m->id }}" @selected(($a['market_id'] ?? '') == $m->id)>{{ $m->name }}</option>@endforeach</select>
             <label for="a-has">Has Product</label><select id="a-has" name="audience[product]"><option value="">Any</option>@foreach (array_keys(config('corral.products')) as $p)<option @selected(($a['product'] ?? '') === $p)>{{ $p }}</option>@endforeach</select>
