@@ -6,6 +6,7 @@ use App\Models\Campaign;
 use App\Models\ContactLog;
 use App\Models\Customer;
 use App\Models\EmailTemplate;
+use App\Models\EmailTestSend;
 use App\Models\MarketingChannel;
 use App\Models\PromoCode;
 use App\Models\Refund;
@@ -71,5 +72,12 @@ class MarketingRewardsSeeder extends Seeder
                 'requested_by' => User::where('email', 'csr@example.com')->value('id')]);
         }
         Customer::where('status', 'Pending - Deposit Due')->update(['deposit_due' => 150]);
+
+        // A test send of the welcome email to the marketing team
+        $marketing = User::where('email', 'marketing@example.com')->first();
+        if ($marketing && $welcome = EmailTemplate::orderBy('id')->first()) {
+            EmailTestSend::create(['email_template_id' => $welcome->id, 'user_id' => $marketing->id, 'mode' => 'team', 'target' => $marketing->role?->name.' team',
+                'recipients' => [['email' => $marketing->email, 'name' => $marketing->name, 'status' => 'logged']], 'status' => 'logged', 'created_at' => now()->subDay()]);
+        }
     }
 }

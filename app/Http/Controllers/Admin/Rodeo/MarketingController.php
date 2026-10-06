@@ -10,6 +10,7 @@ use App\Models\EmailTemplate;
 use App\Models\Market;
 use App\Models\MarketingChannel;
 use App\Models\PromoCode;
+use App\Models\Role;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\RedirectResponse;
@@ -120,7 +121,11 @@ class MarketingController extends Controller
     {
         $template ??= new EmailTemplate(['body' => '<p>Hi {{first_name}},</p>']);
 
-        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first()]);
+        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first(),
+            'tests' => $template->exists ? $template->testSends()->with('user')->latest('id')->limit(10)->get() : collect(),
+            'roles' => Role::withCount(['users' => fn ($q) => $q->where('active', true)])->orderBy('name')->get(),
+            'bookmarks' => request()->user()->bookmarks()->whereNotNull('email')->count(),
+            'markets' => Market::orderBy('name')->get(), 'delivers' => TemplateTestController::delivers()]);
     }
 
     public function saveTemplate(Request $request, ?EmailTemplate $template = null): RedirectResponse

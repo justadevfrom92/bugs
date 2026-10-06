@@ -57,7 +57,9 @@
       buttons.forEach(function (b) {
         b.addEventListener('click', function () { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); });
       });
+      // The URL's #tab, else data-tab-initial (e.g. the tab a form was sent from)
       var initial = location.hash.slice(1);
+      if (!buttons.some(function (b) { return b.dataset.tab === initial; })) initial = box.dataset.tabInitial || '';
       show(buttons.some(function (b) { return b.dataset.tab === initial; }) ? initial : buttons[0].dataset.tab);
     });
 

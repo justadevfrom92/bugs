@@ -69,7 +69,7 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 | **Walker** | Reporting: home lists report runs that are running, completed, or errored / did not finish; each run has its own page (model reference, filters, preview, download) with **Rerun** top right; report library; uploaded report files |
 | **Strongbox** | Finance: dashboard, payments (record check/money order/cash/wire, reverse), pending credits & debits to apply, refunds (request → approve → paid; deciding needs the *refunds* right), deposits held and due, receivables aging, journal export (CSV/XLSX) |
 | **Bounty** | Rewards: reward offers, star earning rules (used by the `et:rewards-stars` job), redemptions to fulfil, member star balances and adjustments, monthly drawing |
-| **Rodeo** | Marketing: email/SMS campaigns with an audience builder, email templates with placeholders, customer surveys with results and NPS, MSIDs and promo codes |
+| **Rodeo** | Marketing: email/SMS campaigns with an audience builder, email templates with placeholders and **Send a Test** (to typed addresses, account numbers, your Corral bookmarks, an admin team, or a customer category; up to 25 people, subject marked [TEST]), customer surveys with results and NPS, MSIDs and promo codes |
 | **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables |
 
 ## Website sign-up, My Account and surveys
@@ -77,7 +77,7 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 - **My Account** (`/myaccount`): dashboard, bills and payments, usage insights, pay a bill, payment methods, products, profile and password, authorized users, linked accounts, renew/change plan, transfer service, rewards, refer a friend, messages. QuickPay at `/myaccount/quickpay` needs no sign-in.
 - **Surveys** (`/survey/<slug>`): built in Rodeo. Put `{{survey:<slug>}}` in an email template; each customer gets a signed link so their answer is tied to their account.
 
-Card payments, emails and texts need Stripe, Salesforce and Twilio keys in `.env`; until then payments are recorded as Pending and campaign messages are logged but not sent.
+Test emails go out through Laravel's mailer: set `MAIL_MAILER` (e.g. `smtp`) and the `MAIL_*` values in `.env`; with the default `log` they are written to `storage/logs` instead of delivered. Card payments, campaign emails and texts need Stripe, Salesforce and Twilio keys in `.env`; until then payments are recorded as Pending and campaign messages are logged but not sent.
 
 ## Adding an admin app
 On the launcher, **+ New Admin App** (roles with Sheriff, e.g. Administrator) creates a new app: name, description, icon, which roles can open it, and its sidebar links. Each link points to any existing admin screen or to a URL, grouped under headings. The app gets a tile on the launcher, opens at `/admin/<address>` in the shared admin layout, and appears as a column in Sheriff → Roles. Edit or delete it from its **Edit App** button. These apps are stored in the `admin_apps` table; the built-in apps stay in `config/admin.php`.

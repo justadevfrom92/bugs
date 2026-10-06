@@ -274,6 +274,7 @@ Route::prefix('admin')->group(function () {
             Route::post('templates', 'saveTemplate')->name('templates.store');
             Route::get('templates/{template}', 'templateForm')->name('templates.edit');
             Route::put('templates/{template}', 'saveTemplate')->name('templates.update');
+            Route::post('templates/{template}/test', [Admin\Rodeo\TemplateTestController::class, 'send'])->middleware('throttle:10,1')->name('templates.test');
             Route::get('surveys', 'surveys')->name('surveys');
             Route::get('surveys/new', 'surveyForm')->name('surveys.create');
             Route::post('surveys', 'saveSurvey')->name('surveys.store');

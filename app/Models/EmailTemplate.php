@@ -21,6 +21,22 @@ class EmailTemplate extends Model
 
     public function render(Customer $c): string
     {
+        return $this->fillIns($this->body, $c);
+    }
+
+    /** The subject with its fill-ins; plain text, so nothing is HTML-escaped. */
+    public function renderSubject(Customer $c): string
+    {
+        return html_entity_decode($this->fillIns($this->subject, $c), ENT_QUOTES);
+    }
+
+    public function testSends(): HasMany
+    {
+        return $this->hasMany(EmailTestSend::class);
+    }
+
+    private function fillIns(string $text, Customer $c): string
+    {
         return preg_replace_callback('/\{\{\s*(first_name|account|balance|plan|survey:([a-z0-9-]+))\s*\}\}/', fn ($m) => match (true) {
             $m[1] === 'first_name' => e($c->first_name),
             $m[1] === 'account' => e($c->account),
@@ -28,6 +44,6 @@ class EmailTemplate extends Model
             $m[1] === 'plan' => e($c->plan?->name ?? ''),
             // Signed, so a response is only tied to the account the email was sent to
             default => URL::signedRoute('survey.show', ['survey' => $m[2], 'c' => $c->account]),
-        }, $this->body);
+        }, $text);
     }
 }
