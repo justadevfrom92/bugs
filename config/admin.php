@@ -127,6 +127,60 @@ return [
                 ],
             ],
         ],
+        'strongbox' => [
+            'name' => 'Strongbox',
+            'desc' => 'Finance: payments, credits and debits approval, refunds, deposits, receivables aging and the journal export.',
+            'icon' => 'safe',
+            'home' => 'strongbox.dashboard',
+            'menu' => [
+                'Finance' => [
+                    ['Dashboard', 'strongbox.dashboard'],
+                    ['Payments', 'strongbox.payments'],
+                    ['Credits & Debits', 'strongbox.ledger', 'ledger_pending'],
+                    ['Refunds', 'strongbox.refunds', 'refunds_pending'],
+                    ['Deposits', 'strongbox.deposits'],
+                ],
+                'Accounting' => [
+                    ['Receivables Aging', 'strongbox.aging'],
+                    ['Journal', 'strongbox.journal'],
+                ],
+            ],
+        ],
+        'bounty' => [
+            'name' => 'Bounty',
+            'desc' => 'Rewards: offers, how stars are earned, redemptions to fulfil, member balances and the monthly drawing.',
+            'icon' => 'gift',
+            'home' => 'bounty.dashboard',
+            'menu' => [
+                'Rewards' => [
+                    ['Dashboard', 'bounty.dashboard'],
+                    ['Offers', 'bounty.offers'],
+                    ['Earning Rules', 'bounty.rules'],
+                ],
+                'Members' => [
+                    ['Redemptions', 'bounty.redemptions', 'redemptions_open'],
+                    ['Members', 'bounty.members'],
+                    ['Monthly Drawing', 'bounty.drawing'],
+                ],
+            ],
+        ],
+        'rodeo' => [
+            'name' => 'Rodeo',
+            'desc' => 'Marketing: email and SMS campaigns, email templates, customer surveys, MSIDs and promo codes.',
+            'icon' => 'megaphone',
+            'home' => 'rodeo.dashboard',
+            'menu' => [
+                'Marketing' => [
+                    ['Dashboard', 'rodeo.dashboard'],
+                    ['Campaigns', 'rodeo.campaigns'],
+                    ['Email Templates', 'rodeo.templates'],
+                    ['Surveys', 'rodeo.surveys'],
+                ],
+                'Tracking' => [
+                    ['MSIDs & Promo Codes', 'rodeo.channels'],
+                ],
+            ],
+        ],
         'sheriff' => [
             'name' => 'Sheriff',
             'desc' => 'Settings: users, roles, API integrations, scheduled jobs and reference data.',

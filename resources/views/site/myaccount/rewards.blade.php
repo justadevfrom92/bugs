@@ -6,7 +6,8 @@
 <x-site.myaccount :c="$c" title="My Rewards">
   <div class="co-card"><p>You have <b>{{ number_format($c->stars) }} stars</b>. Earn stars for on-time payments, paperless billing and referrals.</p></div>
   <div class="offer-grid">
-    @foreach ($offers as $i => [$cost, $name, $desc])
+    @foreach ($offers as $o)
+                @php [$i, $cost, $name, $desc] = [$o->id, $o->stars, $o->name, $o->description]; @endphp
       <form method="post" action="{{ route('myaccount.rewards.redeem') }}" @class(['offer-card', 'locked' => $cost > $c->stars])>@csrf
         <input type="hidden" name="offer" value="{{ $i }}">
         <strong>{{ $cost ? number_format($cost).' ★' : 'Free' }}</strong><b>{{ $name }}</b><small>{{ $desc }}</small>

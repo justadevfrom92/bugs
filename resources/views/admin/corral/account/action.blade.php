@@ -39,7 +39,7 @@
                         @break
                     @case('template')
                         <select id="f-{{ $name }}" name="{{ $name }}" required><option value="">-- Template --</option>
-                            @foreach (config('corral.email_templates') as $t)<option @selected(old($name) === $t)>{{ $t }}</option>@endforeach
+                            @foreach (\App\Models\EmailTemplate::orderBy('name')->pluck('name') as $t)<option @selected(old($name) === $t)>{{ $t }}</option>@endforeach
                         </select>
                         @break
                     @default

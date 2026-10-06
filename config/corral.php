@@ -116,28 +116,6 @@ return [
 
     'priorities' => ['Low', 'Medium', 'High'],
 
-    // Spend Stars offers: [stars, offer, description, effect]. effect: credit:<amount> | gift | drawing | product:<name>
-    'reward_offers' => [
-        [0, 'Monthly Drawing', 'Enter this month\'s drawing.', 'drawing'],
-        [50, '$10 Bill Credit', 'Redeem 50 stars for $10 off the next bill.', 'credit:10'],
-        [100, '$25 Bill Credit', 'Redeem 100 stars for a $25 bill credit.', 'credit:25'],
-        [100, '$25 Starbucks Gift Card', 'Redeem 100 stars for a $25 Starbucks e-gift card.', 'gift'],
-        [100, '$25 Amazon Gift Card', 'Redeem 100 stars for a $25 Amazon e-gift card.', 'gift'],
-        [100, '$25 Target Gift Card', 'Redeem 100 stars for a $25 Target e-gift card.', 'gift'],
-        [150, '$50 Bill Credit', 'Redeem 150 stars for a $50 bill credit.', 'credit:50'],
-        [150, '$50 Starbucks Gift Card', 'Redeem 150 stars for a $50 Starbucks e-gift card.', 'gift'],
-        [150, '$50 Amazon Gift Card', 'Redeem 150 stars for a $50 Amazon e-gift card.', 'gift'],
-        [150, '$50 Target Gift Card', 'Redeem 150 stars for a $50 Target e-gift card.', 'gift'],
-        [450, 'Free Month of Electricity', '450 stars for a bill credit of up to $150.', 'credit:150'],
-        [600, 'ecobee Smart Thermostat', 'Redeem 600 stars for an ecobee smart thermostat.', 'product:ecobee'],
-    ],
-
-    'email_templates' => [
-        'Welcome Letter', 'Welcome Letter - Renewed', 'Renewal - Confirmation', 'Billing - Resi - Payment Made', 'Payment Made',
-        'Bill Ready', 'MyAcct - Peak Perks - Welcome to Peak Perks', 'Freedom Flex - Confirmation', 'MyAccount - Password Reset',
-        'Winback Offer', 'Disconnect Notice', 'Custom Message',
-    ],
-
     // Every queue an account can be moved into (TECH → Move Queues)
     'queues' => [
         'QueueBillComplete',

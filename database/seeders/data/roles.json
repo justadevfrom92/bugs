@@ -8,13 +8,17 @@
    "walker",
    "sheriff",
    "delete",
-   "refunds"
+   "refunds",
+   "strongbox",
+   "bounty",
+   "rodeo"
   ]
  },
  {
   "name": "Customer Service",
   "perms": [
-   "corral"
+   "corral",
+   "bounty"
   ]
  },
  {
@@ -27,7 +31,8 @@
  {
   "name": "Content Editor",
   "perms": [
-   "lando"
+   "lando",
+   "rodeo"
   ]
  },
  {
@@ -36,7 +41,8 @@
    "corral",
    "walker",
    "sheriff",
-   "refunds"
+   "refunds",
+   "strongbox"
   ]
  }
 ]

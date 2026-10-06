@@ -24,6 +24,11 @@ class LedgerEntry extends Model
     }
 
     /** [model name, log group] for History. */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function historyName(): array
     {
         return [$this->kind === 'credit' ? 'ItemCredit_model' : 'ItemDebit_model', 'Payments'];

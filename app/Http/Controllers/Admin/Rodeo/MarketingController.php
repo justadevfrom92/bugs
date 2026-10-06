@@ -1,0 +1,228 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Rodeo;
+
+use App\Http\Controllers\Controller;
+use App\Models\Campaign;
+use App\Models\ContactLog;
+use App\Models\Customer;
+use App\Models\EmailTemplate;
+use App\Models\Market;
+use App\Models\MarketingChannel;
+use App\Models\PromoCode;
+use App\Models\Survey;
+use App\Models\SurveyResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+/**
+ * Rodeo: marketing. Email and text campaigns to opted-in customers, the email
+ * templates Corral and campaigns use, customer surveys, and the MSIDs and
+ * promo codes that track where sign-ups come from.
+ */
+class MarketingController extends Controller
+{
+    private static function ready(string $channel): bool
+    {
+        return collect(config('admin.integrations.'.($channel === 'SMS' ? 'sms' : 'salesforce').'.env'))->every(fn ($v) => filled($v));
+    }
+
+    public function dashboard(): View
+    {
+        $sent = ContactLog::whereNotNull('campaign_id');
+
+        return view('admin.rodeo.dashboard', [
+            'optedIn' => Customer::where('marketing_opt_in', true)->count(),
+            'customers' => Customer::count(),
+            'campaigns' => Campaign::where('status', 'sent')->count(),
+            'messages' => (clone $sent)->count(),
+            'openRate' => ($n = (clone $sent)->where('channel', 'Email')->count()) ? round(100 * (clone $sent)->whereNotNull('opened_at')->count() / $n) : 0,
+            'clickRate' => $n ? round(100 * (clone $sent)->whereNotNull('clicked_at')->count() / $n) : 0,
+            'responses' => SurveyResponse::count(),
+            'byChannel' => Customer::where('created_at', '>=', today()->subDays(90))->selectRaw('msid, count(*) as n')->groupBy('msid')->orderByDesc('n')->get()
+                ->map(fn ($r) => [$r->msid, MarketingChannel::where('msid', $r->msid)->value('name') ?? 'Unknown MSID', $r->n]),
+            'recent' => Campaign::latest()->limit(5)->get(),
+        ]);
+    }
+
+    // ---------- Campaigns ----------
+
+    public function campaigns(): View
+    {
+        return view('admin.rodeo.campaigns', ['campaigns' => Campaign::with('template')->withCount([
+            'messages', 'messages as opened_count' => fn ($q) => $q->whereNotNull('opened_at'), 'messages as clicked_count' => fn ($q) => $q->whereNotNull('clicked_at'),
+        ])->latest()->get()]);
+    }
+
+    public function campaignForm(?Campaign $campaign = null): View
+    {
+        $campaign ??= new Campaign(['channel' => 'Email', 'audience' => ['statuses' => ['Good - On Flow']]]);
+
+        return view('admin.rodeo.campaign', ['campaign' => $campaign, 'templates' => EmailTemplate::orderBy('name')->get(), 'markets' => Market::orderBy('name')->get(),
+            'count' => $campaign->exists ? $campaign->audienceQuery()->count() : null, 'ready' => self::ready($campaign->channel)]);
+    }
+
+    public function saveCampaign(Request $request, ?Campaign $campaign = null): RedirectResponse
+    {
+        abort_if($campaign?->status === 'sent', 422, 'A sent campaign can\'t be changed.');
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'channel' => ['required', Rule::in(['Email', 'SMS'])],
+            'email_template_id' => ['nullable', 'required_if:channel,Email', 'exists:email_templates,id'],
+            'message' => ['nullable', 'required_if:channel,SMS', 'string', 'max:320'],
+            'audience.statuses' => ['nullable', 'array'], 'audience.statuses.*' => [Rule::in(array_keys(config('admin.customer_statuses')))],
+            'audience.type' => ['nullable', Rule::in(['Residential', 'Small Business'])],
+            'audience.market_id' => ['nullable', 'exists:markets,id'],
+            'audience.product' => ['nullable', Rule::in(array_keys(config('corral.products')))],
+            'audience.without_product' => ['nullable', Rule::in(array_keys(config('corral.products')))],
+            'audience.contract_ends_within' => ['nullable', 'integer', 'min:1', 'max:365'],
+        ]);
+        $data['audience'] = array_filter($data['audience'] ?? [], fn ($v) => $v !== null && $v !== []);
+        $campaign = $campaign ? tap($campaign)->update($data) : Campaign::create($data + ['created_by' => $request->user()->id]);
+
+        return redirect()->route('rodeo.campaigns.edit', $campaign)->with('status', 'Campaign saved. '.number_format($campaign->audienceQuery()->count()).' customers match.');
+    }
+
+    /** Creates one message per customer. They go out through Salesforce (email) or Twilio (texts) when those are set up in .env. */
+    public function sendCampaign(Request $request, Campaign $campaign): RedirectResponse
+    {
+        abort_if($campaign->status === 'sent', 422, 'This campaign was already sent.');
+        $ready = self::ready($campaign->channel);
+        $count = 0;
+        DB::transaction(function () use ($campaign, $ready, &$count) {
+            $campaign->audienceQuery()->with('plan')->chunkById(200, function ($customers) use ($campaign, $ready, &$count) {
+                foreach ($customers as $c) {
+                    ContactLog::create(['customer_id' => $c->id, 'campaign_id' => $campaign->id, 'channel' => $campaign->channel,
+                        'template' => $campaign->channel === 'Email' ? $campaign->template?->name : 'Campaign: '.$campaign->name,
+                        'body' => $campaign->channel === 'Email' ? strip_tags($campaign->template?->render($c) ?? '') : str_replace('{{first_name}}', $c->first_name, $campaign->message),
+                        'phone' => $campaign->channel === 'SMS' ? $c->phone : null, 'status' => $ready ? 'queued' : 'not sent']);
+                    $count++;
+                }
+            });
+            $campaign->update(['status' => 'sent', 'sent_at' => now(), 'recipients' => $count]);
+        });
+
+        return redirect()->route('rodeo.campaigns')->with('status', $count.' messages '.($ready ? 'queued.' : 'logged but not sent: '.($campaign->channel === 'SMS' ? 'Twilio' : 'Salesforce').' is not configured in .env.'));
+    }
+
+    // ---------- Email templates ----------
+
+    public function templates(): View
+    {
+        return view('admin.rodeo.templates', ['templates' => EmailTemplate::withCount(['campaigns'])->orderBy('name')->get()]);
+    }
+
+    public function templateForm(?EmailTemplate $template = null): View
+    {
+        $template ??= new EmailTemplate(['body' => '<p>Hi {{first_name}},</p>']);
+
+        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first()]);
+    }
+
+    public function saveTemplate(Request $request, ?EmailTemplate $template = null): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('email_templates')->ignore($template)],
+            'subject' => ['required', 'string', 'max:150'],
+            'body' => ['required', 'string', 'max:100000'],
+        ]);
+        $template = $template ? tap($template)->update($data) : EmailTemplate::create($data);
+
+        return redirect()->route('rodeo.templates.edit', $template)->with('status', 'Template saved');
+    }
+
+    // ---------- Surveys ----------
+
+    public function surveys(): View
+    {
+        return view('admin.rodeo.surveys', ['surveys' => Survey::withCount(['questions', 'responses'])->latest()->get()]);
+    }
+
+    public function surveyForm(?Survey $survey = null): View
+    {
+        $survey ??= new Survey(['status' => 'active']);
+
+        return view('admin.rodeo.survey', ['survey' => $survey, 'questions' => $survey->exists ? $survey->questions : collect()]);
+    }
+
+    public function saveSurvey(Request $request, ?Survey $survey = null): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'intro' => ['nullable', 'string', 'max:1000'],
+            'status' => ['required', Rule::in(['active', 'closed'])],
+            'q' => ['required', 'array', 'min:1'],
+            'q.*.question' => ['required', 'string', 'max:200'],
+            'q.*.type' => ['required', Rule::in(['rating', 'choice', 'text'])],
+            'q.*.options' => ['nullable', 'string', 'max:500'],
+        ], ['q.required' => 'Add at least one question.']);
+        abort_if($survey && $survey->responses()->exists() && count($data['q']) !== $survey->questions()->count(), 422, 'This survey has responses; you can edit wording but not add or remove questions.');
+
+        DB::transaction(function () use (&$survey, $data) {
+            $fields = ['title' => $data['title'], 'intro' => $data['intro'] ?? null, 'status' => $data['status']];
+            $survey = $survey ? tap($survey)->update($fields) : Survey::create($fields + ['slug' => Str::slug($data['title']).'-'.Str::lower(Str::random(4))]);
+            $existing = $survey->questions()->get()->values();
+            foreach (array_values($data['q']) as $i => $q) {
+                $row = ['question' => $q['question'], 'type' => $q['type'], 'position' => $i,
+                    'options' => match ($q['type']) {
+                        'rating' => ['min' => 0, 'max' => 10],
+                        'choice' => array_values(array_filter(array_map('trim', explode("\n", (string) ($q['options'] ?? ''))))),
+                        default => null,
+                    }];
+                isset($existing[$i]) ? $existing[$i]->update($row) : $survey->questions()->create($row);
+            }
+            $existing->slice(count($data['q']))->each->delete();
+        });
+
+        return redirect()->route('rodeo.surveys.edit', $survey)->with('status', 'Survey saved');
+    }
+
+    public function surveyResults(Survey $survey): View
+    {
+        $responses = $survey->responses()->with('customer')->latest('created_at')->get();
+        $results = $survey->questions->values()->map(function ($q, $i) use ($responses) {
+            $answers = $responses->map(fn ($r) => $r->answers[$i] ?? null)->filter(fn ($a) => $a !== null && $a !== '');
+            $nps = null;
+            if ($q->type === 'rating' && $answers->count()) {
+                $nps = (int) round(100 * ($answers->filter(fn ($a) => $a >= 9)->count() - $answers->filter(fn ($a) => $a <= 6)->count()) / $answers->count());
+            }
+
+            return ['q' => $q, 'count' => $answers->count(), 'avg' => $q->type === 'rating' && $answers->count() ? round($answers->avg(), 1) : null, 'nps' => $nps,
+                'choices' => $q->type === 'choice' ? $answers->countBy()->sortDesc() : collect(), 'texts' => $q->type === 'text' ? $answers->take(25) : collect()];
+        });
+
+        return view('admin.rodeo.results', ['survey' => $survey, 'responses' => $responses, 'results' => $results]);
+    }
+
+    // ---------- MSIDs and promo codes ----------
+
+    public function channels(): View
+    {
+        $orders = Customer::selectRaw('msid, count(*) as n, max(created_at) as last_at')->groupBy('msid')->get()->keyBy('msid');
+
+        return view('admin.rodeo.channels', ['channels' => MarketingChannel::orderBy('msid')->get(), 'orders' => $orders,
+            'promos' => PromoCode::orderByDesc('active')->orderBy('code')->get(), 'promoUses' => Customer::whereNotNull('promo_code')->selectRaw('upper(promo_code) as code, count(*) as n')->groupBy('code')->pluck('n', 'code')]);
+    }
+
+    public function saveChannel(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['msid' => ['required', 'regex:/^\d{3,8}$/'], 'name' => ['required', 'string', 'max:100'], 'type' => ['required', Rule::in(['Organic', 'Paid', 'Partner', 'Broker', 'Agent'])], 'active' => ['boolean']]);
+        MarketingChannel::updateOrCreate(['msid' => $data['msid']], $data + ['active' => $request->boolean('active', true)]);
+
+        return back()->with('status', 'MSID '.$data['msid'].' saved. Website links use ?msid='.$data['msid']);
+    }
+
+    public function savePromo(Request $request): RedirectResponse
+    {
+        $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
+        $data = $request->validate(['code' => ['required', 'regex:/^[A-Z0-9_-]{3,30}$/'], 'description' => ['required', 'string', 'max:150'], 'credit' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'starts_on' => ['nullable', 'date'], 'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'], 'active' => ['boolean']]);
+        PromoCode::updateOrCreate(['code' => $data['code']], $data + ['active' => $request->boolean('active', true)]);
+
+        return back()->with('status', 'Promo code '.$data['code'].' saved. Website links use ?promo='.$data['code']);
+    }
+}

@@ -5,7 +5,10 @@ namespace App\Support;
 use App\Models\ContactLog;
 use App\Models\ContactMessage;
 use App\Models\JobRun;
+use App\Models\LedgerEntry;
+use App\Models\Refund;
 use App\Models\ReportRun;
+use App\Models\StarEntry;
 use App\Models\WorkItem;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -88,6 +91,9 @@ class AdminMenu
             $key === 'messages' => ContactMessage::open()->count(),
             $key === 'failed_jobs' => self::failedJobs(),
             $key === 'report_problems' => ReportRun::inState('problem')->count(),
+            $key === 'ledger_pending' => LedgerEntry::where('status', 'pending')->count(),
+            $key === 'refunds_pending' => Refund::whereIn('status', ['requested', 'approved'])->count(),
+            $key === 'redemptions_open' => StarEntry::whereNotNull('reward_offer_id')->where('fulfillment', 'pending')->count(),
             default => 0,
         };
 

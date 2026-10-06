@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\CustomerFlag;
+use App\Models\EmailTemplate;
+use App\Models\RewardOffer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,7 +34,7 @@ class AccountTest extends TestCase
             'textarea' => 'Test message',
             'method' => $c->paymentMethods()->whereNull('removed_at')->value('id'),
             'payment' => $c->payments()->value('id'),
-            'template' => config('corral.email_templates')[0],
+            'template' => EmailTemplate::value('name'),
             default => $name === 'account' ? $other->account : 'Test '.$name,
         })->all();
     }
@@ -88,10 +90,10 @@ class AccountTest extends TestCase
 
         $c->update(['stars' => 0]);
         $c->starEntries()->delete();
-        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => 1])->assertSessionHasErrors('offer');
+        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => RewardOffer::where('stars', 50)->value('id')])->assertSessionHasErrors('offer');
         $c->starEntries()->create(['reason' => 'Test', 'stars' => 60]);
         $c->syncStars();
-        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => 1])->assertRedirect();
+        $this->post(route('corral.customers.stars.redeem', $c), ['offer' => RewardOffer::where('stars', 50)->value('id')])->assertRedirect();
         $this->assertSame(10, $c->fresh()->stars);
 
         $this->post(route('corral.customers.notes', $c), ['category' => 'Billing', 'action' => 'Balance Inquiry', 'priority' => 'Low', 'body' => 'Called about the bill'])->assertRedirect();

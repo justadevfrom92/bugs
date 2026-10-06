@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Plan;
+use App\Models\RewardOffer;
 use App\Models\Signup;
 use App\Models\WorkItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -110,7 +111,7 @@ class WebsiteAccountTest extends TestCase
 
         $c->starEntries()->create(['reason' => 'Test', 'stars' => 100]);
         $c->syncStars();
-        $this->post('/myaccount/rewards', ['offer' => 1])->assertSessionHasNoErrors();
+        $this->post('/myaccount/rewards', ['offer' => RewardOffer::where('stars', 50)->value('id')])->assertSessionHasNoErrors();
 
         $this->put('/myaccount/change-password', ['current_password' => 'password', 'password' => 'another-password', 'password_confirmation' => 'another-password'])->assertRedirect();
         $this->post('/myaccount/logout')->assertRedirect('/myaccount/login');

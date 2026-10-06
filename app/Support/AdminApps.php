@@ -15,7 +15,7 @@ class AdminApps
 
     public static function icons(): array
     {
-        return ['folder' => 'Folder', 'users' => 'People', 'layout' => 'Pages', 'chart' => 'Chart', 'star' => 'Star', 'bolt' => 'Lightning', 'file' => 'Document', 'gear' => 'Settings', 'link' => 'Link'];
+        return ['folder' => 'Folder', 'users' => 'People', 'layout' => 'Pages', 'chart' => 'Chart', 'star' => 'Star', 'bolt' => 'Lightning', 'file' => 'Document', 'gear' => 'Settings', 'link' => 'Link', 'safe' => 'Safe', 'gift' => 'Gift', 'megaphone' => 'Megaphone'];
     }
 
     /** @return array<string, array{name: string, desc: string, icon: string, url: string, custom: bool, menu: mixed, model?: AdminApp}> */

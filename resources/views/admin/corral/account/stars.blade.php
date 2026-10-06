@@ -13,7 +13,8 @@
 
     <div class="panel"><div class="panel-head"><h2>Rangler Rewards</h2></div><div class="panel-body">
         <div class="offers">
-            @foreach ($offers as $i => [$cost, $name, $desc])
+            @foreach ($offers as $o)
+                @php [$i, $cost, $name, $desc] = [$o->id, $o->stars, $o->name, $o->description]; @endphp
                 <form method="post" action="{{ route('corral.customers.stars.redeem', $c) }}" class="offer {{ $cost > $c->stars ? 'locked' : '' }}"
                       data-confirm="Redeem {{ $name }}?|{{ $cost }} stars will be taken from the account.|Redeem">@csrf
                     <input type="hidden" name="offer" value="{{ $i }}">

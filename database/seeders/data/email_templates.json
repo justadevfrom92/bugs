@@ -1,0 +1,72 @@
+[
+ {
+  "name": "Welcome Letter",
+  "subject": "Welcome Letter",
+  "body": "<p>Welcome, {{first_name}}! Your account number is {{account}}. Your plan: {{plan}}.</p>"
+ },
+ {
+  "name": "Welcome Letter - Renewed",
+  "subject": "Welcome Letter: Renewed",
+  "body": "<p>Hi {{first_name}},</p><p>Welcome Letter - Renewed.</p>"
+ },
+ {
+  "name": "Renewal - Confirmation",
+  "subject": "Renewal: Confirmation",
+  "body": "<p>Hi {{first_name}},</p><p>Renewal - Confirmation.</p>"
+ },
+ {
+  "name": "Billing - Resi - Payment Made",
+  "subject": "Billing: Resi: Payment Made",
+  "body": "<p>Hi {{first_name}},</p><p>Billing - Resi - Payment Made.</p>"
+ },
+ {
+  "name": "Payment Made",
+  "subject": "Payment Made",
+  "body": "<p>Hi {{first_name}},</p><p>Payment Made.</p>"
+ },
+ {
+  "name": "Bill Ready",
+  "subject": "Bill Ready",
+  "body": "<p>Hi {{first_name}}, your bill is ready. Balance: {{balance}}.</p>"
+ },
+ {
+  "name": "MyAcct - Peak Perks - Welcome to Peak Perks",
+  "subject": "MyAcct: Peak Perks: Welcome to Peak Perks",
+  "body": "<p>Hi {{first_name}},</p><p>MyAcct - Peak Perks - Welcome to Peak Perks.</p>"
+ },
+ {
+  "name": "Freedom Flex - Confirmation",
+  "subject": "Freedom Flex: Confirmation",
+  "body": "<p>Hi {{first_name}},</p><p>Freedom Flex - Confirmation.</p>"
+ },
+ {
+  "name": "MyAccount - Password Reset",
+  "subject": "MyAccount: Password Reset",
+  "body": "<p>Hi {{first_name}},</p><p>MyAccount - Password Reset.</p>"
+ },
+ {
+  "name": "Winback Offer",
+  "subject": "Winback Offer",
+  "body": "<p>We miss you, {{first_name}}. Come back for a special rate.</p>"
+ },
+ {
+  "name": "Disconnect Notice",
+  "subject": "Disconnect Notice",
+  "body": "<p>Hi {{first_name}},</p><p>Disconnect Notice.</p>"
+ },
+ {
+  "name": "Custom Message",
+  "subject": "Custom Message",
+  "body": "<p>Hi {{first_name}},</p>"
+ },
+ {
+  "name": "Customer Survey",
+  "subject": "How are we doing?",
+  "body": "<p>Hi {{first_name}}, tell us how we're doing: {{survey:how-are-we-doing}}</p>"
+ },
+ {
+  "name": "Renewal Offer",
+  "subject": "Time to renew",
+  "body": "<p>Hi {{first_name}}, your {{plan}} contract ends soon. Renew in My Account to lock in a rate.</p>"
+ }
+]

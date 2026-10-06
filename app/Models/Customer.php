@@ -52,6 +52,11 @@ class Customer extends Authenticatable
         return $this->hasMany(Bill::class)->latest('billed_on');
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class)->latest()->latest('id');

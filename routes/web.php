@@ -5,6 +5,7 @@ use App\Http\Controllers\MyAccount;
 use App\Http\Controllers\SignupController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePageController;
+use App\Http\Controllers\SurveyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,6 +66,10 @@ Route::prefix('myaccount')->name('myaccount.')->group(function () {
 });
 
 // Website sign-up (the original /checkout flow)
+// Customer surveys (built in Rodeo → Surveys)
+Route::get('survey/{survey:slug}', [SurveyController::class, 'show'])->name('survey.show');
+Route::post('survey/{survey:slug}', [SurveyController::class, 'store'])->middleware('throttle:10,1')->name('survey.store');
+
 Route::prefix('checkout')->name('checkout')->group(function () {
     Route::get('/', [SignupController::class, 'start']);
     Route::post('address', [SignupController::class, 'address'])->name('.address');
@@ -221,6 +226,63 @@ Route::prefix('admin')->group(function () {
             Route::post('uploads', [Admin\Walker\UploadController::class, 'store'])->name('uploads.store');
             Route::get('uploads/{upload}', [Admin\Walker\UploadController::class, 'download'])->name('uploads.download');
             Route::delete('uploads/{upload}', [Admin\Walker\UploadController::class, 'destroy'])->name('uploads.destroy');
+        });
+
+        // Strongbox — finance
+        Route::prefix('strongbox')->name('strongbox.')->middleware('app:strongbox')->controller(Admin\Strongbox\FinanceController::class)->group(function () {
+            Route::get('/', 'dashboard')->name('dashboard');
+            Route::get('payments', 'payments')->name('payments');
+            Route::post('payments', 'recordPayment')->name('payments.record');
+            Route::post('payments/{payment}/reverse', 'reverse')->name('payments.reverse');
+            Route::get('credits-debits', 'ledger')->name('ledger');
+            Route::post('credits-debits/{entry}', 'decideLedger')->name('ledger.decide');
+            Route::get('refunds', 'refunds')->name('refunds');
+            Route::post('refunds', 'requestRefund')->name('refunds.request');
+            Route::post('refunds/{refund}', 'decideRefund')->name('refunds.decide');
+            Route::get('deposits', 'deposits')->name('deposits');
+            Route::get('aging', 'aging')->name('aging');
+            Route::get('journal', 'journal')->name('journal');
+        });
+
+        // Bounty — rewards
+        Route::prefix('bounty')->name('bounty.')->middleware('app:bounty')->controller(Admin\Bounty\RewardsController::class)->group(function () {
+            Route::get('/', 'dashboard')->name('dashboard');
+            Route::get('offers', 'offers')->name('offers');
+            Route::put('offers', 'saveOffers')->name('offers.save');
+            Route::get('rules', 'rules')->name('rules');
+            Route::put('rules', 'saveRules')->name('rules.save');
+            Route::post('award', 'award')->name('award');
+            Route::get('redemptions', 'redemptions')->name('redemptions');
+            Route::post('redemptions/{entry}', 'fulfil')->name('fulfil');
+            Route::get('members', 'members')->name('members');
+            Route::post('members/{customer}', 'adjust')->name('adjust');
+            Route::get('drawing', 'drawing')->name('drawing');
+            Route::post('drawing', 'draw')->name('draw');
+        });
+
+        // Rodeo — marketing
+        Route::prefix('rodeo')->name('rodeo.')->middleware('app:rodeo')->controller(Admin\Rodeo\MarketingController::class)->group(function () {
+            Route::get('/', 'dashboard')->name('dashboard');
+            Route::get('campaigns', 'campaigns')->name('campaigns');
+            Route::get('campaigns/new', 'campaignForm')->name('campaigns.create');
+            Route::post('campaigns', 'saveCampaign')->name('campaigns.store');
+            Route::get('campaigns/{campaign}', 'campaignForm')->name('campaigns.edit');
+            Route::put('campaigns/{campaign}', 'saveCampaign')->name('campaigns.update');
+            Route::post('campaigns/{campaign}/send', 'sendCampaign')->name('campaigns.send');
+            Route::get('templates', 'templates')->name('templates');
+            Route::get('templates/new', 'templateForm')->name('templates.create');
+            Route::post('templates', 'saveTemplate')->name('templates.store');
+            Route::get('templates/{template}', 'templateForm')->name('templates.edit');
+            Route::put('templates/{template}', 'saveTemplate')->name('templates.update');
+            Route::get('surveys', 'surveys')->name('surveys');
+            Route::get('surveys/new', 'surveyForm')->name('surveys.create');
+            Route::post('surveys', 'saveSurvey')->name('surveys.store');
+            Route::get('surveys/{survey}', 'surveyForm')->name('surveys.edit');
+            Route::put('surveys/{survey}', 'saveSurvey')->name('surveys.update');
+            Route::get('surveys/{survey}/results', 'surveyResults')->name('surveys.results');
+            Route::get('channels', 'channels')->name('channels');
+            Route::post('channels', 'saveChannel')->name('channels.save');
+            Route::post('promos', 'savePromo')->name('promos.save');
         });
 
         // Sheriff — users, roles, integrations, jobs, reference data

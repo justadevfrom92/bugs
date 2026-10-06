@@ -63,7 +63,7 @@ class AccountController extends Controller
                 'textarea' => ['required', 'string', 'max:2000'],
                 'method' => ['required', Rule::exists('payment_methods', 'id')->where('customer_id', $customer->id)->whereNull('removed_at')],
                 'payment' => ['required', Rule::exists('payments', 'id')->where('customer_id', $customer->id)],
-                'template' => ['required', Rule::in(config('corral.email_templates'))],
+                'template' => ['required', Rule::exists('email_templates', 'name')],
                 default => ['required', 'string', 'max:200'],
             };
         }
