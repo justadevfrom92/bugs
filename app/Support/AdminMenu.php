@@ -73,9 +73,14 @@ class AdminMenu
         // Highlight the exact item, or else the item from the same area (customers.show → customers.index)
         $hasExact = collect($sections)->flatten(1)->contains('exact', true);
         $area = Str::beforeLast($current, '.');
+        $area = config('admin.menu_parents', [])[$area] ?? $area; // pages whose list lives under another name
+        // (or rodeo.templates.edit → rodeo.templates); only the first match is highlighted
+        $found = false;
         foreach ($sections as &$items) {
             foreach ($items as &$it) {
-                $it['active'] = $hasExact ? $it['exact'] : Str::beforeLast($it['route'], '.') === $area && Str::endsWith($it['route'], '.index');
+                $it['active'] = ! $found && ($hasExact ? $it['exact']
+                    : (Str::beforeLast($it['route'], '.') === $area && Str::endsWith($it['route'], '.index')) || $it['route'] === $area);
+                $found = $found || $it['active'];
             }
         }
 

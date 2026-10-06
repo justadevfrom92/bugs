@@ -201,6 +201,11 @@ return [
         ],
     ],
 
+    // Detail pages whose menu item isn't named after them: route area => menu route (Walker run pages sit under Report Status)
+    'menu_parents' => [
+        'walker.runs' => 'walker.home',
+    ],
+
     // Extra permissions a role can hold besides app access
     'permissions' => [
         'delete' => 'Permanent deletes',

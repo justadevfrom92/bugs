@@ -79,6 +79,8 @@ h3 { font-size: .95rem; color: var(--navy); margin-bottom: 8px; }
 }
 .topbar .crumbs { color: var(--muted); font-size: .85rem; flex: 1; min-width: 0; }
 .topbar .crumbs b { color: var(--navy); }
+.topbar .crumbs a { color: var(--muted); }
+.topbar .crumbs a:hover { color: var(--navy); }
 .menu-btn { display: none; background: none; border: 0; cursor: pointer; color: var(--navy); width: 36px; height: 36px; }
 .menu-btn svg { width: 22px; height: 22px; }
 .user-chip { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--navy); }
@@ -154,6 +156,10 @@ table input.neg { color: var(--red); }
 .btn.sm { padding: 4px 10px; font-size: .78rem; }
 .btn:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* In a table the buttons stay inside a normal cell, so the row lines up */
+td.actions { display: table-cell; white-space: nowrap; }
+td.actions > * { display: inline-block; vertical-align: middle; margin: 2px 8px 2px 0; }
+td.actions > *:last-child { margin-right: 0; }
 
 /* ---------- Tabs ---------- */
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 18px; overflow-x: auto; }

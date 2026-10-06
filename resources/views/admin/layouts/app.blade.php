@@ -6,7 +6,8 @@
     $appKey = \App\Support\AdminMenu::currentApp();
     $app = \App\Support\AdminApps::get($appKey);
     $sections = \App\Support\AdminMenu::sections($appKey);
-    $activeLabel = collect($sections)->flatten(1)->firstWhere('active', true)['label'] ?? '';
+    $activeItem = collect($sections)->flatten(1)->firstWhere('active', true);
+    $activeLabel = $activeItem['label'] ?? '';
     $user = auth()->user();
 @endphp
 <!DOCTYPE html>
@@ -43,7 +44,7 @@
     <div class="main">
         <header class="topbar">
             <button class="menu-btn" id="menu-btn" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-            <div class="crumbs">{{ $app['name'] }} / <b>@yield('crumb', $activeLabel)</b></div>
+            <div class="crumbs">{{ $app['name'] }} /@if ($activeItem && ! $activeItem['exact'] && View::hasSection('crumb') && trim(View::getSection('crumb')) !== $activeLabel) <a href="{{ $activeItem['url'] }}">{{ $activeLabel }}</a> /@endif <b>@yield('crumb', $activeLabel)</b></div>
             <div class="user-chip"><span class="avatar">{{ $user->initials() }}</span><span><span>{{ $user->name }}</span><small>{{ $user->role?->name }}</small></span></div>
             <form method="post" action="{{ route('admin.logout') }}" class="inline">@csrf<button class="btn sm ghost">Logout</button></form>
         </header>
