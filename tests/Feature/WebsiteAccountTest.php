@@ -76,6 +76,8 @@ class WebsiteAccountTest extends TestCase
         $this->post('/myaccount/login', ['login' => 'demo.customer', 'password' => 'nope'])->assertSessionHasErrors('login');
         $this->post('/myaccount/login', ['login' => 'demo.customer', 'password' => 'password'])->assertRedirect('/myaccount/dashboard');
         $c = Customer::where('username', 'demo.customer')->firstOrFail();
+        // The website header shows Sign Out while a customer is signed in
+        $this->getJson('/site/session')->assertJsonPath('customer.name', $c->first_name);
 
         foreach (['dashboard', 'bill-and-payments/view-bills', 'bill-and-payments/pay-bill', 'bill-and-payments/payment-methods', 'energy-insights',
             'enroll/autopay', 'enroll/paperless-billing', 'enroll/peak-perks', 'enroll/giddy-up', 'profile-and-preferences', 'plan-and-services/current-plan',

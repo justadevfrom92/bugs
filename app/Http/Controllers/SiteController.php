@@ -36,6 +36,8 @@ class SiteController extends Controller
         return response()->json([
             'csrf' => csrf_token(),
             'user' => $user?->active ? ['name' => $user->name] : null,
+            // A customer signed in to My Account gets Sign Out in the website header
+            'customer' => ($c = auth('customer')->user()) ? ['name' => $c->first_name] : null,
         ])->header('Cache-Control', 'no-store');
     }
 

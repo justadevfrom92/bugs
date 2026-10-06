@@ -29,7 +29,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
             <span>Admin<small>{{ $app['name'] }}</small></span>
         </a>
-        <form method="post" action="{{ route('admin.logout') }}" class="side-out">@csrf<button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign Out</button></form>
         <nav class="menu" id="menu" aria-label="{{ $app['name'] }} menu">
             @foreach ($sections as $heading => $items)
                 @if (is_string($heading))<h4>{{ $heading }}</h4>@elseif (! $loop->first)<div class="menu-gap"></div>@endif
