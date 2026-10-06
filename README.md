@@ -12,7 +12,7 @@ composer setup          # install, create .env + app key, create the SQLite data
 php artisan serve       # http://localhost:8000
 ```
 
-Click **Admin** (top right of the website). It asks you to sign in, then opens the launcher in a new tab.
+Click **Admin** (bottom right of the website footer, or go to `/admin`). It asks you to sign in, then opens the launcher in a new tab.
 
 Demo users (all fictional; password is `ADMIN_DEMO_PASSWORD`, default `password`):
 

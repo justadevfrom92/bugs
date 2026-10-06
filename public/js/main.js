@@ -20,11 +20,6 @@
       return '<a href="' + ET.root + n[0] + '"' + (n[0] === here ? ' class="active"' : '') + '>' + n[1] + '</a>';
     }).join('');
     return (
-      '<div class="utility"><div class="wrap">' +
-      '<span>Proudly serving deregulated Texas &nbsp;·&nbsp; <a href="' + B.phoneHref + '">' + esc(B.phone) + '</a></span>' +
-      '<div class="utility-right"><nav class="utility-links"><a href="' + ET.root + 'myaccount/quickpay">Pay My Bill</a><a href="#">Report an Outage</a><a href="#">Español</a></nav>' +
-      '<button type="button" class="admin-btn" data-admin>Admin</button></div>' +
-      '</div></div>' +
       '<header class="site-header"><div class="wrap">' +
       '<a class="logo" href="' + ET.root + 'index.html" aria-label="' + esc(B.name) + ' home">' + LOGO + '</a>' +
       '<button class="menu-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>' +
@@ -41,6 +36,7 @@
       '<div class="footer-cols">' +
       '<div><a class="logo" href="' + ET.root + 'index.html">' + LOGO + '</a>' +
       '<p style="margin-top:18px">Texas-sized service, honest electricity plans and rewards just for keepin\' the lights on.</p>' +
+      '<p class="footer-phone">Call us: <a href="' + B.phoneHref + '">' + esc(B.phone) + '</a> &nbsp;·&nbsp; <a href="' + ET.root + 'myaccount/quickpay">Pay My Bill</a></p>' +
       '<div class="footer-social">' +
       '<a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8h3V4h-3c-2.8 0-4 1.8-4 4.3V10H7v4h3v8h4v-8h3l1-4h-4V8.6c0-.4.2-.6.6-.6z"/></svg></a>' +
       '<a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></a>' +
@@ -67,7 +63,7 @@
       '</ul></div>' +
       '</div>' +
       '<div class="footer-bottom"><span>&copy; ' + year + ' ' + esc(B.name) + '. All rights reserved. PUCT Cert. No. ' + esc(B.puct) + '</span>' +
-      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a></nav></div>' +
+      '<nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Your Rights as a Customer</a><a href="#">Accessibility</a><button type="button" class="admin-btn" data-admin>Admin</button></nav></div>' +
       '</div></footer>'
     );
   }
