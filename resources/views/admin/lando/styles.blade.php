@@ -72,12 +72,12 @@
                 @foreach ($admin as $c)
                     <div class="panel"><div class="panel-head"><h3 style="margin:0">{{ $c['title'] }}</h3></div><div class="panel-body">
                         <div>{!! $c['html'] !!}</div>
-                        @include('admin.sheriff._chips', ['names' => $c['vars']])
+                        @include('admin.lando._chips', ['names' => $c['vars']])
                     </div></div>
                 @endforeach
                 <div class="panel"><div class="panel-head"><h3 style="margin:0">Multi-select</h3></div><div class="panel-body">
                     @include('admin.partials.multiselect', ['id' => 'sg-multi', 'name' => 'sg[]', 'label' => 'Sample', 'options' => ['Submitted', 'Good - On Flow', 'Dropped - Churned'], 'selected' => ['Good - On Flow']])
-                    @include('admin.sheriff._chips', ['names' => \App\Support\StyleSheets::varsFor(['.multi'], 'admin-assets/admin.css')])
+                    @include('admin.lando._chips', ['names' => \App\Support\StyleSheets::varsFor(['.multi'], 'admin-assets/admin.css')])
                 </div></div>
             </div>
             <div class="panel-head"><h2>Website</h2><span class="muted">css/style.css · shown in frames so the website's own styles apply</span></div>
@@ -86,7 +86,7 @@
                     <div class="panel"><div class="panel-head"><h3 style="margin:0">{{ $c['title'] }}</h3></div><div class="panel-body">
                         <iframe class="sg-frame" title="{{ $c['title'] }} sample" data-site-sample="{{ $i }}"></iframe>
                         <script type="text/plain" id="sg-sample-{{ $i }}">{!! $c['html'] !!}</script>
-                        @include('admin.sheriff._chips', ['names' => $c['vars']])
+                        @include('admin.lando._chips', ['names' => $c['vars']])
                     </div></div>
                 @endforeach
             </div>

@@ -40,7 +40,7 @@ Other commands: `php artisan test` (feature tests), `php artisan migrate:fresh -
 ```
 public/                    the website (static pages) + admin-assets/ (admin CSS and JS)
   shared/boot.js           one <script> per page; loads brand.js, catalog.js and core.js
-  shared/css/tokens.css    brand, text and status colors and fonts for the website AND the admin (see Sheriff → Style Guide)
+  shared/css/tokens.css    brand, text and status colors and fonts for the website AND the admin (see Lando → Style Guide)
 config/brand.php           company name, phone, PUCT number, website nav  → /shared/config/brand.js
 config/admin.php           every admin app: name, icon, menu, queues, reference tables, jobs, integrations
 app/Services/Catalog.php   current rates/fees and the EFL average price  → /shared/config/catalog.js
@@ -64,13 +64,13 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 | App | What it does |
 | --- | --- |
 | **Corral** | Customer search (status/exception filters, bookmarks), account detail with billing, payments (reversal needs the *refunds* right), notes; ESIID lookup; phone orders (resi & biz) and renew/change plan; orders report (screen, summary, CSV); exception queues; website Contact Us messages |
-| **Lando** | Page tree and editor (delete needs the *delete* right), sitemap rebuild, templates, content blocks with live preview, plans (incl. website bullets and filters), plan groups, rate search with EFL average price, bulk rate editor with effective dates, TDSP fees, markets |
+| **Lando** | **Style Guide** (every color and style variable from the shared, admin and website stylesheets, where each is used, sample components, hard-coded colors, live color pickers that export the changed CSS); page tree and editor (delete needs the *delete* right), sitemap rebuild, templates, content blocks with live preview, plans (incl. website bullets and filters), plan groups, rate search with EFL average price, bulk rate editor with effective dates, TDSP fees, markets |
 | **Astro** | Term discounts by region, ETF by term, Build Your Own Plan products (price and whether the website shows them) |
 | **Walker** | Reporting: home lists report runs that are running, completed, or errored / did not finish; each run has its own page (model reference, filters, preview, download) with **Rerun** top right; report library; uploaded report files |
 | **Caboose** | Finance: dashboard, payments (record check/money order/cash/wire, reverse), pending credits & debits to apply, refunds (request → approve → paid; deciding needs the *refunds* right), deposits held and due, receivables aging, journal export (CSV/XLSX) |
 | **Bounty** | Rewards: reward offers, star earning rules (used by the `et:rewards-stars` job), redemptions to fulfil, member star balances and adjustments, monthly drawing |
 | **Rodeo** | Marketing: email/SMS campaigns with an audience builder, email templates with placeholders and **Send a Test** (to typed addresses, account numbers, your Corral bookmarks, an admin team, or a customer category; up to 25 people, subject marked [TEST]), customer surveys with results and NPS, MSIDs and promo codes |
-| **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables; **Style Guide**: every color and style variable from the shared, admin and website stylesheets with where each is used, sample components, hard-coded colors, and live color pickers that export the changed CSS |
+| **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables |
 
 ## Website sign-up, My Account and surveys
 - **Sign up** (`/checkout`): address → plan → about you → review → submit, with save-and-resume and a deposit step. Orders land in Corral like phone orders.

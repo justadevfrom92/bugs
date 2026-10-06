@@ -5,7 +5,7 @@ namespace App\Support;
 use Illuminate\Support\Collection;
 
 /**
- * Reads the site's stylesheets for Sheriff → Style Guide: every CSS variable
+ * Reads the site's stylesheets for Lando → Style Guide: every CSS variable
  * (where it's defined, its value, what uses it) and the colors still typed
  * straight into rules instead of coming from a variable.
  */

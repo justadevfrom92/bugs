@@ -7,7 +7,7 @@ use App\Support\StyleSheets;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** Sheriff → Style Guide: every CSS variable, where it's used, and the components built from them. */
+/** Lando → Style Guide: every CSS variable, where it's used, and the components built from them. */
 class StyleGuideTest extends TestCase
 {
     use RefreshDatabase;
@@ -24,11 +24,11 @@ class StyleGuideTest extends TestCase
         $this->assertContains('--cyan', StyleSheets::varsFor(['.btn'], 'admin-assets/admin.css'));
 
         $this->actingAs(User::where('email', 'admin@example.com')->firstOrFail());
-        $this->get(route('sheriff.styles'))->assertOk()
+        $this->get(route('lando.styles'))->assertOk()
             ->assertSee('Style Guide')->assertSee('--navy')->assertSee('data-var="--cyan"', false)
             ->assertSee('Hard-coded Colors')->assertSee('My Account menu')->assertSee('public/shared/css/tokens.css');
 
         $this->actingAs(User::where('email', 'csr@example.com')->firstOrFail());
-        $this->get(route('sheriff.styles'))->assertRedirect();
+        $this->get(route('lando.styles'))->assertRedirect();
     }
 }

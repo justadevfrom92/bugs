@@ -14,6 +14,7 @@
   <div class="wrap ma-grid">
     <nav class="ma-nav" aria-label="My Account">
       <div class="ma-who"><b>{{ $c->name }}</b><span>Account {{ $c->account }}</span></div>
+      <form method="post" action="{{ route('myaccount.logout') }}">@csrf<button class="ma-out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign Out</button></form>
       @foreach ($menu as $heading => $items)
         <h4>{{ $heading }}</h4>
         @foreach ($items as [$label, $route, $params])
@@ -21,7 +22,6 @@
           <a href="{{ $url }}" @class(['on' => $url === $here]) @if ($url === $here) aria-current="page" @endif>{{ $label }}</a>
         @endforeach
       @endforeach
-      <form method="post" action="{{ route('myaccount.logout') }}">@csrf<button class="ma-out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign Out</button></form>
     </nav>
     <div class="ma-main">
       <h2 class="ma-title">{{ $title }}</h2>
