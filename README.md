@@ -1,6 +1,6 @@
 # Energy Texas — Website & Admin Tools
 
-The public website (with sign-up and the My Account portal) plus the internal admin tools (Corral, Lando, Astro, Walker, Strongbox, Bounty, Rodeo, Sheriff), served by **Laravel 13** on PHP 8.3.
+The public website (with sign-up and the My Account portal) plus the internal admin tools (Corral, Lando, Astro, Walker, Caboose, Bounty, Rodeo, Sheriff), served by **Laravel 13** on PHP 8.3.
 No Node, no React and no build step: the admin is server-rendered Blade with plain CSS and a small plain-JavaScript file.
 
 ## Run it on Linux
@@ -22,7 +22,7 @@ Demo users (all fictional; password is `ADMIN_DEMO_PASSWORD`, default `password`
 | csr@example.com | Customer Service | Corral, Bounty |
 | pricing@example.com | Pricing | Lando, Astro |
 | marketing@example.com | Content Editor | Lando, Rodeo |
-| finance@example.com | Finance | Corral, Walker, Strongbox, Sheriff, refunds |
+| finance@example.com | Finance | Corral, Walker, Caboose, Sheriff, refunds |
 
 Website customer login (My Account, at `/myaccount`): username `demo.customer`, password `password` (fictional account 1219000000).
 
@@ -46,12 +46,12 @@ config/admin.php           every admin app: name, icon, menu, queues, reference 
 app/Services/Catalog.php   current rates/fees and the EFL average price  → /shared/config/catalog.js
 app/Http/Controllers/
   SiteController.php       website data, session/CSRF token, Contact Us form
-  Admin/{Corral,Lando,Astro,Walker,Strongbox,Bounty,Rodeo,Sheriff}/   one folder of controllers per app
+  Admin/{Corral,Lando,Astro,Walker,Caboose,Bounty,Rodeo,Sheriff}/   one folder of controllers per app
   SignupController.php, MyAccount/, SurveyController.php   website sign-up, customer portal, surveys
 app/Reports/               report definitions shared by Walker and Corral (config/walker.php lists them)
 resources/views/admin/
   layouts/app.blade.php    the one layout every app uses (sidebar, switcher, menu from config/admin.php)
-  {corral,lando,astro,walker,strongbox,bounty,rodeo,sheriff}/   each app's screens
+  {corral,lando,astro,walker,caboose,bounty,rodeo,sheriff}/   each app's screens
 app/Console/Commands/      scheduled jobs (et:*), each run logged for Sheriff → Crons
 database/migrations, seeders/data/*.json   schema and fictional sample data
 ```
@@ -67,7 +67,7 @@ database/migrations, seeders/data/*.json   schema and fictional sample data
 | **Lando** | Page tree and editor (delete needs the *delete* right), sitemap rebuild, templates, content blocks with live preview, plans (incl. website bullets and filters), plan groups, rate search with EFL average price, bulk rate editor with effective dates, TDSP fees, markets |
 | **Astro** | Term discounts by region, ETF by term, Build Your Own Plan products (price and whether the website shows them) |
 | **Walker** | Reporting: home lists report runs that are running, completed, or errored / did not finish; each run has its own page (model reference, filters, preview, download) with **Rerun** top right; report library; uploaded report files |
-| **Strongbox** | Finance: dashboard, payments (record check/money order/cash/wire, reverse), pending credits & debits to apply, refunds (request → approve → paid; deciding needs the *refunds* right), deposits held and due, receivables aging, journal export (CSV/XLSX) |
+| **Caboose** | Finance: dashboard, payments (record check/money order/cash/wire, reverse), pending credits & debits to apply, refunds (request → approve → paid; deciding needs the *refunds* right), deposits held and due, receivables aging, journal export (CSV/XLSX) |
 | **Bounty** | Rewards: reward offers, star earning rules (used by the `et:rewards-stars` job), redemptions to fulfil, member star balances and adjustments, monthly drawing |
 | **Rodeo** | Marketing: email/SMS campaigns with an audience builder, email templates with placeholders and **Send a Test** (to typed addresses, account numbers, your Corral bookmarks, an admin team, or a customer category; up to 25 people, subject marked [TEST]), customer surveys with results and NPS, MSIDs and promo codes |
 | **Sheriff** | Users (add, change role, disable), role permissions, API integration status, scheduled jobs with Run Now and history, reference data tables |

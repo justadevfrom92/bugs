@@ -7,7 +7,7 @@
         <tbody>@forelse ($pending as $e)
             <tr><td>{{ $e->created_at->format('n/j/Y') }}</td><td>{{ $e->customer?->account }}<br><span class="help">{{ $e->customer?->name }}</span></td><td>{{ ucfirst($e->kind) }}</td>
                 <td class="num">${{ number_format($e->amount, 2) }}</td><td>{{ $e->description }}</td><td>{{ $e->user?->name ?? 'System' }}</td>
-                <td class="actions">@foreach (['apply' => 'Apply', 'reject' => 'Reject'] as $do => $l)<form method="post" action="{{ route('strongbox.ledger.decide', $e) }}" class="inline">@csrf<input type="hidden" name="do" value="{{ $do }}"><button class="btn sm {{ $do === 'apply' ? '' : 'ghost' }}">{{ $l }}</button></form>@endforeach</td></tr>
+                <td class="actions">@foreach (['apply' => 'Apply', 'reject' => 'Reject'] as $do => $l)<form method="post" action="{{ route('caboose.ledger.decide', $e) }}" class="inline">@csrf<input type="hidden" name="do" value="{{ $do }}"><button class="btn sm {{ $do === 'apply' ? '' : 'ghost' }}">{{ $l }}</button></form>@endforeach</td></tr>
         @empty <tr><td colspan="7" class="empty">Nothing pending.</td></tr> @endforelse</tbody>
     </table></div></div>
     <div class="panel"><div class="panel-head"><h2>Recently Decided</h2></div><div class="table-wrap"><table>

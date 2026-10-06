@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Strongbox;
+namespace App\Http\Controllers\Admin\Caboose;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bill;
@@ -21,7 +21,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Strongbox: finance. Cash and payments, pending credits/debits, refunds,
+ * Caboose: finance. Cash and payments, pending credits/debits, refunds,
  * deposits, receivables aging and the daily journal for the accounting system.
  * Every change leaves a note on the account and a history entry.
  */
@@ -36,7 +36,7 @@ class FinanceController extends Controller
     {
         $paid = Payment::where('status', 'Success');
 
-        return view('admin.strongbox.dashboard', [
+        return view('admin.caboose.dashboard', [
             'today' => (clone $paid)->whereDate('paid_on', today())->sum('amount'),
             'month' => (clone $paid)->whereDate('paid_on', '>=', today()->startOfMonth())->sum('amount'),
             'pendingPayments' => Payment::where('status', 'Pending')->count(),
@@ -62,7 +62,7 @@ class FinanceController extends Controller
             ->when($f['status'], fn ($q, $s) => $q->where('status', $s))
             ->when($f['account'], fn ($q, $a) => $q->whereHas('customer', fn ($c) => $c->where('account', trim($a))));
 
-        return view('admin.strongbox.payments', ['f' => $f, 'payments' => (clone $q)->orderByDesc('paid_on')->orderByDesc('id')->paginate(50)->withQueryString(),
+        return view('admin.caboose.payments', ['f' => $f, 'payments' => (clone $q)->orderByDesc('paid_on')->orderByDesc('id')->paginate(50)->withQueryString(),
             'total' => (clone $q)->where('status', 'Success')->sum('amount')]);
     }
 
@@ -100,7 +100,7 @@ class FinanceController extends Controller
         DB::transaction(function () use ($request, $payment) {
             $payment->update(['status' => 'Reversed', 'reversed_at' => now(), 'reversed_by' => $request->user()->id]);
             $payment->customer->increment('balance', $payment->amount);
-            $this->note($request, $payment->customer, 'Payment '.$payment->reference.' for $'.number_format($payment->amount, 2).' reversed in Strongbox.', 'Payment Dispute');
+            $this->note($request, $payment->customer, 'Payment '.$payment->reference.' for $'.number_format($payment->amount, 2).' reversed in Caboose.', 'Payment Dispute');
         });
 
         return back()->with('status', 'Payment reversed');
@@ -110,7 +110,7 @@ class FinanceController extends Controller
 
     public function ledger(): View
     {
-        return view('admin.strongbox.ledger', [
+        return view('admin.caboose.ledger', [
             'pending' => LedgerEntry::with(['customer', 'user'])->where('status', 'pending')->oldest()->get(),
             'recent' => LedgerEntry::with(['customer', 'user'])->where('status', '!=', 'pending')->latest('updated_at')->limit(25)->get(),
         ]);
@@ -125,7 +125,7 @@ class FinanceController extends Controller
             if ($do === 'apply') {
                 $entry->kind === 'credit' ? $entry->customer->decrement('balance', $entry->amount) : $entry->customer->increment('balance', $entry->amount);
             }
-            $this->note($request, $entry->customer, ucfirst($entry->kind).' of $'.number_format($entry->amount, 2).' ('.$entry->description.') '.($do === 'apply' ? 'applied' : 'rejected').' in Strongbox.', 'Fees');
+            $this->note($request, $entry->customer, ucfirst($entry->kind).' of $'.number_format($entry->amount, 2).' ('.$entry->description.') '.($do === 'apply' ? 'applied' : 'rejected').' in Caboose.', 'Fees');
         });
 
         return back()->with('status', ucfirst($entry->kind).' '.($do === 'apply' ? 'applied to the balance' : 'rejected'));
@@ -135,7 +135,7 @@ class FinanceController extends Controller
 
     public function refunds(): View
     {
-        return view('admin.strongbox.refunds', [
+        return view('admin.caboose.refunds', [
             'open' => Refund::with(['customer', 'requester', 'decider'])->whereIn('status', ['requested', 'approved'])->oldest()->get(),
             'done' => Refund::with(['customer', 'requester', 'decider'])->whereIn('status', ['paid', 'rejected'])->latest('updated_at')->limit(25)->get(),
             'credits' => Customer::where('balance', '<', 0)->whereDoesntHave('refunds', fn ($q) => $q->whereIn('status', ['requested', 'approved']))->orderBy('balance')->limit(25)->get(),
@@ -186,7 +186,7 @@ class FinanceController extends Controller
 
     public function deposits(): View
     {
-        return view('admin.strongbox.deposits', [
+        return view('admin.caboose.deposits', [
             'due' => Customer::where('deposit_due', '>', 0)->orderByDesc('deposit_due')->get(),
             'held' => Customer::where('deposit_held', '>', 0)->orderByDesc('deposit_held')->get(),
         ]);
@@ -200,7 +200,7 @@ class FinanceController extends Controller
         $f = ['as_of' => $request->date('as_of')?->toDateString() ?? today()->toDateString(), 'min' => '0.01'];
         $accounts = $report->query($f);
 
-        return view('admin.strongbox.aging', ['f' => $f, 'accounts' => $accounts, 'summary' => $report->summary($accounts)[1], 'bucket' => fn ($d) => ReceivablesReport::bucket($d)]);
+        return view('admin.caboose.aging', ['f' => $f, 'accounts' => $accounts, 'summary' => $report->summary($accounts)[1], 'bucket' => fn ($d) => ReceivablesReport::bucket($d)]);
     }
 
     // ---------- Journal ----------
@@ -228,7 +228,7 @@ class FinanceController extends Controller
                 }, $name.'.csv', ['Content-Type' => 'text/csv']);
         }
 
-        return view('admin.strongbox.journal', ['start' => $start, 'end' => $end, 'lines' => $lines,
+        return view('admin.caboose.journal', ['start' => $start, 'end' => $end, 'lines' => $lines,
             'debits' => round($lines->sum('debit'), 2), 'credits' => round($lines->sum('credit'), 2),
             'quickbooks' => collect(config('admin.integrations.quickbooks.env'))->every(fn ($v) => filled($v))]);
     }

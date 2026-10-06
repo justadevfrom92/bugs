@@ -16,7 +16,7 @@
                     <td><input type="hidden" name="o[{{ $o->id }}][active]" value="0"><label class="check"><input type="checkbox" name="o[{{ $o->id }}][active]" value="1" @checked($o->active)> Active</label></td></tr>
             @endforeach</tbody>
         </table></div></div>
-        <p class="help">Value: the dollar amount for a bill credit, or the product name (e.g. ecobee) for a product. Bill credits go to Strongbox → Credits &amp; Debits to be applied.</p>
+        <p class="help">Value: the dollar amount for a bill credit, or the product name (e.g. ecobee) for a product. Bill credits go to Caboose → Credits &amp; Debits to be applied.</p>
     </form>
     <template id="offer-row"><tr>
         <td><input class="cell-input" name="o[__i__][name]" required aria-label="Offer name"></td><td><input class="cell-input" name="o[__i__][description]" required aria-label="Description"></td>

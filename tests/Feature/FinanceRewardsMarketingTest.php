@@ -19,7 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-/** Strongbox (finance), Bounty (rewards), Rodeo (marketing) and the public survey page. */
+/** Caboose (finance), Bounty (rewards), Rodeo (marketing) and the public survey page. */
 class FinanceRewardsMarketingTest extends TestCase
 {
     use RefreshDatabase;
@@ -34,7 +34,7 @@ class FinanceRewardsMarketingTest extends TestCase
     public function test_every_menu_page_opens_and_menus_stay_inside_their_app(): void
     {
         $this->actingAs($this->user());
-        foreach (['strongbox', 'bounty', 'rodeo'] as $app) {
+        foreach (['caboose', 'bounty', 'rodeo'] as $app) {
             foreach (config("admin.apps.$app.menu") as $links) {
                 foreach ($links as $link) {
                     $html = $this->get(route($link[1]))->assertOk()->getContent();
@@ -56,49 +56,49 @@ class FinanceRewardsMarketingTest extends TestCase
     public function test_apps_follow_role_permissions(): void
     {
         $this->actingAs($this->user('csr@example.com'));
-        $this->get('/admin/strongbox')->assertRedirect(route('admin.launcher', ['denied' => 'strongbox']));
+        $this->get('/admin/caboose')->assertRedirect(route('admin.launcher', ['denied' => 'caboose']));
         $this->get('/admin/rodeo')->assertRedirect(route('admin.launcher', ['denied' => 'rodeo']));
         $this->get('/admin/bounty')->assertOk();
 
         $this->actingAs($this->user('finance@example.com'));
-        $this->get('/admin/strongbox')->assertOk();
+        $this->get('/admin/caboose')->assertOk();
         $this->get('/admin/bounty')->assertRedirect(route('admin.launcher', ['denied' => 'bounty']));
 
         $this->actingAs($this->user('marketing@example.com'));
         $this->get('/admin/rodeo')->assertOk();
-        $this->get('/admin/strongbox')->assertRedirect(route('admin.launcher', ['denied' => 'strongbox']));
+        $this->get('/admin/caboose')->assertRedirect(route('admin.launcher', ['denied' => 'caboose']));
     }
 
-    public function test_strongbox_payments_ledger_refunds_and_journal(): void
+    public function test_caboose_payments_ledger_refunds_and_journal(): void
     {
         $this->actingAs($this->user());
         $c = Customer::where('status', 'Good - On Flow')->firstOrFail();
         $balance = (float) $c->balance;
 
-        $this->post(route('strongbox.payments.record'), ['account' => $c->account, 'amount' => 25, 'method' => 'Check', 'reference' => '1042', 'kind' => 'Balance Payment'])->assertRedirect();
+        $this->post(route('caboose.payments.record'), ['account' => $c->account, 'amount' => 25, 'method' => 'Check', 'reference' => '1042', 'kind' => 'Balance Payment'])->assertRedirect();
         $this->assertEqualsWithDelta($balance - 25, (float) $c->fresh()->balance, 0.001);
         $payment = Payment::where('customer_id', $c->id)->latest('id')->firstOrFail();
-        $this->post(route('strongbox.payments.reverse', $payment))->assertRedirect();
+        $this->post(route('caboose.payments.reverse', $payment))->assertRedirect();
         $this->assertEqualsWithDelta($balance, (float) $c->fresh()->balance, 0.001);
 
         $entry = LedgerEntry::create(['customer_id' => $c->id, 'kind' => 'credit', 'amount' => 10, 'description' => 'Goodwill', 'status' => 'pending']);
-        $this->post(route('strongbox.ledger.decide', $entry), ['do' => 'apply'])->assertRedirect();
+        $this->post(route('caboose.ledger.decide', $entry), ['do' => 'apply'])->assertRedirect();
         $this->assertSame('applied', $entry->fresh()->status);
         $this->assertEqualsWithDelta($balance - 10, (float) $c->fresh()->balance, 0.001);
 
         // Refund a credit balance: request → approve → paid
         $c->update(['balance' => -40]);
-        $this->post(route('strongbox.refunds.request'), ['account' => $c->account, 'kind' => 'balance', 'amount' => 50, 'reason' => 'Move out', 'method' => 'Check'])->assertSessionHasErrors();
-        $this->post(route('strongbox.refunds.request'), ['account' => $c->account, 'kind' => 'balance', 'amount' => 40, 'reason' => 'Move out', 'method' => 'Check'])->assertRedirect();
+        $this->post(route('caboose.refunds.request'), ['account' => $c->account, 'kind' => 'balance', 'amount' => 50, 'reason' => 'Move out', 'method' => 'Check'])->assertSessionHasErrors();
+        $this->post(route('caboose.refunds.request'), ['account' => $c->account, 'kind' => 'balance', 'amount' => 40, 'reason' => 'Move out', 'method' => 'Check'])->assertRedirect();
         $refund = Refund::where('customer_id', $c->id)->latest('id')->firstOrFail();
-        $this->post(route('strongbox.refunds.decide', $refund), ['do' => 'paid'])->assertStatus(422);
-        $this->post(route('strongbox.refunds.decide', $refund), ['do' => 'approve'])->assertRedirect();
-        $this->post(route('strongbox.refunds.decide', $refund), ['do' => 'paid'])->assertRedirect();
+        $this->post(route('caboose.refunds.decide', $refund), ['do' => 'paid'])->assertStatus(422);
+        $this->post(route('caboose.refunds.decide', $refund), ['do' => 'approve'])->assertRedirect();
+        $this->post(route('caboose.refunds.decide', $refund), ['do' => 'paid'])->assertRedirect();
         $this->assertSame('paid', $refund->fresh()->status);
         $this->assertEqualsWithDelta(0, (float) $c->fresh()->balance, 0.001);
 
-        $this->get(route('strongbox.journal', ['format' => 'csv', 'start' => today()->subYear()->toDateString()]))->assertOk()->assertHeader('content-type', 'text/csv; charset=utf-8');
-        $this->get(route('strongbox.journal', ['format' => 'xlsx']))->assertOk();
+        $this->get(route('caboose.journal', ['format' => 'csv', 'start' => today()->subYear()->toDateString()]))->assertOk()->assertHeader('content-type', 'text/csv; charset=utf-8');
+        $this->get(route('caboose.journal', ['format' => 'xlsx']))->assertOk();
     }
 
     public function test_refund_decisions_need_the_refunds_right(): void
@@ -108,7 +108,7 @@ class FinanceRewardsMarketingTest extends TestCase
         $role = $this->user('finance@example.com')->role;
         $role->update(['perms' => array_values(array_diff($role->perms, ['refunds']))]);
         $this->actingAs($this->user('finance@example.com')->fresh());
-        $this->post(route('strongbox.refunds.decide', $refund), ['do' => 'approve'])->assertForbidden();
+        $this->post(route('caboose.refunds.decide', $refund), ['do' => 'approve'])->assertForbidden();
     }
 
     public function test_bounty_rules_adjustments_and_fulfilment(): void

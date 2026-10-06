@@ -18,11 +18,11 @@
                     <tr><td>{{ $p->paid_on?->format('n/j/Y') }}</td><td>{{ $p->customer?->account }}<br><span class="help">{{ $p->customer?->name }}</span></td>
                         <td class="num">${{ number_format($p->amount, 2) }}</td><td>{{ $p->method }}</td><td>{{ $p->source }}</td><td>{{ $p->kind }}</td>
                         <td>@include('admin.partials.pill', ['text' => $p->status, 'tone' => ['Success' => 'ok', 'Pending' => 'info', 'Reversed' => 'warn'][$p->status] ?? 'bad'])</td>
-                        <td>@if ($p->status === 'Success')@can('refunds')<form method="post" action="{{ route('strongbox.payments.reverse', $p) }}" class="inline" data-confirm="Reverse this payment?|${{ number_format($p->amount, 2) }} goes back on account {{ $p->customer?->account }}.|Reverse">@csrf<button class="btn sm ghost">Reverse</button></form>@endcan @endif</td></tr>
+                        <td>@if ($p->status === 'Success')@can('refunds')<form method="post" action="{{ route('caboose.payments.reverse', $p) }}" class="inline" data-confirm="Reverse this payment?|${{ number_format($p->amount, 2) }} goes back on account {{ $p->customer?->account }}.|Reverse">@csrf<button class="btn sm ghost">Reverse</button></form>@endcan @endif</td></tr>
                 @empty <tr><td colspan="8" class="empty">No payments match.</td></tr> @endforelse</tbody>
             </table></div>@include('admin.partials.pager', ['p' => $payments])</div>
         </div>
-        <form method="post" action="{{ route('strongbox.payments.record') }}" class="panel">@csrf
+        <form method="post" action="{{ route('caboose.payments.record') }}" class="panel">@csrf
             <div class="panel-head"><h2>Record a Payment</h2></div>
             <div class="panel-body" style="display:flex;flex-direction:column;gap:12px">
                 <div class="field"><label for="r-account">Account #</label><input id="r-account" name="account" required value="{{ old('account') }}"></div>

@@ -9,7 +9,7 @@
    "sheriff",
    "delete",
    "refunds",
-   "strongbox",
+   "caboose",
    "bounty",
    "rodeo"
   ]
@@ -42,7 +42,7 @@
    "walker",
    "sheriff",
    "refunds",
-   "strongbox"
+   "caboose"
   ]
  }
 ]

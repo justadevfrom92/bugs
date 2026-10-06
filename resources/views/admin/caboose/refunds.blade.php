@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => 'Refunds', 'sub' => 'Refunds of credit balances and deposits. Anyone in Strongbox can request one; approving needs the refunds right.'])
+    @include('admin.partials.page-head', ['title' => 'Refunds', 'sub' => 'Refunds of credit balances and deposits. Anyone in Caboose can request one; approving needs the refunds right.'])
     <div class="grid-2" style="grid-template-columns:1fr 340px;align-items:start">
         <div>
             <div class="panel"><div class="panel-head"><h2>Open</h2></div><div class="table-wrap"><table>
@@ -12,9 +12,9 @@
                         <td>@include('admin.partials.pill', ['text' => ucfirst($r->status), 'tone' => $r->status === 'approved' ? 'ok' : 'info'])</td>
                         <td class="actions">@can('refunds')
                             @if ($r->status === 'requested')
-                                @foreach (['approve' => 'Approve', 'reject' => 'Reject'] as $do => $l)<form method="post" action="{{ route('strongbox.refunds.decide', $r) }}" class="inline">@csrf<input type="hidden" name="do" value="{{ $do }}"><button class="btn sm {{ $do === 'approve' ? '' : 'ghost' }}">{{ $l }}</button></form>@endforeach
+                                @foreach (['approve' => 'Approve', 'reject' => 'Reject'] as $do => $l)<form method="post" action="{{ route('caboose.refunds.decide', $r) }}" class="inline">@csrf<input type="hidden" name="do" value="{{ $do }}"><button class="btn sm {{ $do === 'approve' ? '' : 'ghost' }}">{{ $l }}</button></form>@endforeach
                             @else
-                                <form method="post" action="{{ route('strongbox.refunds.decide', $r) }}" class="inline" data-confirm="Mark refund paid?|Confirm the {{ strtolower($r->method) }} for ${{ number_format($r->amount, 2) }} was sent.|Mark Paid">@csrf<input type="hidden" name="do" value="paid"><button class="btn sm">Mark Paid</button></form>
+                                <form method="post" action="{{ route('caboose.refunds.decide', $r) }}" class="inline" data-confirm="Mark refund paid?|Confirm the {{ strtolower($r->method) }} for ${{ number_format($r->amount, 2) }} was sent.|Mark Paid">@csrf<input type="hidden" name="do" value="paid"><button class="btn sm">Mark Paid</button></form>
                             @endif
                         @else <span class="help">Needs refunds right</span> @endcan</td></tr>
                 @empty <tr><td colspan="8" class="empty">No open refunds.</td></tr> @endforelse</tbody>
@@ -28,7 +28,7 @@
                 @empty <tr><td class="empty">None yet.</td></tr> @endforelse</tbody>
             </table></div></div>
         </div>
-        <form method="post" action="{{ route('strongbox.refunds.request') }}" class="panel">@csrf
+        <form method="post" action="{{ route('caboose.refunds.request') }}" class="panel">@csrf
             <div class="panel-head"><h2>Request a Refund</h2></div>
             <div class="panel-body" style="display:flex;flex-direction:column;gap:12px">
                 <div class="field"><label for="f-account">Account #</label><input id="f-account" name="account" required value="{{ old('account') }}"></div>

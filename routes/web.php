@@ -228,8 +228,8 @@ Route::prefix('admin')->group(function () {
             Route::delete('uploads/{upload}', [Admin\Walker\UploadController::class, 'destroy'])->name('uploads.destroy');
         });
 
-        // Strongbox — finance
-        Route::prefix('strongbox')->name('strongbox.')->middleware('app:strongbox')->controller(Admin\Strongbox\FinanceController::class)->group(function () {
+        // Caboose — finance
+        Route::prefix('caboose')->name('caboose.')->middleware('app:caboose')->controller(Admin\Caboose\FinanceController::class)->group(function () {
             Route::get('/', 'dashboard')->name('dashboard');
             Route::get('payments', 'payments')->name('payments');
             Route::post('payments', 'recordPayment')->name('payments.record');

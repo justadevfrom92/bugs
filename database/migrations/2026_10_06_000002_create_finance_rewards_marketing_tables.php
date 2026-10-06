@@ -4,12 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Strongbox (finance), Bounty (rewards) and Rodeo (marketing). */
+/** Caboose (finance), Bounty (rewards) and Rodeo (marketing). */
 return new class extends Migration
 {
     public function up(): void
     {
-        // ---------- Strongbox ----------
+        // ---------- Caboose ----------
         Schema::create('refunds', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();

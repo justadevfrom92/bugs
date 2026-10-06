@@ -16,7 +16,7 @@ use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-/** Bounty offers and rules, Rodeo templates/channels/promo codes/survey/campaign, and sample Strongbox refunds. */
+/** Bounty offers and rules, Rodeo templates/channels/promo codes/survey/campaign, and sample Caboose refunds. */
 class MarketingRewardsSeeder extends Seeder
 {
     public function run(): void
@@ -65,7 +65,7 @@ class MarketingRewardsSeeder extends Seeder
         Campaign::create(['name' => 'Peak Perks Enrollment', 'channel' => 'Email', 'email_template_id' => EmailTemplate::where('name', 'like', '%Peak Perks%')->value('id'),
             'audience' => ['statuses' => ['Good - On Flow'], 'without_product' => 'Peak Perks'], 'created_by' => $admin?->id]);
 
-        // Strongbox: a refund waiting for approval for an account with a credit balance
+        // Caboose: a refund waiting for approval for an account with a credit balance
         $credit = Customer::where('balance', '<', 0)->first() ?? tap(Customer::where('status', 'Dropped - Churned')->first(), fn ($c) => $c?->update(['balance' => -42.18]));
         if ($credit) {
             Refund::create(['customer_id' => $credit->id, 'amount' => abs($credit->balance), 'reason' => 'Credit balance after final bill', 'method' => 'Check',

@@ -127,22 +127,22 @@ return [
                 ],
             ],
         ],
-        'strongbox' => [
-            'name' => 'Strongbox',
+        'caboose' => [
+            'name' => 'Caboose',
             'desc' => 'Finance: payments, credits and debits approval, refunds, deposits, receivables aging and the journal export.',
-            'icon' => 'safe',
-            'home' => 'strongbox.dashboard',
+            'icon' => 'train',
+            'home' => 'caboose.dashboard',
             'menu' => [
                 'Finance' => [
-                    ['Dashboard', 'strongbox.dashboard'],
-                    ['Payments', 'strongbox.payments'],
-                    ['Credits & Debits', 'strongbox.ledger', 'ledger_pending'],
-                    ['Refunds', 'strongbox.refunds', 'refunds_pending'],
-                    ['Deposits', 'strongbox.deposits'],
+                    ['Dashboard', 'caboose.dashboard'],
+                    ['Payments', 'caboose.payments'],
+                    ['Credits & Debits', 'caboose.ledger', 'ledger_pending'],
+                    ['Refunds', 'caboose.refunds', 'refunds_pending'],
+                    ['Deposits', 'caboose.deposits'],
                 ],
                 'Accounting' => [
-                    ['Receivables Aging', 'strongbox.aging'],
-                    ['Journal', 'strongbox.journal'],
+                    ['Receivables Aging', 'caboose.aging'],
+                    ['Journal', 'caboose.journal'],
                 ],
             ],
         ],
