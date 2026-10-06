@@ -182,6 +182,7 @@ class FinanceRewardsMarketingTest extends TestCase
         $this->actingAs($admin);
         $template = EmailTemplate::firstOrFail();
         $url = route('rodeo.templates.test', $template);
+        $before = (int) $template->testSends()->max('id'); // the seed data has a sample test already
         $this->get(route('rodeo.templates.edit', $template))->assertOk()->assertSee('Send a Test')->assertSee('An admin team')->assertSee('mail log');
 
         // Typed addresses, filled in from a sample account
@@ -205,7 +206,7 @@ class FinanceRewardsMarketingTest extends TestCase
         $this->post($url, ['mode' => 'category', 'status' => 'Good - On Flow', 'limit' => 3])->assertRedirect();
         $this->post($url, ['mode' => 'category', 'limit' => 500])->assertSessionHasErrors('limit');
 
-        $sends = $template->testSends()->get();
+        $sends = $template->testSends()->where('id', '>', $before)->orderBy('id')->get();
         $this->assertSame(['emails', 'accounts', 'bookmarks', 'team', 'category'], $sends->pluck('mode')->all());
         $this->assertSame('logged', $sends->first()->status); // MAIL_MAILER=log in tests: written to the log, not delivered
         $this->assertSame(3, count($sends->last()->recipients));
