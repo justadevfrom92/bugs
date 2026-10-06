@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\MyAccount;
+use App\Http\Controllers\SignupController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePageController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +21,68 @@ Route::get('/site/session', [SiteController::class, 'session']);
 Route::post('/contact', [SiteController::class, 'contact'])->middleware('throttle:10,1');
 Route::get('/site/components', [SitePageController::class, 'components']);
 
+// My Account: the customer portal (guard "customer", separate from admin sign-in)
+Route::prefix('myaccount')->name('myaccount.')->group(function () {
+    Route::get('quickpay', [MyAccount\PortalController::class, 'quickpay'])->middleware('throttle:30,1')->name('quickpay');
+    Route::middleware('guest:customer')->group(function () {
+        Route::get('login', [MyAccount\AuthController::class, 'show'])->name('login');
+        Route::post('login', [MyAccount\AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
+        Route::get('create-account', [MyAccount\AuthController::class, 'registerForm'])->name('register');
+        Route::post('create-account', [MyAccount\AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.store');
+        Route::get('forgot-{what}', [MyAccount\AuthController::class, 'forgotForm'])->whereIn('what', ['password', 'username'])->name('forgot');
+        Route::post('forgot-{what}', [MyAccount\AuthController::class, 'forgot'])->whereIn('what', ['password', 'username'])->middleware('throttle:5,1')->name('forgot.send');
+        Route::get('reset-password/{token}', [MyAccount\AuthController::class, 'resetForm'])->name('reset');
+        Route::post('reset-password', [MyAccount\AuthController::class, 'reset'])->middleware('throttle:10,1')->name('reset.store');
+    });
+    Route::middleware('auth:customer')->group(function () {
+        Route::get('/', fn () => redirect()->route('myaccount.dashboard'));
+        Route::post('logout', [MyAccount\AuthController::class, 'logout'])->name('logout');
+        Route::get('dashboard', [MyAccount\PortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('bill-and-payments/view-bills', [MyAccount\PortalController::class, 'bills'])->name('bills');
+        Route::get('bill-and-payments/pay-bill', [MyAccount\PortalController::class, 'payForm'])->name('pay');
+        Route::post('bill-and-payments/pay-bill', [MyAccount\PortalController::class, 'pay'])->middleware('throttle:10,1')->name('pay.store');
+        Route::get('bill-and-payments/payment-methods', [MyAccount\PortalController::class, 'methods'])->name('methods');
+        Route::delete('payment-methods/{method}', [MyAccount\PortalController::class, 'removeMethod'])->name('methods.remove');
+        Route::post('payment-methods/{method}/default', [MyAccount\PortalController::class, 'defaultMethod'])->name('methods.default');
+        Route::get('energy-insights', [MyAccount\PortalController::class, 'insights'])->name('insights');
+        Route::get('enroll/{product}', [MyAccount\PortalController::class, 'product'])->name('product');
+        Route::post('enroll/{product}', [MyAccount\PortalController::class, 'toggleProduct'])->name('product.toggle');
+        Route::get('profile-and-preferences', [MyAccount\PortalController::class, 'profile'])->name('profile');
+        Route::put('profile-and-preferences', [MyAccount\PortalController::class, 'updateProfile'])->name('profile.update');
+        Route::put('change-password', [MyAccount\PortalController::class, 'password'])->name('password');
+        Route::post('authorized-users', [MyAccount\PortalController::class, 'authorizedUser'])->name('authorized.store');
+        Route::delete('authorized-users/{index}', [MyAccount\PortalController::class, 'removeAuthorizedUser'])->whereNumber('index')->name('authorized.remove');
+        Route::post('link-accounts', [MyAccount\PortalController::class, 'linkAccount'])->name('link');
+        Route::get('plan-and-services/current-plan', [MyAccount\PortalController::class, 'plan'])->name('plan');
+        Route::post('plan-and-services/renew-plan', [MyAccount\PortalController::class, 'renew'])->name('renew');
+        Route::get('plan-and-services/transfer-service', [MyAccount\PortalController::class, 'transferForm'])->name('transfer');
+        Route::post('plan-and-services/transfer-service', [MyAccount\PortalController::class, 'transfer'])->name('transfer.store');
+        Route::get('rewards', [MyAccount\PortalController::class, 'rewards'])->name('rewards');
+        Route::post('rewards', [MyAccount\PortalController::class, 'redeem'])->name('rewards.redeem');
+        Route::get('refer-a-friend', [MyAccount\PortalController::class, 'refer'])->name('refer');
+        Route::get('message-center', [MyAccount\PortalController::class, 'messages'])->name('messages');
+    });
+});
+
+// Website sign-up (the original /checkout flow)
+Route::prefix('checkout')->name('checkout')->group(function () {
+    Route::get('/', [SignupController::class, 'start']);
+    Route::post('address', [SignupController::class, 'address'])->name('.address');
+    Route::get('plan', [SignupController::class, 'plans'])->name('.plan');
+    Route::post('plan', [SignupController::class, 'plan'])->name('.plan.store');
+    Route::get('about', [SignupController::class, 'aboutForm'])->name('.about');
+    Route::post('about', [SignupController::class, 'about'])->name('.about.store');
+    Route::get('review', [SignupController::class, 'review'])->name('.review');
+    Route::post('review', [SignupController::class, 'submit'])->middleware('throttle:10,1')->name('.submit');
+    Route::get('accepted', [SignupController::class, 'accepted'])->name('.accepted');
+    Route::post('save', [SignupController::class, 'save'])->middleware('throttle:10,1')->name('.save');
+    Route::get('saved', [SignupController::class, 'saved'])->name('.saved');
+    Route::get('resume/{token}', [SignupController::class, 'resume'])->name('.resume');
+    Route::get('deposit', [SignupController::class, 'deposit'])->middleware('throttle:30,1')->name('.deposit');
+    Route::post('cancel', [SignupController::class, 'cancel'])->middleware('throttle:10,1')->name('.cancel');
+    Route::get('{page}', [SignupController::class, 'page'])->whereIn('page', ['alternatives', 'frozen', 'start-call', 'cancel', 'error'])->name('.page');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Admin tools
@@ -27,12 +91,13 @@ Route::get('/site/components', [SitePageController::class, 'components']);
 | user's role includes that app (middleware 'app:<key>').
 */
 Route::prefix('admin')->group(function () {
-    Route::middleware('guest')->group(function () {
+    // Admin sign-in is the employee login (guard "web"); a My Account customer login never opens these pages
+    Route::middleware('guest:web')->group(function () {
         Route::get('login', [Admin\AuthController::class, 'show'])->name('admin.login');
         Route::post('login', [Admin\AuthController::class, 'login'])->middleware('throttle:10,1')->name('admin.login.attempt');
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware('auth:web')->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('admin.logout');
         Route::get('/', Admin\LauncherController::class)->name('admin.launcher');
 

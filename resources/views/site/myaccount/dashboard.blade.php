@@ -1,0 +1,37 @@
+@extends('site.layouts.main')
+@section('title', 'Dashboard')
+@section('crumb', 'My Account')
+@section('heading', 'My Account')
+@section('main')
+<x-site.myaccount :c="$c" title="Dashboard">
+  <div class="ma-cards">
+    <div class="ma-stat"><span>Current Balance</span><strong>${{ number_format($c->balance, 2) }}</strong><small>{{ $c->due_date ? 'Due '.$c->due_date->format('M j, Y') : 'Nothing due' }}</small>
+      <a class="btn btn-block" href="{{ route('myaccount.pay') }}">Pay Bill</a></div>
+    <div class="ma-stat"><span>Plan</span><strong class="sm">{{ $c->plan?->name ?? '—' }}</strong>
+      <small>@if ($term?->contract_end)Contract ends {{ $term->contract_end->format('M j, Y') }}@else{{ $c->status }}@endif</small>
+      <a class="btn btn-outline btn-block" href="{{ route('myaccount.plan') }}">Plan & Renewal</a></div>
+    <div class="ma-stat"><span>Rewards</span><strong>{{ number_format($c->stars) }} ★</strong><small>stars to spend</small>
+      <a class="btn btn-outline btn-block" href="{{ route('myaccount.rewards') }}">Redeem</a></div>
+  </div>
+  <div class="ma-row">
+    <div class="co-card"><h3>Last Bill</h3>
+      @if ($lastBill)<p>{{ $lastBill->billed_on->format('M j, Y') }} · {{ number_format($lastBill->kwh) }} kWh · <b>${{ number_format($lastBill->amount, 2) }}</b></p><a href="{{ route('myaccount.bills') }}">View all bills</a>
+      @else<p>Your first bill will show here.</p>@endif
+    </div>
+    <div class="co-card"><h3>Services</h3>
+      <ul class="ma-services">
+        @foreach (['AutoPay' => 'autopay', 'Paperless Billing' => 'paperless-billing', 'Peak Perks' => 'peak-perks'] as $label => $slug)
+          <li><a href="{{ route('myaccount.product', $slug) }}">{{ $label }}</a> <span @class(['pill-on' => $c->hasProduct($label), 'pill-off' => ! $c->hasProduct($label)])>{{ $c->hasProduct($label) ? 'On' : 'Off' }}</span></li>
+        @endforeach
+      </ul>
+    </div>
+  </div>
+  @if ($usage->count())
+    <div class="co-card" style="margin-top:20px"><h3>Usage (kWh)</h3>
+      @php $max = max(1, $usage->max('kwh')); @endphp
+      <div class="bars">@foreach ($usage as $b)<div class="bar"><span style="height:{{ round($b->kwh / $max * 100) }}%" title="{{ number_format($b->kwh) }} kWh"></span><small>{{ $b->billed_on->format('M') }}</small></div>@endforeach</div>
+      <a href="{{ route('myaccount.insights') }}">Energy insights</a>
+    </div>
+  @endif
+</x-site.myaccount>
+@endsection

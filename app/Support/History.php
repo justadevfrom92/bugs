@@ -58,7 +58,7 @@ class History
     public static function record(array $attributes): HistoryItem
     {
         return HistoryItem::create($attributes + [
-            'user_id' => auth()->id(),
+            'user_id' => auth('web')->id(),   // admin users only; customers' own changes are attributed in the summary/notes
             'ip' => app()->runningInConsole() ? null : request()->ip(),
             'created_at' => now(),
         ]);

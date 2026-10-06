@@ -22,14 +22,14 @@
     return (
       '<div class="utility"><div class="wrap">' +
       '<span>Proudly serving deregulated Texas &nbsp;·&nbsp; <a href="' + B.phoneHref + '">' + esc(B.phone) + '</a></span>' +
-      '<div class="utility-right"><nav class="utility-links"><a href="#">Pay My Bill</a><a href="#">Report an Outage</a><a href="#">Español</a></nav>' +
+      '<div class="utility-right"><nav class="utility-links"><a href="' + ET.root + 'myaccount/quickpay">Pay My Bill</a><a href="#">Report an Outage</a><a href="#">Español</a></nav>' +
       '<button type="button" class="admin-btn" data-admin>Admin</button></div>' +
       '</div></div>' +
       '<header class="site-header"><div class="wrap">' +
       '<a class="logo" href="' + ET.root + 'index.html" aria-label="' + esc(B.name) + ' home">' + LOGO + '</a>' +
       '<button class="menu-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>' +
       '<nav class="nav" id="main-nav">' + links +
-      '<a class="btn" href="#">My Account</a>' +
+      '<a class="btn" href="' + ET.root + 'myaccount">My Account</a>' +
       '</nav></div></header>'
     );
   }
@@ -150,7 +150,7 @@
       '<div class="plan-body"><ul class="checks">' +
       p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') +
       '</ul>' +
-      '<a class="btn btn-block" href="' + ET.root + 'contact-us.html?plan=' + encodeURIComponent(p.internal) + '">Sign Up</a>' +
+      '<a class="btn btn-block" href="' + ET.root + 'checkout?plan=' + encodeURIComponent(p.internal) + (ET.query().get('zip') ? '&zip=' + encodeURIComponent(ET.query().get('zip')) : '') + '">Sign Up</a>' +
       '<div class="plan-links"><a href="#">Electricity Facts Label</a><a href="#">Terms of Service</a><a href="#">YRAC</a></div>' +
       '</div></article>'
     );

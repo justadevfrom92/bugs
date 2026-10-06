@@ -36,7 +36,10 @@ class AuthController extends Controller
         History::record(['model' => 'AdminLogin_model', 'group' => 'Logins', 'record_id' => $request->user()->id,
             'action' => 'logged', 'summary' => 'Signed in to the admin', 'data' => ['user_agent' => substr((string) $request->userAgent(), 0, 250)]]);
 
-        return redirect()->intended(route('admin.launcher'));
+        // Only go back to an admin page (not a My Account page left over in the session)
+        $intended = (string) $request->session()->pull('url.intended');
+
+        return redirect(str_starts_with($intended, url('admin')) ? $intended : route('admin.launcher'));
     }
 
     public function logout(Request $request): RedirectResponse

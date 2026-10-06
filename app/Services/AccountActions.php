@@ -30,7 +30,13 @@ use Illuminate\Support\Str;
  */
 class AccountActions
 {
-    public function __construct(private Customer $c, private User $user) {}
+    /** $user is the admin doing it; null when the customer does it in My Account ($source 'MyAccount'). */
+    public function __construct(private Customer $c, private ?User $user, private string $source = 'Phone') {}
+
+    private function who(): string
+    {
+        return $this->user?->name ?? 'Customer ('.$this->source.')';
+    }
 
     /** @return array{0: string, 1: ?string} [message, redirect URL] */
     public function run(string $action, array $input): array
@@ -41,7 +47,7 @@ class AccountActions
 
         if ($action !== 'delete-order') {
             $label = $this->label($action);
-            $this->c->notes()->create(['user_id' => $this->user->id, 'author' => $this->user->name, 'disposition' => $label,
+            $this->c->notes()->create(['user_id' => $this->user?->id, 'author' => $this->who(), 'disposition' => $label,
                 'category' => 'Order', 'action' => $label, 'priority' => 'Low', 'body' => $label.': '.$message]);
         }
 
@@ -76,12 +82,12 @@ class AccountActions
         QueueLog::where('customer_id', $this->c->id)->whereNull('exited_at')
             ->where('queue', 'like', 'QueueCart%')->where('queue', 'not like', 'QueueCartException%')->where('queue', 'not like', 'QueueCartVip%')
             ->update(['exited_at' => now()]);
-        QueueLog::create(['customer_id' => $this->c->id, 'queue' => $queue, 'entered_at' => now(), 'note' => $note, 'user_id' => $this->user->id]);
+        QueueLog::create(['customer_id' => $this->c->id, 'queue' => $queue, 'entered_at' => now(), 'note' => $note, 'user_id' => $this->user?->id]);
     }
 
     private function enterQueue(string $queue, ?string $note = null): void
     {
-        QueueLog::create(['customer_id' => $this->c->id, 'queue' => $queue, 'entered_at' => now(), 'note' => $note, 'user_id' => $this->user->id]);
+        QueueLog::create(['customer_id' => $this->c->id, 'queue' => $queue, 'entered_at' => now(), 'note' => $note, 'user_id' => $this->user?->id]);
     }
 
     private function ercot(string $type, string $label, ?string $date = null, string $purpose = 'request', ?string $esiid = null): ErcotTransaction
@@ -93,7 +99,7 @@ class AccountActions
     private function addProduct(string $product, array $data = []): void
     {
         if (! $this->c->hasProduct($product)) {
-            CustomerProduct::create(['customer_id' => $this->c->id, 'product' => $product, 'data' => $data ?: null, 'user_id' => $this->user->id]);
+            CustomerProduct::create(['customer_id' => $this->c->id, 'product' => $product, 'data' => $data ?: null, 'user_id' => $this->user?->id]);
             if ($field = config('corral.product_fields.'.$product)) {
                 $this->c->update([$field => true]);
             }
@@ -105,7 +111,7 @@ class AccountActions
         $integration = $channel === 'SMS' ? 'sms' : 'salesforce';
         $ready = $this->configured($integration);
         ContactLog::create(['customer_id' => $this->c->id, 'channel' => $channel, 'template' => $template, 'body' => $body,
-            'phone' => $channel === 'SMS' ? $this->c->phone : null, 'status' => $ready ? 'queued' : 'not sent', 'sent_at' => null, 'user_id' => $this->user->id]);
+            'phone' => $channel === 'SMS' ? $this->c->phone : null, 'status' => $ready ? 'queued' : 'not sent', 'sent_at' => null, 'user_id' => $this->user?->id]);
 
         return $ready
             ? $channel.' "'.$template.'" queued for '.$this->integrationName($integration).'.'
@@ -134,7 +140,7 @@ class AccountActions
     {
         $row = ReferenceRow::where('table_key', 'max-deposits')->get()->first(fn ($r) => str_starts_with($this->c->type, $r->cells[0] ?? '-'));
         $amount = (float) preg_replace('/[^\d.]/', '', $row->cells[1] ?? '400');
-        LedgerEntry::create(['customer_id' => $this->c->id, 'kind' => 'debit', 'amount' => $amount, 'description' => 'Deposit', 'user_id' => $this->user->id]);
+        LedgerEntry::create(['customer_id' => $this->c->id, 'kind' => 'debit', 'amount' => $amount, 'description' => 'Deposit', 'user_id' => $this->user?->id]);
         $this->c->update(['status' => 'Pending - Deposit Due']);
         $this->moveToQueue('QueueCartFulfilledDeposit');
 
@@ -203,7 +209,7 @@ class AccountActions
             $this->ercot('814_08', 'Cancel');
         }
         $this->c->update(['status' => 'Cancelled']);
-        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'Order has been cancelled manually', 'user_id' => $this->user->id, 'author' => $this->user->name]);
+        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'Order has been cancelled manually', 'user_id' => $this->user?->id, 'author' => $this->who()]);
         $this->moveToQueue('QueueCartCancel', $in['reason']);
 
         return 'Order cancelled. Reason: '.$in['reason'];
@@ -274,7 +280,7 @@ class AccountActions
     {
         $ok = $this->configured('stripe');
         Payment::create(['customer_id' => $this->c->id, 'reference' => 'PAY-'.strtoupper(Str::random(8)), 'paid_on' => today(), 'paid_time' => now()->format('H:i:s'),
-            'amount' => $in['amount'], 'method' => 'Card', 'source' => 'Phone', 'kind' => 'Balance Payment', 'payment_method_id' => $in['method'],
+            'amount' => $in['amount'], 'method' => 'Card', 'source' => $this->source, 'kind' => 'Balance Payment', 'payment_method_id' => $in['method'],
             'status' => $ok ? 'Failed' : 'Pending']);
         ApiLog::create(['customer_id' => $this->c->id, 'api' => 'Stripe', 'action' => 'charges.create', 'status' => $ok ? 'not built' : 'skipped', 'created_at' => now()]);
 
@@ -285,7 +291,7 @@ class AccountActions
 
     public function addBillCredit(array $in): string
     {
-        LedgerEntry::create(['customer_id' => $this->c->id, 'kind' => 'credit', 'amount' => $in['amount'], 'description' => $in['description'], 'user_id' => $this->user->id]);
+        LedgerEntry::create(['customer_id' => $this->c->id, 'kind' => 'credit', 'amount' => $in['amount'], 'description' => $in['description'], 'user_id' => $this->user?->id]);
 
         return 'Pending bill credit of $'.number_format($in['amount'], 2).' added.';
     }
@@ -302,7 +308,7 @@ class AccountActions
     public function paymentArrangement(array $in): string
     {
         $this->addProduct('Payment Arrangement', ['installments' => (int) $in['installments'], 'first_due' => $in['date']]);
-        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'VIP - Payment Arrangement', 'user_id' => $this->user->id, 'author' => $this->user->name]);
+        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'VIP - Payment Arrangement', 'user_id' => $this->user?->id, 'author' => $this->who()]);
         $this->enterQueue('QueueCartVipPaymentarrangement');
 
         return 'Payment arrangement: '.$in['installments'].' installments starting '.$in['date'].'.';
@@ -311,7 +317,7 @@ class AccountActions
     public function deferredPaymentPlan(array $in): string
     {
         $this->addProduct('Deferred Payment Plan', ['installments' => (int) $in['installments'], 'first_due' => $in['date']]);
-        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'VIP - Deferred Payment Plan', 'user_id' => $this->user->id, 'author' => $this->user->name]);
+        CustomerFlag::create(['customer_id' => $this->c->id, 'flag' => 'VIP - Deferred Payment Plan', 'user_id' => $this->user?->id, 'author' => $this->who()]);
         $this->enterQueue('QueueCartVipDeferredpayment');
 
         return 'Deferred payment plan: '.$in['installments'].' installments starting '.$in['date'].'.';
@@ -322,7 +328,7 @@ class AccountActions
         $other = $this->findAccount($in['account']);
         $payment = Payment::where('customer_id', $this->c->id)->findOrFail($in['payment']);
         $payment->update(['customer_id' => $other->id]);
-        $other->notes()->create(['user_id' => $this->user->id, 'author' => $this->user->name, 'body' => 'Payment '.$payment->reference.' transferred in from account '.$this->c->account.'.']);
+        $other->notes()->create(['user_id' => $this->user?->id, 'author' => $this->who(), 'body' => 'Payment '.$payment->reference.' transferred in from account '.$this->c->account.'.']);
 
         return 'Payment '.$payment->reference.' moved to account '.$other->account.'.';
     }
@@ -332,8 +338,8 @@ class AccountActions
         $other = $this->findAccount($in['account']);
         $stars = (int) $in['stars'];
         abort_if($stars > $this->c->stars, 422, 'This account only has '.$this->c->stars.' stars.');
-        StarEntry::create(['customer_id' => $this->c->id, 'reason' => 'Transferred to '.$other->account, 'stars' => -$stars, 'user_id' => $this->user->id]);
-        StarEntry::create(['customer_id' => $other->id, 'reason' => 'Transferred from '.$this->c->account, 'stars' => $stars, 'user_id' => $this->user->id]);
+        StarEntry::create(['customer_id' => $this->c->id, 'reason' => 'Transferred to '.$other->account, 'stars' => -$stars, 'user_id' => $this->user?->id]);
+        StarEntry::create(['customer_id' => $other->id, 'reason' => 'Transferred from '.$this->c->account, 'stars' => $stars, 'user_id' => $this->user?->id]);
         $this->c->syncStars();
         $other->syncStars();
 

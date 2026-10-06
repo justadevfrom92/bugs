@@ -3,15 +3,18 @@
 namespace App\Models;
 
 use App\Models\Concerns\RecordsHistory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Customer extends Model
+/** A customer account. Customers sign in to My Account with this model (guard "customer"). */
+class Customer extends Authenticatable
 {
     use RecordsHistory;
 
     protected $guarded = ['id'];
+
+    protected $hidden = ['password', 'remember_token'];
 
     protected function casts(): array
     {
@@ -20,6 +23,7 @@ class Customer extends Model
             'balance' => 'float', 'stars' => 'integer', 'start_date' => 'date',
             'requested_start' => 'date', 'actual_start' => 'date', 'due_date' => 'date', 'marketing_opt_in' => 'boolean',
             'authorized_users' => 'array', 'linked_accounts' => 'array',
+            'password' => 'hashed', 'deposit_due' => 'float',
         ];
     }
 

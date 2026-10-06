@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Market;
 use App\Models\Plan;
 use App\Models\WorkItem;
+use App\Services\Enrollment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,25 +79,8 @@ class OrderController extends Controller
                 return $c;
             }
 
-            $next = (int) Customer::max('account') + 1373;
-            $c = Customer::create([
-                'account' => (string) $next,
-                'ticket' => now()->format('YmdHisv').random_int(100, 999),
-                'name' => ($data['biz'] ?? false) ? $data['business_name'] : $data['name'],
-                'type' => ($data['biz'] ?? false) ? 'Small Business' : 'Residential',
-                'phone' => $data['phone'], 'email' => $data['email'],
-                'address' => $data['address'], 'city' => $data['city'], 'zip' => $data['zip'],
-                'market_id' => $data['market_id'], 'esiid' => $data['esiid'] ?: null, 'plan_id' => $plan->id,
-                'status' => 'Submitted', 'exception' => empty($data['esiid']) ? 'No ESIID' : null,
-                'source' => $data['source'], 'enrollment_type' => $data['enrollment_type'],
-                'start_date' => $data['start_date'] ?? null,
-                'autopay' => $data['autopay'] ?? false, 'paperless' => $data['paperless'] ?? false, 'peak_perks' => $data['peak_perks'] ?? false,
-            ]);
-            $c->notes()->create(['user_id' => $user->id, 'author' => $user->name,
-                'body' => 'Order taken by '.$user->name.' via '.$data['source'].($data['biz'] ?? false ? ' (contact: '.$data['name'].')' : '').'.']);
-            WorkItem::create(['queue' => 'unprocessed-orders', 'customer_id' => $c->id, 'summary' => 'Send enrollment to the utility']);
-
-            return $c;
+            return Enrollment::create(($data['biz'] ?? false) ? ['name' => $data['business_name']] + $data : $data, $data['source'], $user,
+                'Order taken by '.$user->name.' via '.$data['source'].($data['biz'] ?? false ? ' (contact: '.$data['name'].')' : '').'.');
         });
 
         return redirect()->route('corral.customers.show', $customer)

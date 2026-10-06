@@ -9,7 +9,7 @@
       <tbody>@foreach ($grid['rows'] as $r)
         <tr><td><b>{{ $r['plan']->name }}</b></td><td>{{ $r['plan']->term === 1 ? 'Month-to-month' : $r['plan']->term.' months' }}</td>
           @foreach ([500, 1000, 2000] as $kwh)<td>{{ number_format($r['avg'][$kwh], 1) }}¢</td>@endforeach
-          <td><a class="btn" href="/contact-us.html?plan={{ urlencode($r['plan']->internal) }}">Sign Up</a></td></tr>
+          <td><a class="btn" href="/checkout?plan={{ urlencode($r['plan']->internal) }}">Sign Up</a></td></tr>
       @endforeach</tbody>
     </table></div>
   @else
@@ -21,7 +21,7 @@
           <div class="plan-rate"><strong>{{ number_format($r['price'], 1) }}¢</strong><span>per kWh</span></div>
           <p class="plan-rate-note">{{ $grid['formula'] }}</p>
         </div>
-        <div class="plan-body"><a class="btn btn-block" href="/contact-us.html?plan={{ urlencode($r['plan']->internal) }}">Sign Up</a></div>
+        <div class="plan-body"><a class="btn btn-block" href="/checkout?plan={{ urlencode($r['plan']->internal) }}">Sign Up</a></div>
       </div>
     @endforeach</div>
   @endif

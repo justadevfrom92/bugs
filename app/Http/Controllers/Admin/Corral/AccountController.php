@@ -15,9 +15,9 @@ use App\Models\PaymentMethod;
 use App\Models\PlanTerm;
 use App\Models\QueueLog;
 use App\Models\ServiceAddress;
-use App\Models\StarEntry;
 use App\Services\AccountActions;
-use App\Support\History;
+use App\Services\Products;
+use App\Services\Rewards;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -96,12 +96,8 @@ class AccountController extends Controller
     public function addProduct(Request $request, Customer $customer): RedirectResponse
     {
         $data = $request->validate(['product' => ['required', Rule::in(array_keys(config('corral.products')))]]);
-        if ($customer->hasProduct($data['product'])) {
+        if (! Products::add($customer, $data['product'], $request->user())) {
             return $this->back($customer, 'products', $data['product'].' is already on the account');
-        }
-        CustomerProduct::create(['customer_id' => $customer->id, 'product' => $data['product'], 'user_id' => $request->user()->id]);
-        if ($field = config('corral.product_fields.'.$data['product'])) {
-            $customer->update([$field => true]);
         }
 
         return $this->back($customer, 'products', $data['product'].' added');
@@ -109,10 +105,7 @@ class AccountController extends Controller
 
     public function removeProduct(CustomerProduct $product): RedirectResponse
     {
-        $product->update(['removed_at' => now()]);
-        if ($field = config('corral.product_fields.'.$product->product)) {
-            $product->customer->update([$field => false]);
-        }
+        Products::remove($product->customer, $product->product);
 
         return $this->back($product->customer, 'products', $product->product.' removed');
     }
@@ -178,36 +171,19 @@ class AccountController extends Controller
 
     public function stars(Customer $customer): View
     {
-        return view('admin.corral.account.stars', ['c' => $customer, 'offers' => config('corral.reward_offers')]);
+        return view('admin.corral.account.stars', ['c' => $customer, 'offers' => Rewards::offers()]);
     }
 
     public function redeem(Request $request, Customer $customer): RedirectResponse
     {
-        $offers = config('corral.reward_offers');
-        $data = $request->validate(['offer' => ['required', 'integer', 'min:0', 'max:'.(count($offers) - 1)]]);
-        [$cost, $name, , $effect] = $offers[$data['offer']];
-        if ($cost > $customer->stars) {
-            return back()->withErrors(['offer' => 'Not enough stars: '.$name.' needs '.$cost.', the account has '.$customer->stars.'.']);
+        $data = $request->validate(['offer' => ['required', 'integer', 'min:0']]);
+        try {
+            $message = Rewards::redeem($customer, (int) $data['offer'], $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['offer' => $e->getMessage()]);
         }
 
-        DB::transaction(function () use ($customer, $request, $cost, $name, $effect) {
-            if ($cost) {
-                StarEntry::create(['customer_id' => $customer->id, 'reason' => 'Redeemed: '.$name, 'stars' => -$cost, 'user_id' => $request->user()->id]);
-            }
-            if (str_starts_with($effect, 'credit:')) {
-                LedgerEntry::create(['customer_id' => $customer->id, 'kind' => 'credit', 'amount' => (float) substr($effect, 7), 'description' => $name, 'user_id' => $request->user()->id]);
-            } elseif ($effect === 'gift') {
-                ContactLog::create(['customer_id' => $customer->id, 'channel' => 'Email', 'template' => 'E-Gift Card: '.$name, 'status' => 'queued', 'user_id' => $request->user()->id]);
-            } elseif ($effect === 'drawing') {
-                History::record(['customer_id' => $customer->id, 'model' => 'ItemDrawingEntry_model', 'group' => 'Products', 'action' => 'created', 'summary' => 'Monthly drawing entry', 'data' => ['month' => now()->format('Y-m')]]);
-            } elseif (str_starts_with($effect, 'product:')) {
-                CustomerProduct::firstOrCreate(['customer_id' => $customer->id, 'product' => substr($effect, 8), 'removed_at' => null], ['user_id' => $request->user()->id]);
-            }
-            $customer->syncStars();
-            $customer->notes()->create(['user_id' => $request->user()->id, 'author' => $request->user()->name, 'category' => 'Rewards', 'action' => 'Redeem Stars', 'priority' => 'Low', 'body' => 'Redeemed '.$cost.' stars: '.$name.'.']);
-        });
-
-        return redirect()->route('corral.customers.stars', $customer)->with('status', 'Redeemed: '.$name);
+        return redirect()->route('corral.customers.stars', $customer)->with('status', $message);
     }
 
     public function recalculateStars(Customer $customer): RedirectResponse

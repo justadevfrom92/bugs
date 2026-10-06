@@ -43,6 +43,12 @@ class AccountSeeder extends Seeder
         foreach (Customer::with(['plan', 'market', 'payments', 'bills', 'notes'])->get() as $c) {
             $this->account($c, $csr, $rolloffs);
         }
+
+        // Every account gets a referral code; the first account has a sample My Account login
+        foreach (Customer::whereNull('referral_code')->get() as $c) {
+            $c->forceFill(['referral_code' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', (string) $c->first_name), 0, 4)).substr($c->account, -4)])->saveQuietly();
+        }
+        Customer::orderBy('id')->first()?->forceFill(['username' => 'demo.customer', 'password' => 'password'])->saveQuietly();
     }
 
     private function account(Customer $c, ?User $csr, $rolloffs): void

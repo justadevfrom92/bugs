@@ -13,8 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->redirectGuestsTo(fn () => route('admin.login'));
-        $middleware->redirectUsersTo(fn () => route('admin.launcher'));
+        // My Account (customers) and the admin (employees) each send people to their own sign-in page
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('myaccount*') ? route('myaccount.login') : route('admin.login'));
+        $middleware->redirectUsersTo(fn (Request $request) => $request->is('myaccount*') ? route('myaccount.dashboard') : route('admin.launcher'));
         $middleware->alias([
             'app' => EnsureAppAccess::class,
         ]);

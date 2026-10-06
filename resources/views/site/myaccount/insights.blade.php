@@ -1,0 +1,19 @@
+@extends('site.layouts.main')
+@section('title', 'Energy Insights')
+@section('crumb', 'My Account')
+@section('heading', 'My Account')
+@section('main')
+<x-site.myaccount :c="$c" title="Energy Insights">
+  <div class="ma-cards">
+    <div class="ma-stat"><span>Average Use</span><strong>{{ number_format($avg ?? 0) }}</strong><small>kWh per month</small></div>
+    <div class="ma-stat"><span>Highest Month</span><strong>{{ number_format($bills->max('kwh') ?? 0) }}</strong><small>kWh</small></div>
+    <div class="ma-stat"><span>Last Month</span><strong>{{ number_format($bills->last()?->kwh ?? 0) }}</strong><small>kWh</small></div>
+  </div>
+  <div class="co-card" style="margin-top:20px"><h3>Monthly Usage</h3>
+    <div class="bars">@foreach ($bills as $b)<div class="bar"><span style="height:{{ round($b->kwh / $max * 100) }}%" title="{{ number_format($b->kwh) }} kWh"></span><small>{{ $b->billed_on->format('M y') }}</small></div>@endforeach</div>
+    <table class="price-table" style="margin-top:20px"><thead><tr><th>Bill</th><th>kWh</th><th>Amount</th><th>¢/kWh</th></tr></thead><tbody>
+      @foreach ($bills->reverse() as $b)<tr><td>{{ $b->billed_on->format('M Y') }}</td><td>{{ number_format($b->kwh) }}</td><td>${{ number_format($b->amount, 2) }}</td><td>{{ $b->kwh ? number_format($b->amount / $b->kwh * 100, 1) : '—' }}</td></tr>@endforeach
+    </tbody></table>
+  </div>
+</x-site.myaccount>
+@endsection
