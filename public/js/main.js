@@ -379,21 +379,40 @@
       .catch(function () {});
   }
 
+  /* ---------- My Account Sign Out in the header ---------- */
+  // Shown while a customer is signed in. In test mode (ET.brand.signoutTest) it is always shown,
+  // and clicking it only hides it; clicking My Account shows it again. Nothing is signed out.
+  var HIDE = 'et-signout-hidden';
+  function signOutHidden(v) {
+    try {
+      if (v === undefined) return localStorage.getItem(HIDE) === '1';
+      if (v) localStorage.setItem(HIDE, '1'); else localStorage.removeItem(HIDE);
+    } catch (e) { return false; }
+  }
+  function signOutButton() {
+    loadSession().then(function (s) {
+      var nav = document.getElementById('main-nav'), test = !!B.signoutTest;
+      if (!nav || nav.querySelector('.nav-out') || !(s.customer || test)) return;
+      var out = document.createElement('form');
+      out.method = 'post'; out.action = ET.root + 'myaccount/logout'; out.className = 'nav-out';
+      out.innerHTML = '<input type="hidden" name="_token" value="' + esc(s.csrf) + '">' +
+        '<button type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign Out</button>';
+      nav.appendChild(out);
+      if (!test) return;
+      out.hidden = signOutHidden();
+      out.addEventListener('submit', function (e) { e.preventDefault(); signOutHidden(true); out.hidden = true; });
+      var account = nav.querySelector('a.btn[href$="myaccount"]');
+      if (account) account.addEventListener('click', function () { signOutHidden(false); out.hidden = false; });
+    });
+  }
+
   ET.ready(function () {
     var h = document.getElementById('site-header');
     var f = document.getElementById('site-footer');
     if (h) h.outerHTML = header();
     if (f) f.outerHTML = footer();
     fillBrand();
-    loadSession().then(function (s) {
-      var nav = document.getElementById('main-nav');
-      if (!s.customer || !nav || nav.querySelector('.nav-out')) return;
-      var out = document.createElement('form');
-      out.method = 'post'; out.action = ET.root + 'myaccount/logout'; out.className = 'nav-out';
-      out.innerHTML = '<input type="hidden" name="_token" value="' + esc(s.csrf) + '">' +
-        '<button type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign Out</button>';
-      nav.appendChild(out);
-    });
+    signOutButton();
 
     var toggle = document.querySelector('.menu-toggle');
     var nav = document.getElementById('main-nav');

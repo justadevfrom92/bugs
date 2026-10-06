@@ -15,6 +15,9 @@ return [
     'hours' => 'Mon – Fri, 8am – 6pm CT',
     'puct' => env('BRAND_PUCT', 'XXXXX'),                    // placeholder — PUCT certificate number
     'rewards' => 'Rangler Rewards',
+    // Testing: the header's My Account Sign Out only hides itself and My Account shows it again,
+    // instead of signing out. On everywhere but production unless MYACCOUNT_SIGNOUT_TEST says otherwise.
+    'signoutTest' => (bool) env('MYACCOUNT_SIGNOUT_TEST', env('APP_ENV', 'production') !== 'production'),
     'nav' => [
         ['index.html', 'Home'],
         ['plans.html', 'Plans'],

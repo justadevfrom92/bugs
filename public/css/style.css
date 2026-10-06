@@ -120,7 +120,7 @@ ul, ol { list-style: none; }
 .nav .btn::after { display: none; }
 .nav-account { display: inline-flex; align-items: center; gap: 6px; }
 /* Sign Out in the header, shown while a customer is signed in to My Account */
-.nav-out { margin: 0; }
+.nav-out { margin: 0; } .nav-out[hidden] { display: none !important; }
 .nav .nav-out button { display: inline-flex; align-items: center; gap: 8px; background: var(--navy); color: var(--white); border: 2px solid var(--navy); border-radius: var(--radius); padding: 10px 18px; font: 700 .85rem var(--font-display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
 .nav .nav-out button:hover, .nav .nav-out button:focus-visible { background: var(--white); color: var(--navy); }
 .nav .nav-out svg { width: 16px; height: 16px; }
@@ -545,6 +545,11 @@ fieldset.field { border: 0; padding: 0; }
 .ma-stat > span { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--grey); font-weight: 700; }
 .ma-stat strong { font: 900 2rem var(--font-display); color: var(--navy); } .ma-stat strong.sm { font-size: 1.2rem; } .ma-stat small { color: var(--grey); margin-bottom: 8px; }
 .ma-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+/* Buttons and links that end a card sit at its bottom, so a row of cards lines its buttons up */
+.ma-stat > .btn:last-child, .ma-stat > form:last-child { margin-top: auto; }
+.ma-row > .co-card { display: flex; flex-direction: column; }
+.ma-row > .co-card > a:last-child, .ma-row > .co-card > .btn:last-child, .ma-row > .co-card > form:last-child { margin-top: auto; align-self: flex-start; }
+.offer-card > .btn:last-child, .offer-card > button:last-child { margin-top: auto; }
 .ma-services { list-style: none; padding: 0; margin: 0; } .ma-services li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .pill-on, .pill-off { font-size: .75rem; font-weight: 700; padding: 2px 10px; border-radius: 10px; } .pill-on { background: var(--ok-bg); color: var(--ok); } .pill-off { background: var(--sky); color: var(--grey); }
 .ma-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
