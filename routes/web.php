@@ -298,6 +298,7 @@ Route::prefix('admin')->group(function () {
             Route::put('roles', [Admin\Sheriff\RoleController::class, 'update'])->name('roles.update');
             Route::get('integrations', [Admin\Sheriff\SystemController::class, 'integrations'])->name('integrations.index');
             Route::get('integrations/{integration}', [Admin\Sheriff\SystemController::class, 'integration'])->name('integrations.show');
+            Route::get('styles', [Admin\Sheriff\StyleController::class, 'index'])->name('styles');
             Route::get('sitemap', [Admin\Sheriff\SystemController::class, 'sitemap'])->name('sitemap');
             Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('sitemap.run');
             Route::get('fees', [Admin\Lando\FeeController::class, 'index'])->name('fees.index');

@@ -194,6 +194,7 @@ return [
                 'Config' => [
                     ['Crons', 'sheriff.jobs.index', 'failed_jobs'],
                     ['Update Sitemap', 'sheriff.sitemap'],
+                    ['Style Guide', 'sheriff.styles'],
                 ],
                 'APIs' => 'integrations',        // one page per integration below, plus the overview
                 'Data' => 'reference_tables',    // one page per table below, plus TDSP Fees
