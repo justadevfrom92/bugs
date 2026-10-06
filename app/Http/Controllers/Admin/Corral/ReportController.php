@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Admin\Corral;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use App\Models\Note;
-use App\Models\Phonecall;
+use App\Jobs\RunReport;
 use App\Models\ReportRun;
 use App\Models\User;
+use App\Reports\Report;
 use App\Support\Xlsx;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -15,174 +14,74 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/** Corral → Reports. Each report shows on screen or as a summary, downloads as CSV or XLS, or runs in the backend; runs are kept under Recent Results. */
+/**
+ * Corral → Reports (Orders, Notes, Phonecalls). Each shows on screen or as a
+ * summary, downloads as CSV or XLS, or runs in the backend. The queries are the
+ * report classes in app/Reports, which Walker uses too; every run is listed in Walker.
+ */
 class ReportController extends Controller
 {
-    /** The original's output choices. "backend" runs after the page returns and saves an .xlsx under Recent Results. */
+    /** The original's output choices. "backend" queues the run and saves an .xlsx under Recent Results. */
     private const OUTPUTS = ['screen', 'summary', 'csv', 'csv-summary', 'xls', 'xls-summary', 'backend'];
 
     public function orders(Request $request)
     {
-        $statuses = array_keys(config('admin.customer_statuses'));
-        $f = $request->validate([
-            'start' => ['nullable', 'date'],
-            'end' => ['nullable', 'date', 'after_or_equal:start'],
-            'statuses' => ['nullable', 'array'],
-            'statuses.*' => [Rule::in($statuses)],
-            'output' => ['nullable', Rule::in(self::OUTPUTS)],
-        ]);
-        $f += ['start' => now()->startOfYear()->toDateString(), 'end' => today()->toDateString(), 'statuses' => $statuses, 'output' => 'screen'];
-
-        $orders = null;
-        if ($request->has('run')) {
-            $fetch = fn () => Customer::with(['plan', 'market'])
-                ->whereDate('created_at', '>=', $f['start'])->whereDate('created_at', '<=', $f['end'])
-                ->whereIn('status', $f['statuses'])->orderBy('created_at')->get();
-            $detail = fn ($orders) => [['Account', 'Created', 'Status', 'Exception', 'Customer', 'Type', 'Phone', 'Email', 'Address', 'City', 'Zip', 'Market', 'ESIID', 'Plan', 'Source'],
-                $orders->map(fn ($c) => [$c->account, $c->created_at->toDateString(), $c->status, $c->exception, $c->name, $c->type, $c->phone, $c->email,
-                    $c->address, $c->city, $c->zip, $c->market?->name, $c->esiid, $c->plan?->internal, $c->source])];
-            $summary = fn ($orders) => [['Status', 'Orders'], $orders->countBy('status')->map(fn ($n, $s) => [$s, $n])->values()];
-            if ($response = $this->deliver($request, 'orders', $f, $fetch, $detail, $summary)) {
-                return $response;
-            }
-            $orders = $fetch();
-            $this->remember($request, 'orders', $f, $orders->count());
-        }
-
-        return view('admin.corral.report', ['f' => $f, 'statuses' => $statuses, 'orders' => $orders, 'recent' => $this->recent($request, 'orders')]);
+        return $this->report($request, 'orders', 'admin.corral.report', fn ($report) => ['statuses' => array_keys(config('admin.customer_statuses'))]);
     }
 
     public function notes(Request $request)
     {
-        $priorities = [...config('corral.priorities'), 'System'];
-        $f = $request->validate([
-            'user' => ['nullable', 'integer', 'exists:users,id'],
-            'start' => ['nullable', 'date'],
-            'end' => ['nullable', 'date', 'after_or_equal:start'],
-            'contains' => ['nullable', 'string', 'max:100'],
-            'priorities' => ['nullable', 'array'],
-            'priorities.*' => [Rule::in($priorities)],
-            'output' => ['nullable', Rule::in(self::OUTPUTS)],
-        ]);
-        $f += ['user' => null, 'start' => today()->subDays(30)->toDateString(), 'end' => today()->toDateString(), 'contains' => null, 'priorities' => $priorities, 'output' => 'screen'];
-
-        $notes = null;
-        if ($request->has('run')) {
-            $wanted = $f['priorities'];
-            $fetch = fn () => Note::with('customer')
-                ->whereDate('created_at', '>=', $f['start'])->whereDate('created_at', '<=', $f['end'])
-                ->when($f['user'], fn ($q, $id) => $q->where('user_id', $id))
-                ->when($f['contains'], fn ($q, $text) => $q->where('body', 'like', '%'.addcslashes($text, '%_\\').'%'))
-                ->where(function ($q) use ($wanted) {
-                    // "System" = notes written by the system rather than an agent
-                    $q->whereIn('priority', array_diff($wanted, ['System']));
-                    if (in_array('System', $wanted, true)) {
-                        $q->orWhereNull('user_id');
-                    }
-                })
-                ->latest()->get();
-            $detail = fn ($notes) => [['Date', 'Account', 'Customer', 'Author', 'Category', 'Action', 'Priority', 'Note'],
-                $notes->map(fn ($n) => [$n->created_at->format('Y-m-d H:i'), $n->customer?->account, $n->customer?->name, $n->author, $n->category, $n->action, $n->priority, $n->body])];
-            $summary = fn ($notes) => [['Author', 'Category', 'Notes'], $this->notesSummary($notes)->map(fn ($r) => array_values($r))];
-            if ($response = $this->deliver($request, 'notes', $f, $fetch, $detail, $summary)) {
-                return $response;
-            }
-            $notes = $fetch();
-            $this->remember($request, 'notes', $f, $notes->count());
-        }
-
-        return view('admin.corral.reports.notes', ['f' => $f, 'priorities' => $priorities, 'users' => User::orderBy('name')->get(['id', 'name']),
-            'notes' => $notes, 'summary' => $notes ? $this->notesSummary($notes) : null, 'recent' => $this->recent($request, 'notes')]);
+        return $this->report($request, 'notes', 'admin.corral.reports.notes', fn ($report) => [
+            'priorities' => [...config('corral.priorities'), 'System'], 'users' => User::orderBy('name')->get(['id', 'name'])]);
     }
 
     public function phonecalls(Request $request)
     {
-        $f = $request->validate([
-            'start' => ['nullable', 'date'],
-            'end' => ['nullable', 'date', 'after_or_equal:start'],
-            'account' => ['nullable', 'string', 'max:20'],
-            'agent' => ['nullable', 'string', 'max:20'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'output' => ['nullable', Rule::in(self::OUTPUTS)],
-        ]);
-        $f += ['start' => now()->startOfYear()->toDateString(), 'end' => today()->toDateString(), 'account' => null, 'agent' => null, 'phone' => null, 'output' => 'screen'];
+        return $this->report($request, 'phonecalls', 'admin.corral.reports.phonecalls', fn ($report) => []);
+    }
 
-        $calls = null;
+    private function report(Request $request, string $key, string $view, \Closure $extra)
+    {
+        $report = Report::make($key);
+        $f = $request->validate($report->rules() + ['output' => ['nullable', Rule::in(self::OUTPUTS)]]);
+        $f = array_merge($report->defaults(), array_filter($f, fn ($v) => $v !== null)) + ['output' => 'screen'];
+
+        $records = null;
+        $summary = null;
         if ($request->has('run')) {
-            $digits = preg_replace('/\D/', '', (string) $f['phone']);
-            $fetch = fn () => Phonecall::with(['customer', 'user'])
-                ->whereDate('started_at', '>=', $f['start'])->whereDate('started_at', '<=', $f['end'])
-                ->when($f['account'], fn ($q, $a) => $q->whereHas('customer', fn ($c) => $c->where('account', trim($a))))
-                ->when($f['agent'], fn ($q, $a) => $q->where('agent_id', trim($a)))
-                ->latest('started_at')->get()
-                // Phone numbers are stored formatted; compare digits only
-                ->when($digits, fn ($c) => $c->filter(fn ($call) => str_contains(preg_replace('/\D/', '', $call->phone), $digits))->values());
-            $detail = fn ($calls) => [['Started', 'Direction', 'Phone', 'Account', 'Customer', 'Agent Id', 'Agent', 'Seconds', 'Disposition'],
-                $calls->map(fn ($c) => [$c->started_at->format('Y-m-d H:i'), $c->direction, $c->phone, $c->customer?->account, $c->customer?->name, $c->agent_id, $c->user?->name, $c->duration_sec, $c->disposition])];
-            $summary = fn ($calls) => [['Agent Id', 'Calls', 'Inbound', 'Outbound', 'Minutes'], $this->callsSummary($calls)->map(fn ($r) => array_values($r))];
-            if ($response = $this->deliver($request, 'phonecalls', $f, $fetch, $detail, $summary)) {
+            if ($response = $this->deliver($request, $key, $report, $f)) {
                 return $response;
             }
-            $calls = $fetch();
-            $this->remember($request, 'phonecalls', $f, $calls->count());
+            $records = $report->query($f);
+            $summary = $report->summary($records);
+            $this->remember($request, $key, $f, $records->count());
         }
 
-        return view('admin.corral.reports.phonecalls', ['f' => $f, 'calls' => $calls, 'summary' => $calls ? $this->callsSummary($calls) : null,
-            'recent' => $this->recent($request, 'phonecalls')]);
+        return view($view, ['f' => $f, 'records' => $records, 'summary' => $summary, 'recent' => $this->recent($request, $key)] + $extra($report));
     }
 
-    private function notesSummary(Collection $notes): Collection
-    {
-        return $notes->groupBy(fn ($n) => ($n->author ?? 'System').'|'.($n->category ?? '—'))
-            ->map(fn ($g, $k) => ['author' => explode('|', $k)[0], 'category' => explode('|', $k)[1], 'notes' => $g->count()])
-            ->sortBy(['author', 'category'])->values();
-    }
-
-    private function callsSummary(Collection $calls): Collection
-    {
-        return $calls->groupBy(fn ($c) => $c->agent_id ?? '—')
-            ->map(fn ($g, $agent) => ['agent' => $agent, 'calls' => $g->count(), 'inbound' => $g->where('direction', 'inbound')->count(),
-                'outbound' => $g->where('direction', 'outbound')->count(), 'minutes' => (int) round($g->sum('duration_sec') / 60)])
-            ->sortKeys()->values();
-    }
-
-    /**
-     * File outputs: CSV or XLS (detail or summary) download now; Backend saves an .xlsx
-     * for later. Returns null for the on-screen outputs.
-     */
-    private function deliver(Request $request, string $report, array $f, \Closure $fetch, \Closure $detail, \Closure $summary)
+    /** File outputs download now; Backend is queued. Returns null for the on-screen outputs. */
+    private function deliver(Request $request, string $key, Report $report, array $f)
     {
         $output = $f['output'];
         if (in_array($output, ['screen', 'summary'], true)) {
             return null;
         }
-
         if ($output === 'backend') {
-            $run = $this->remember($request, $report, $f, 0, 'running');
-            // Runs after the response is sent, so a big report doesn't hold up the page
-            app()->terminating(function () use ($run, $fetch, $detail) {
-                try {
-                    $rows = $fetch();
-                    [$header, $data] = $detail($rows);
-                    $file = 'reports/'.$run->report.'-'.$run->id.'.xlsx';
-                    Storage::disk('local')->put($file, Xlsx::build($header, $data, ucfirst($run->report)));
-                    $run->update(['status' => 'done', 'file' => $file, 'rows' => $rows->count()]);
-                } catch (\Throwable $e) {
-                    report($e);
-                    $run->update(['status' => 'failed']);
-                }
-            });
+            $run = $this->remember($request, $key, $f, 0, 'queued');
+            RunReport::dispatch($run->id);
 
-            return back()->with('status', 'Report is running in the background. It will appear under Recent Results with a download link.');
+            return back()->with('status', 'Report queued. It appears under Recent Results (and in Walker) with a download link when it finishes.');
         }
 
-        $rows = $fetch();
-        $this->remember($request, $report, $f, $rows->count());
-        [$header, $data] = str_ends_with($output, 'summary') ? $summary($rows) : $detail($rows);
-        $name = $report.(str_ends_with($output, 'summary') ? '-summary' : '').'-'.$f['start'].'-to-'.$f['end'];
+        $records = $report->query($f);
+        $this->remember($request, $key, $f, $records->count());
+        $isSummary = str_ends_with($output, 'summary');
+        [$header, $data] = $isSummary ? $report->summary($records) : $report->detail($records);
+        $name = $key.($isSummary ? '-summary' : '').'-'.($f['start'] ?? today()->toDateString()).'-to-'.($f['end'] ?? today()->toDateString());
 
         return str_starts_with($output, 'xls')
-            ? response(Xlsx::build($header, $data, ucfirst($report)), 200, [
+            ? response(Xlsx::build($header, $data, ucfirst($key)), 200, [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'Content-Disposition' => 'attachment; filename="'.$name.'.xlsx"',
             ])
@@ -197,10 +96,13 @@ class ReportController extends Controller
         return Storage::disk('local')->download($run->file, basename($run->file));
     }
 
-    private function remember(Request $request, string $report, array $f, int $rows, string $status = 'done'): ReportRun
+    private function remember(Request $request, string $key, array $f, int $rows, string $status = 'done'): ReportRun
     {
-        return ReportRun::create(['user_id' => $request->user()->id, 'report' => $report, 'params' => array_filter($f, fn ($v) => $v !== null && $v !== []),
-            'rows' => $rows, 'status' => $status, 'created_at' => now()]);
+        $def = Report::definition($key);
+
+        return ReportRun::create(['user_id' => $request->user()->id, 'app' => 'corral', 'report' => $key, 'title' => $def['title'], 'model' => $def['model'],
+            'params' => array_filter($f, fn ($v) => $v !== null && $v !== []), 'rows' => $rows, 'status' => $status, 'created_at' => now(),
+            'started_at' => $status === 'done' ? now() : null, 'finished_at' => $status === 'done' ? now() : null]);
     }
 
     private function recent(Request $request, string $report): Collection

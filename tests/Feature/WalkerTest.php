@@ -1,0 +1,90 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ReportRun;
+use App\Models\ReportUpload;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+/** Walker: report status home page, run pages with Rerun, the report library and uploads. */
+class WalkerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected bool $seed = true;
+
+    private function admin(): User
+    {
+        return User::where('email', 'admin@example.com')->firstOrFail();
+    }
+
+    public function test_home_lists_runs_by_status(): void
+    {
+        $this->actingAs($this->admin());
+        $this->get('/admin/walker?status=running')->assertOk()->assertSee('Emails &amp; Texts', false)->assertDontSee('Accounts Receivable Aging');
+        $this->get('/admin/walker?status=done')->assertOk()->assertSee('Accounts Receivable Aging')->assertSee('Completed');
+        $this->get('/admin/walker?status=problem')->assertOk()->assertSee('Error')->assertSee('Did not finish')->assertSee('ERCOT Transactions');
+        $this->get('/admin/walker')->assertOk()->assertSee('Report Status');
+    }
+
+    public function test_run_page_shows_the_model_and_rerun_creates_a_new_run(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->admin());
+        $run = ReportRun::where('report', 'payments')->firstOrFail();
+        $this->get('/admin/walker/runs/'.$run->id)->assertOk()->assertSee('ItemPayment_model')->assertSee('Rerun')->assertSee('Model Reference')->assertSee('Paid On');
+
+        $this->post('/admin/walker/runs/'.$run->id.'/rerun')->assertRedirect();
+        $new = ReportRun::latest('id')->firstOrFail();
+        $this->assertSame([$run->id, 'payments', 'done'], [$new->rerun_of, $new->report, $new->status]); // the queue runs jobs right away in tests
+        $this->assertGreaterThan(0, $new->rows);
+        $this->get('/admin/walker/runs/'.$new->id.'/download')->assertOk();
+
+        $failed = ReportRun::where('status', 'failed')->firstOrFail();
+        $this->get('/admin/walker/runs/'.$failed->id)->assertOk()->assertSee('timed out');
+    }
+
+    public function test_every_report_in_the_library_runs(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->admin());
+        $this->get('/admin/walker/reports')->assertOk();
+        foreach (array_keys(config('walker.reports')) as $key) {
+            $this->get('/admin/walker/reports/'.$key)->assertOk();
+            $this->post('/admin/walker/reports/'.$key, ['start' => '2020-01-01'])->assertRedirect();
+            $run = ReportRun::where('report', $key)->latest('id')->firstOrFail();
+            $this->assertSame('done', $run->status, $key.': '.$run->error);
+        }
+        $this->post('/admin/walker/reports/orders', ['start' => '2026-02-01', 'end' => '2026-01-01'])->assertSessionHasErrors('end');
+        $this->get('/admin/walker/reports/not-a-report')->assertNotFound();
+    }
+
+    public function test_corral_backend_reports_show_in_walker(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->admin());
+        $this->from('/admin/corral/reports/notes')->get('/admin/corral/reports/notes?run=1&start=2020-01-01&output=backend')->assertRedirect();
+        $run = ReportRun::where('app', 'corral')->where('report', 'notes')->latest('id')->firstOrFail();
+        $this->assertSame('done', $run->status);
+        $this->get('/admin/walker?status=done')->assertSee(route('walker.runs.show', $run));
+    }
+
+    public function test_uploads_and_access(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->admin());
+        $this->post('/admin/walker/uploads', ['title' => 'Vendor file', 'category' => 'Operations', 'file' => UploadedFile::fake()->createWithContent('v.csv', "a,b\n1,2\n")])->assertRedirect();
+        $u = ReportUpload::where('title', 'Vendor file')->firstOrFail();
+        $this->get('/admin/walker/uploads/'.$u->id)->assertOk();
+        $this->post('/admin/walker/uploads', ['title' => 'Bad', 'category' => 'Operations', 'file' => UploadedFile::fake()->create('x.exe', 10)])->assertSessionHasErrors('file');
+        $this->delete('/admin/walker/uploads/'.$u->id)->assertRedirect();
+        $this->assertNull($u->fresh());
+
+        // Customer Service doesn't have Walker
+        $this->actingAs(User::where('email', 'csr@example.com')->firstOrFail())->get('/admin/walker')->assertRedirect();
+    }
+}

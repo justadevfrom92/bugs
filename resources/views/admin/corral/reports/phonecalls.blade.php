@@ -14,18 +14,15 @@
         </div>
     </div></form>
 
-    @if ($calls !== null)
+    @if ($records !== null)
         <div class="panel">
             @if ($f['output'] === 'summary')
-                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $calls->count() }} calls</span></div>
-                <div class="table-wrap"><table><thead><tr><th>Agent Id</th><th class="num">Calls</th><th class="num">Inbound</th><th class="num">Outbound</th><th class="num">Minutes</th></tr></thead><tbody>
-                    @forelse ($summary as $r)<tr><td class="mono">{{ $r['agent'] }}</td><td class="num">{{ $r['calls'] }}</td><td class="num">{{ $r['inbound'] }}</td><td class="num">{{ $r['outbound'] }}</td><td class="num">{{ number_format($r['minutes']) }}</td></tr>
-                    @empty <tr><td colspan="5" class="empty">No calls match.</td></tr> @endforelse
-                </tbody></table></div>
+                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $records->count() }} calls</span></div>
+                @include('admin.corral.reports._summary')
             @else
-                <div class="panel-head"><h2>Phonecalls</h2><span class="muted">{{ $calls->count() }} calls</span></div>
+                <div class="panel-head"><h2>Phonecalls</h2><span class="muted">{{ $records->count() }} calls</span></div>
                 <div class="table-wrap"><table><thead><tr><th>Started</th><th>Direction</th><th>Phone</th><th>Account</th><th>Agent</th><th class="num">Duration</th><th>Disposition</th></tr></thead><tbody>
-                    @forelse ($calls as $p)
+                    @forelse ($records as $p)
                         <tr><td>{{ $p->started_at->format('n/j/Y g:i A') }}</td><td>{{ ucfirst($p->direction) }}</td><td class="mono">{{ $p->phone }}</td>
                             <td>@if ($p->customer)<a href="{{ route('corral.customers.contact-log', $p->customer) }}">{{ $p->customer->account }}</a><br><span class="help">{{ $p->customer->name }}</span>@else — @endif</td>
                             <td><span class="mono">{{ $p->agent_id ?? '—' }}</span>@if ($p->user)<br><span class="help">{{ $p->user->name }}</span>@endif</td>

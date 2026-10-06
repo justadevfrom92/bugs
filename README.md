@@ -30,6 +30,7 @@ Other commands: `php artisan test` (feature tests), `php artisan migrate:fresh -
 - Point the web server's document root at `public/` (Apache or Nginx + PHP-FPM, the usual Laravel setup).
 - Use MySQL by setting `DB_CONNECTION=mysql` and the `DB_*` values in `.env`, then `php artisan migrate --force`.
 - Scheduled jobs need one cron entry: `* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1`
+- Background reports (Walker, and Corral's "Output - Backend") need a queue worker, e.g. a systemd service or Supervisor running `php artisan queue:work --tries=1`. Without it they stay "Queued" and show as "Did not finish" after an hour.
 - Set `APP_ENV=production`, `APP_DEBUG=false`, change or remove the demo users, and run `php artisan config:cache route:cache view:cache`.
 
 ## How it fits together

@@ -16,17 +16,14 @@
         </div>
     </div></form>
 
-    @if ($orders !== null)
+    @if ($records !== null)
         <div class="panel">
             @if ($f['output'] === 'summary')
-                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $orders->count() }} orders</span></div>
-                <div class="table-wrap"><table><thead><tr><th>Status</th><th class="num">Orders</th></tr></thead><tbody>
-                    @forelse ($orders->countBy('status') as $status => $n)<tr><td>{{ $status }}</td><td class="num">{{ $n }}</td></tr>
-                    @empty <tr><td colspan="2" class="empty">No orders in this range.</td></tr> @endforelse
-                </tbody></table></div>
+                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $records->count() }} orders</span></div>
+                @include('admin.corral.reports._summary')
             @else
-                <div class="panel-head"><h2>Orders</h2><span class="muted">{{ $orders->count() }} orders</span></div>
-                @include('admin.corral.customers._rows', ['customers' => $orders, 'empty' => 'No orders in this range.'])
+                <div class="panel-head"><h2>Orders</h2><span class="muted">{{ $records->count() }} orders</span></div>
+                @include('admin.corral.customers._rows', ['customers' => $records, 'empty' => 'No orders in this range.'])
             @endif
         </div>
     @endif

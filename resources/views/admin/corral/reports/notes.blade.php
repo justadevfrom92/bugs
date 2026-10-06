@@ -19,18 +19,15 @@
         </div>
     </div></form>
 
-    @if ($notes !== null)
+    @if ($records !== null)
         <div class="panel">
             @if ($f['output'] === 'summary')
-                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $notes->count() }} notes</span></div>
-                <div class="table-wrap"><table><thead><tr><th>Author</th><th>Category</th><th class="num">Notes</th></tr></thead><tbody>
-                    @forelse ($summary as $r)<tr><td>{{ $r['author'] }}</td><td>{{ $r['category'] }}</td><td class="num">{{ $r['notes'] }}</td></tr>
-                    @empty <tr><td colspan="3" class="empty">No notes match.</td></tr> @endforelse
-                </tbody></table></div>
+                <div class="panel-head"><h2>Summary</h2><span class="muted">{{ $records->count() }} notes</span></div>
+                @include('admin.corral.reports._summary')
             @else
-                <div class="panel-head"><h2>Notes</h2><span class="muted">{{ $notes->count() }} notes</span></div>
+                <div class="panel-head"><h2>Notes</h2><span class="muted">{{ $records->count() }} notes</span></div>
                 <div class="table-wrap"><table><thead><tr><th>Date</th><th>Account</th><th>Author</th><th>Category / Action</th><th>Priority</th><th>Note</th></tr></thead><tbody>
-                    @forelse ($notes as $n)
+                    @forelse ($records as $n)
                         <tr><td>{{ $n->created_at->format('n/j/Y g:i A') }}</td>
                             <td>@if ($n->customer)<a href="{{ route('corral.customers.show', $n->customer) }}#notes">{{ $n->customer->account }}</a><br><span class="help">{{ $n->customer->name }}</span>@endif</td>
                             <td>{{ $n->author ?? 'System' }}</td><td>{{ $n->category ?? '—' }}@if ($n->action)<br><span class="help">{{ $n->action }}</span>@endif</td>

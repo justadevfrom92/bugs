@@ -112,6 +112,21 @@ return [
                 ],
             ],
         ],
+        'walker' => [
+            'name' => 'Walker',
+            'desc' => 'Reporting: report runs and their status, the report library, and uploaded reports.',
+            'icon' => 'file',
+            'home' => 'walker.home',
+            'menu' => [
+                'Reports' => [
+                    ['Report Status', 'walker.home', 'report_problems'],
+                    ['Run a Report', 'walker.reports.index'],
+                ],
+                'Files' => [
+                    ['Uploaded Reports', 'walker.uploads.index'],
+                ],
+            ],
+        ],
         'sheriff' => [
             'name' => 'Sheriff',
             'desc' => 'Settings: users, roles, API integrations, scheduled jobs and reference data.',

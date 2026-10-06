@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             AccountSeeder::class,
             HistorySeeder::class,
             SystemSeeder::class,
+            WalkerSeeder::class,
         ]);
     }
 

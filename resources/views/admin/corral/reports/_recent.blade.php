@@ -4,11 +4,10 @@
     <tbody>@forelse ($recent as $r)
         <tr @class(['saved-report' => $r->file])><td>{{ $r->created_at->format('n/j/Y @ g:i A') }}</td><td>{{ \Illuminate\Support\Str::headline($r->report) }}</td>
             <td class="help">@foreach ($r->params as $k => $v){{ \Illuminate\Support\Str::headline($k) }}: {{ is_array($v) ? implode(', ', $v) : $v }}@if (! $loop->last) · @endif @endforeach</td>
-            <td class="num">{{ $r->status === 'running' ? '…' : number_format($r->rows) }}</td>
+            <td class="num">{{ in_array($r->status, ['queued', 'running']) ? '…' : number_format($r->rows) }}</td>
             <td class="actions">
                 @if ($r->file)<a class="btn sm" href="{{ route('corral.reports.download', $r) }}">Download .xlsx</a>
-                @elseif ($r->status === 'running')@include('admin.partials.pill', ['text' => 'Running', 'tone' => 'info'])
-                @elseif ($r->status === 'failed')@include('admin.partials.pill', ['text' => 'Failed', 'tone' => 'bad'])@endif
+                @elseif ($r->state() !== 'done')@include('admin.partials.pill', ['text' => \App\Models\ReportRun::stateLabel($r->state())[0], 'tone' => \App\Models\ReportRun::stateLabel($r->state())[1]])@endif
                 <a class="btn sm ghost" href="{{ route($route, array_merge($r->params, ['run' => 1, 'output' => in_array($r->params['output'] ?? '', ['screen', 'summary']) ? $r->params['output'] : 'screen'])) }}">Run again</a></td></tr>
     @empty <tr><td colspan="5" class="empty">No reports run yet.</td></tr> @endforelse</tbody>
 </table></div></div>

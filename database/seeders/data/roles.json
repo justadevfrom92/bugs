@@ -5,6 +5,7 @@
    "corral",
    "lando",
    "astro",
+   "walker",
    "sheriff",
    "delete",
    "refunds"
@@ -33,6 +34,7 @@
   "name": "Finance",
   "perms": [
    "corral",
+   "walker",
    "sheriff",
    "refunds"
   ]

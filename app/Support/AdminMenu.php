@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\ContactLog;
 use App\Models\ContactMessage;
 use App\Models\JobRun;
+use App\Models\ReportRun;
 use App\Models\WorkItem;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -86,6 +87,7 @@ class AdminMenu
             $key === 'sms' => self::unansweredTexts(),
             $key === 'messages' => ContactMessage::open()->count(),
             $key === 'failed_jobs' => self::failedJobs(),
+            $key === 'report_problems' => ReportRun::inState('problem')->count(),
             default => 0,
         };
 

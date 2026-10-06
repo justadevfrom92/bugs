@@ -208,6 +208,21 @@ Route::prefix('admin')->group(function () {
             Route::post('uploads/byop', [Admin\Astro\PricingController::class, 'byopImport'])->name('byop.import');
         });
 
+        // Walker — reporting: report runs by status, report library, uploaded reports
+        Route::prefix('walker')->name('walker.')->middleware('app:walker')->group(function () {
+            Route::get('/', [Admin\Walker\ReportController::class, 'home'])->name('home');
+            Route::get('runs/{run}', [Admin\Walker\ReportController::class, 'show'])->name('runs.show');
+            Route::post('runs/{run}/rerun', [Admin\Walker\ReportController::class, 'rerun'])->name('runs.rerun');
+            Route::get('runs/{run}/download', [Admin\Walker\ReportController::class, 'download'])->name('runs.download');
+            Route::get('reports', [Admin\Walker\ReportController::class, 'index'])->name('reports.index');
+            Route::get('reports/{key}', [Admin\Walker\ReportController::class, 'report'])->name('reports.show');
+            Route::post('reports/{key}', [Admin\Walker\ReportController::class, 'run'])->name('reports.run');
+            Route::get('uploads', [Admin\Walker\UploadController::class, 'index'])->name('uploads.index');
+            Route::post('uploads', [Admin\Walker\UploadController::class, 'store'])->name('uploads.store');
+            Route::get('uploads/{upload}', [Admin\Walker\UploadController::class, 'download'])->name('uploads.download');
+            Route::delete('uploads/{upload}', [Admin\Walker\UploadController::class, 'destroy'])->name('uploads.destroy');
+        });
+
         // Sheriff — users, roles, integrations, jobs, reference data
         Route::prefix('sheriff')->name('sheriff.')->middleware('app:sheriff')->group(function () {
             Route::get('/', fn () => redirect()->route('sheriff.users.index'));

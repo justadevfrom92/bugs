@@ -5,3 +5,4 @@
 <link rel="icon" href="/shared/img/logo-mark.svg">
 <link rel="stylesheet" href="/admin-assets/admin.css">
 <script src="/admin-assets/admin.js" defer></script>
+@yield('head')
