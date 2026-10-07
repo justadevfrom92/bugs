@@ -12,7 +12,6 @@ use App\Models\PromoCode;
 use App\Models\Refund;
 use App\Models\RewardOffer;
 use App\Models\RewardRule;
-use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -41,16 +40,7 @@ class MarketingRewardsSeeder extends Seeder
         PromoCode::create(['code' => 'FALL25', 'description' => '$25 bill credit for fall sign-ups', 'credit' => 25, 'starts_on' => today()->subDays(20), 'ends_on' => today()->addDays(40)]);
         PromoCode::create(['code' => 'WELCOME', 'description' => 'Website welcome offer', 'credit' => 10]);
 
-        $survey = Survey::create(['title' => 'How are we doing?', 'slug' => 'how-are-we-doing', 'intro' => 'Two minutes to help us serve you better.']);
-        $survey->questions()->createMany([
-            ['question' => 'How likely are you to recommend us to a friend?', 'type' => 'rating', 'options' => ['min' => 0, 'max' => 10], 'position' => 0],
-            ['question' => 'How did you hear about us?', 'type' => 'choice', 'options' => ['Search engine', 'Friend or family', 'Ad', 'Power to Choose', 'Other'], 'position' => 1],
-            ['question' => 'Anything we could do better?', 'type' => 'text', 'options' => null, 'position' => 2],
-        ]);
-        foreach (Customer::where('status', 'Good - On Flow')->limit(9)->get() as $i => $c) {
-            $survey->responses()->create(['customer_id' => $c->id, 'created_at' => now()->subDays($i + 1),
-                'answers' => [(string) [10, 9, 9, 8, 10, 7, 6, 9, 10][$i], ['Search engine', 'Friend or family', 'Ad', 'Power to Choose', 'Search engine'][$i % 5], [0 => 'Faster answers on the phone.', 3 => 'Text me when my bill is ready.', 6 => 'Happy so far, the app is easy.'][$i] ?? '']]);
-        }
+        $this->call(SurveySeeder::class);
 
         $admin = User::where('email', 'admin@example.com')->first();
         $tpl = EmailTemplate::where('name', 'Renewal Offer')->first();

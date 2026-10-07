@@ -10,13 +10,10 @@ use App\Models\EmailTemplate;
 use App\Models\Market;
 use App\Models\MarketingChannel;
 use App\Models\PromoCode;
-use App\Models\Role;
-use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -114,18 +111,14 @@ class MarketingController extends Controller
 
     public function templates(): View
     {
-        return view('admin.rodeo.templates', ['templates' => EmailTemplate::withCount(['campaigns'])->orderBy('name')->get()]);
+        return view('admin.rodeo.templates', ['templates' => EmailTemplate::withCount(['campaigns', 'testSends'])->withMax('testSends', 'created_at')->orderBy('name')->get()]);
     }
 
     public function templateForm(?EmailTemplate $template = null): View
     {
         $template ??= new EmailTemplate(['body' => '<p>Hi {{first_name}},</p>']);
 
-        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first(),
-            'tests' => $template->exists ? $template->testSends()->with('user')->latest('id')->limit(10)->get() : collect(),
-            'roles' => Role::withCount(['users' => fn ($q) => $q->where('active', true)])->orderBy('name')->get(),
-            'bookmarks' => request()->user()->bookmarks()->whereNotNull('email')->count(),
-            'markets' => Market::orderBy('name')->get(), 'delivers' => TemplateTestController::delivers()]);
+        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first()]);
     }
 
     public function saveTemplate(Request $request, ?EmailTemplate $template = null): RedirectResponse
@@ -138,69 +131,6 @@ class MarketingController extends Controller
         $template = $template ? tap($template)->update($data) : EmailTemplate::create($data);
 
         return redirect()->route('rodeo.templates.edit', $template)->with('status', 'Template saved');
-    }
-
-    // ---------- Surveys ----------
-
-    public function surveys(): View
-    {
-        return view('admin.rodeo.surveys', ['surveys' => Survey::withCount(['questions', 'responses'])->latest()->get()]);
-    }
-
-    public function surveyForm(?Survey $survey = null): View
-    {
-        $survey ??= new Survey(['status' => 'active']);
-
-        return view('admin.rodeo.survey', ['survey' => $survey, 'questions' => $survey->exists ? $survey->questions : collect()]);
-    }
-
-    public function saveSurvey(Request $request, ?Survey $survey = null): RedirectResponse
-    {
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:150'],
-            'intro' => ['nullable', 'string', 'max:1000'],
-            'status' => ['required', Rule::in(['active', 'closed'])],
-            'q' => ['required', 'array', 'min:1'],
-            'q.*.question' => ['required', 'string', 'max:200'],
-            'q.*.type' => ['required', Rule::in(['rating', 'choice', 'text'])],
-            'q.*.options' => ['nullable', 'string', 'max:500'],
-        ], ['q.required' => 'Add at least one question.']);
-        abort_if($survey && $survey->responses()->exists() && count($data['q']) !== $survey->questions()->count(), 422, 'This survey has responses; you can edit wording but not add or remove questions.');
-
-        DB::transaction(function () use (&$survey, $data) {
-            $fields = ['title' => $data['title'], 'intro' => $data['intro'] ?? null, 'status' => $data['status']];
-            $survey = $survey ? tap($survey)->update($fields) : Survey::create($fields + ['slug' => Str::slug($data['title']).'-'.Str::lower(Str::random(4))]);
-            $existing = $survey->questions()->get()->values();
-            foreach (array_values($data['q']) as $i => $q) {
-                $row = ['question' => $q['question'], 'type' => $q['type'], 'position' => $i,
-                    'options' => match ($q['type']) {
-                        'rating' => ['min' => 0, 'max' => 10],
-                        'choice' => array_values(array_filter(array_map('trim', explode("\n", (string) ($q['options'] ?? ''))))),
-                        default => null,
-                    }];
-                isset($existing[$i]) ? $existing[$i]->update($row) : $survey->questions()->create($row);
-            }
-            $existing->slice(count($data['q']))->each->delete();
-        });
-
-        return redirect()->route('rodeo.surveys.edit', $survey)->with('status', 'Survey saved');
-    }
-
-    public function surveyResults(Survey $survey): View
-    {
-        $responses = $survey->responses()->with('customer')->latest('created_at')->get();
-        $results = $survey->questions->values()->map(function ($q, $i) use ($responses) {
-            $answers = $responses->map(fn ($r) => $r->answers[$i] ?? null)->filter(fn ($a) => $a !== null && $a !== '');
-            $nps = null;
-            if ($q->type === 'rating' && $answers->count()) {
-                $nps = (int) round(100 * ($answers->filter(fn ($a) => $a >= 9)->count() - $answers->filter(fn ($a) => $a <= 6)->count()) / $answers->count());
-            }
-
-            return ['q' => $q, 'count' => $answers->count(), 'avg' => $q->type === 'rating' && $answers->count() ? round($answers->avg(), 1) : null, 'nps' => $nps,
-                'choices' => $q->type === 'choice' ? $answers->countBy()->sortDesc() : collect(), 'texts' => $q->type === 'text' ? $answers->take(25) : collect()];
-        });
-
-        return view('admin.rodeo.results', ['survey' => $survey, 'responses' => $responses, 'results' => $results]);
     }
 
     // ---------- MSIDs and promo codes ----------

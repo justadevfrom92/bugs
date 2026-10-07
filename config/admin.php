@@ -177,7 +177,14 @@ return [
                     ['Dashboard', 'rodeo.dashboard'],
                     ['Campaigns', 'rodeo.campaigns'],
                     ['Email Templates', 'rodeo.templates'],
-                    ['Surveys', 'rodeo.surveys'],
+                ],
+                'Surveys' => [
+                    ['All Surveys', 'rodeo.surveys'],
+                    ['New Survey', 'rodeo.surveys.create'],
+                    ['Responses', 'rodeo.surveys.responses'],
+                    ['Question Bank', 'rodeo.surveys.bank'],
+                    ['Answer Sets', 'rodeo.surveys.answers'],
+                    ['Categories', 'rodeo.surveys.categories'],
                 ],
                 'Tracking' => [
                     ['MSIDs & Promo Codes', 'rodeo.channels'],

@@ -13,6 +13,11 @@ class Survey extends Model
 
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return ['opens_on' => 'date', 'closes_on' => 'date'];
+    }
+
     public function questions(): HasMany
     {
         return $this->hasMany(SurveyQuestion::class)->orderBy('position');
@@ -21,5 +26,26 @@ class Survey extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(SurveyResponse::class);
+    }
+
+    /** open | scheduled | ended | closed */
+    public function state(): string
+    {
+        return match (true) {
+            $this->status === 'closed' => 'closed',
+            $this->opens_on && $this->opens_on->isFuture() => 'scheduled',
+            $this->closes_on && $this->closes_on->endOfDay()->isPast() => 'ended',
+            default => 'open',
+        };
+    }
+
+    public function stateLabel(): string
+    {
+        return ['open' => 'Open', 'scheduled' => 'Opens '.$this->opens_on?->format('M j'), 'ended' => 'Ended '.$this->closes_on?->format('M j'), 'closed' => 'Closed'][$this->state()];
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->state() === 'open';
     }
 }

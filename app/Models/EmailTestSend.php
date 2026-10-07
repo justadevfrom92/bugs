@@ -13,7 +13,7 @@ class EmailTestSend extends Model
 
     protected function casts(): array
     {
-        return ['recipients' => 'array', 'created_at' => 'datetime'];
+        return ['recipients' => 'array', 'params' => 'array', 'created_at' => 'datetime'];
     }
 
     public function user(): BelongsTo

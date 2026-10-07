@@ -19,7 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-/** Caboose (finance), Bounty (rewards), Rodeo (marketing) and the public survey page. */
+/** Caboose (finance), Bounty (rewards) and Rodeo (marketing). Surveys are in RodeoSurveysTest. */
 class FinanceRewardsMarketingTest extends TestCase
 {
     use RefreshDatabase;
@@ -143,73 +143,72 @@ class FinanceRewardsMarketingTest extends TestCase
         $this->post(route('rodeo.campaigns.send', $campaign))->assertRedirect()->assertSessionHas('status');
         $this->assertSame($count, ContactLog::where('campaign_id', $campaign->id)->count());
 
-        $this->post(route('rodeo.surveys.store'), ['title' => 'Quick poll', 'status' => 'active', 'q' => [
-            ['question' => 'How likely are you to recommend us?', 'type' => 'rating'],
-            ['question' => 'Favorite thing?', 'type' => 'choice', 'options' => "Price\nService"],
-        ]])->assertRedirect();
-        $this->assertSame(2, Survey::where('title', 'Quick poll')->firstOrFail()->questions()->count());
-
         $this->post(route('rodeo.channels.save'), ['msid' => '77001', 'name' => 'Radio spot', 'type' => 'Paid'])->assertRedirect();
         $this->post(route('rodeo.promos.save'), ['code' => 'rodeo10', 'description' => '$10 off', 'credit' => 10])->assertRedirect();
         $this->assertDatabaseHas('promo_codes', ['code' => 'RODEO10']);
     }
 
-    public function test_public_survey_ties_signed_links_to_the_customer(): void
-    {
-        $survey = Survey::where('slug', 'how-are-we-doing')->firstOrFail()->load('questions');
-        $c = Customer::firstOrFail();
-        $link = EmailTemplate::make(['body' => '{{survey:how-are-we-doing}}'])->render($c);
-        $answers = $survey->questions->values()->map(fn ($q) => match ($q->type) {
-            'rating' => 9, 'choice' => $q->options[0], default => 'Great'
-        })->all();
-
-        $this->get($link)->assertOk()->assertSee($survey->title)->assertSee('Answering as');
-        $path = parse_url($link, PHP_URL_PATH).'?'.parse_url($link, PHP_URL_QUERY);
-        $this->post($path, ['a' => $answers])->assertRedirect();
-        $this->assertSame($c->id, $survey->responses()->latest('id')->first()->customer_id);
-
-        // A tampered account number is not trusted
-        $this->post('/survey/how-are-we-doing?c='.Customer::latest('id')->value('account'), ['a' => $answers])->assertRedirect();
-        $this->assertNull($survey->responses()->latest('id')->first()->customer_id);
-        $this->post('/survey/how-are-we-doing', ['a' => [42]])->assertSessionHasErrors();
-        $this->get('/survey/how-are-we-doing')->assertOk()->assertDontSee('Answering as');
-    }
-
-    public function test_email_template_test_sends(): void
+    public function test_email_template_send_test_page(): void
     {
         Mail::fake();
         $admin = $this->user();
         $this->actingAs($admin);
         $template = EmailTemplate::firstOrFail();
-        $url = route('rodeo.templates.test', $template);
+        $page = route('rodeo.templates.test', $template);
+        $url = route('rodeo.templates.test.send', $template);
         $before = (int) $template->testSends()->max('id'); // the seed data has a sample test already
-        $this->get(route('rodeo.templates.edit', $template))->assertOk()->assertSee('Send a Test')->assertSee('An admin team')->assertSee('mail log');
+
+        // The template page and the list link to the Send Test page, which has every way to pick recipients
+        $this->get(route('rodeo.templates.edit', $template))->assertOk()->assertSee($page, false)->assertDontSee('Recent Tests');
+        $this->get(route('rodeo.templates'))->assertOk()->assertSee($page, false);
+        $this->get($page)->assertOk()->assertSee('Send Test: '.$template->name)->assertSee('An admin team')->assertSee('Customer category')
+            ->assertSee('Mail log only')->assertSee('Test History')->assertSee('Rodeo / <a', false);
+
+        // Check Recipients and the live preview
+        $sample = Customer::firstOrFail();
+        $this->getJson(route('rodeo.templates.test.recipients', [$template, 'mode' => 'team', 'role_id' => $admin->role_id]))->assertOk()->assertJsonPath('count', 1);
+        $this->getJson(route('rodeo.templates.test.recipients', [$template, 'mode' => 'accounts', 'accounts' => '999']))->assertStatus(422)->assertJsonPath('error', 'No account 999');
+        $this->getJson(route('rodeo.templates.test.preview', [$template, 'sample' => $sample->account, 'prefix' => '[QA]', 'note' => 'Logo check']))->assertOk()
+            ->assertJsonPath('customer.account', $sample->account)->assertJson(fn ($j) => $j->where('subject', fn ($s) => str_starts_with($s, '[QA] '))->etc())
+            ->assertSee('Logo check');
+
+        // Just me, with a custom prefix and note
+        $this->post($url, ['mode' => 'me', 'prefix' => '[QA]', 'note' => 'Logo check'])->assertRedirect($page)->assertSessionHas('test_result');
+        Mail::assertSent(TemplateTest::class, fn ($m) => $m->hasTo($admin->email) && str_starts_with($m->subjectLine, '[QA] ') && str_contains($m->bodyHtml, 'Logo check'));
 
         // Typed addresses, filled in from a sample account
-        $sample = Customer::firstOrFail();
-        $this->post($url, ['mode' => 'emails', 'emails' => "a@example.com, b@example.com\na@example.com", 'sample' => $sample->account])->assertRedirect()->assertSessionHas('test_result');
-        Mail::assertSentCount(2);
+        $this->post($url, ['mode' => 'emails', 'emails' => "a@example.com, b@example.com\na@example.com", 'sample' => $sample->account])->assertRedirect();
+        Mail::assertSentCount(3);
         Mail::assertSent(TemplateTest::class, fn ($m) => $m->hasTo('a@example.com') && str_starts_with($m->subjectLine, '[TEST] ') && str_contains($m->bodyHtml, e($sample->first_name)));
         $this->post($url, ['mode' => 'emails', 'emails' => 'not-an-email'])->assertSessionHasErrors('emails');
 
-        // Account numbers: each customer gets their own fill-ins and a Contact Log entry
+        // Account numbers: each customer gets their own fill-ins and a Contact Log entry (unless turned off)
         $c = Customer::whereNotNull('email')->latest('id')->firstOrFail();
         $this->post($url, ['mode' => 'accounts', 'accounts' => $c->account])->assertRedirect();
         $this->assertDatabaseHas('contact_logs', ['customer_id' => $c->id, 'template' => 'Test: '.$template->name]);
+        $logs = ContactLog::where('customer_id', $c->id)->count();
+        $this->post($url, ['mode' => 'accounts', 'accounts' => $c->account, 'log_contact' => '0'])->assertRedirect();
+        $this->assertSame($logs, ContactLog::where('customer_id', $c->id)->count());
         $this->post($url, ['mode' => 'accounts', 'accounts' => '999'])->assertSessionHasErrors('accounts');
 
-        // Bookmarks, an admin team, a customer category
+        // Bookmarks, an admin team, a customer category (multi-select statuses)
         $admin->bookmarks()->attach($c->id);
         $this->post($url, ['mode' => 'bookmarks'])->assertRedirect();
-        $role = $admin->role;
-        $this->post($url, ['mode' => 'team', 'role_id' => $role->id])->assertRedirect();
-        $this->post($url, ['mode' => 'category', 'status' => 'Good - On Flow', 'limit' => 3])->assertRedirect();
+        $this->post($url, ['mode' => 'team', 'role_id' => $admin->role_id])->assertRedirect();
+        $this->post($url, ['mode' => 'category', 'status' => ['Good - On Flow', 'Submitted'], 'limit' => 3])->assertRedirect();
         $this->post($url, ['mode' => 'category', 'limit' => 500])->assertSessionHasErrors('limit');
 
         $sends = $template->testSends()->where('id', '>', $before)->orderBy('id')->get();
-        $this->assertSame(['emails', 'accounts', 'bookmarks', 'team', 'category'], $sends->pluck('mode')->all());
-        $this->assertSame('logged', $sends->first()->status); // MAIL_MAILER=log in tests: written to the log, not delivered
+        $this->assertSame(['me', 'emails', 'accounts', 'accounts', 'bookmarks', 'team', 'category'], $sends->pluck('mode')->all());
+        $this->assertSame('logged', $sends->first()->status); // tests use the array mailer: kept, not delivered
+        $this->assertSame('Logo check', $sends->first()->note);
         $this->assertSame(3, count($sends->last()->recipients));
-        $this->get(route('rodeo.templates.edit', $template))->assertSee('Recent Tests')->assertSee('a@example.com');
+
+        // Send Again repeats the same people and options
+        $this->post(route('rodeo.templates.test.again', [$template, $sends->first()]))->assertRedirect($page);
+        $again = $template->testSends()->latest('id')->first();
+        $this->assertSame(['me', 'Logo check'], [$again->mode, $again->note]);
+        $this->get($page)->assertSee('a@example.com')->assertSee('Send Again');
+        $this->get($page.'?result=failed')->assertOk()->assertSee('No tests with that result');
     }
 }

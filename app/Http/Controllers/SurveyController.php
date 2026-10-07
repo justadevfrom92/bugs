@@ -18,27 +18,39 @@ class SurveyController extends Controller
 {
     public function show(Request $request, Survey $survey): View
     {
-        $survey->load('questions');
+        $survey->load('questions.category');
 
         return view('site.survey', ['survey' => $survey, 'customer' => $this->customer($request),
+            'groups' => $survey->questions->groupBy(fn ($q) => (string) ($q->survey_category_id ?? 0)),
             'query' => $request->hasValidSignature() ? $request->query() : []]);
     }
 
     public function store(Request $request, Survey $survey): RedirectResponse
     {
-        abort_unless($survey->status === 'active', 410);
+        abort_unless($survey->isOpen(), 410);
         $rules = [];
-        foreach ($survey->questions->values() as $i => $q) {
-            $rules["a.$i"] = match ($q->type) {
-                'rating' => ['nullable', 'integer', 'between:0,10'],
-                'choice' => ['nullable', Rule::in($q->options ?? [])],
-                default => ['nullable', 'string', 'max:2000'],
+        $names = [];
+        foreach ($survey->questions as $q) {
+            $key = 'a.'.$q->id;
+            $need = $q->required ? 'required' : 'nullable';
+            $names[$key] = '“'.$q->question.'”';
+            $rules[$key] = match ($q->type) {
+                'rating' => [$need, 'integer', 'between:0,10'],
+                'multi' => [$need, 'array'],
+                'text' => [$need, 'string', 'max:2000'],
+                default => [$need, Rule::in($q->choices())],
             };
+            if ($q->type === 'multi') {
+                $rules[$key.'.*'] = [Rule::in($q->choices())];
+            }
         }
-        $answers = $request->validate($rules)['a'] ?? [];
+        $answers = $request->validate($rules, ['required' => 'Please answer :attribute'], $names)['a'] ?? [];
+        $customer = $this->customer($request);
         $survey->responses()->create([
-            'customer_id' => $this->customer($request)?->id,
-            'answers' => array_map(fn ($i) => $answers[$i] ?? null, array_keys($survey->questions->all())),
+            'customer_id' => $customer?->id,
+            'answers' => (object) collect($answers)->filter(fn ($a) => $a !== null && $a !== '' && $a !== [])
+                ->mapWithKeys(fn ($a, $id) => [(string) $id => is_array($a) ? array_values($a) : (string) $a])->all(),
+            'source' => $request->hasValidSignature() && $request->query('c') ? 'email' : (auth('customer')->check() ? 'my-account' : 'website'),
             'created_at' => now(),
         ]);
 
