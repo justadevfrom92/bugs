@@ -6,7 +6,7 @@
             <td>@if ($b->answerSet)<div class="help" style="margin-bottom:3px">{{ $b->answerSet->name }}</div><div class="sv-opts">@foreach ($b->answerSet->options as $o)<span class="sv-opt">{{ $o }}</span>@endforeach</div>
                 @elseif ($b->type === 'rating')<span class="help">0 to 10</span>@elseif ($b->type === 'yes_no')<span class="help">Yes · No</span>@else<span class="help">Written</span>@endif</td>
             <td class="num">{{ $b->uses_count }}</td>
-            <td class="actions nowrap"><a class="btn sm ghost" href="{{ route('rodeo.surveys.bank', ['edit' => $b->id]) }}">Edit</a>
+            <td class="actions nowrap"><a class="btn sm ghost" href="{{ route('rodeo.surveys.bank.edit', $b) }}">Edit</a>
                 <form method="post" action="{{ route('rodeo.surveys.bank.destroy', $b) }}" class="inline" data-confirm="Remove this question from the bank?|Surveys that use it keep their own copy.|Remove">@csrf @method('delete')<button class="btn sm ghost">Remove</button></form></td></tr>
     @empty <tr><td colspan="4" class="empty">No questions in this category yet.</td></tr> @endforelse</tbody>
 </table></div></div>

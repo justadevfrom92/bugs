@@ -1,9 +1,10 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => 'Payments', 'sub' => 'Every payment, with reversal (needs the refunds right). Record checks, money orders and cash received.'])
+    @include('admin.partials.page-head', ['title' => 'Payments', 'sub' => 'Every payment, with reversal (needs the refunds right). Record checks, money orders and cash received.',
+        'actions' => '<a class="btn cyan" href="'.route('caboose.payments.create').'">Record a Payment</a>'])
 
-    <div class="grid-2" style="grid-template-columns:1fr 340px;align-items:start">
+    <div>
         <div>
             <form method="get" class="panel"><div class="panel-body form-row">
                 <div class="field"><label for="start">From</label><input id="start" name="start" type="date" value="{{ $f['start'] }}"></div>
@@ -22,16 +23,5 @@
                 @empty <tr><td colspan="8" class="empty">No payments match.</td></tr> @endforelse</tbody>
             </table></div>@include('admin.partials.pager', ['p' => $payments])</div>
         </div>
-        <form method="post" action="{{ route('caboose.payments.record') }}" class="panel">@csrf
-            <div class="panel-head"><h2>Record a Payment</h2></div>
-            <div class="panel-body" style="display:flex;flex-direction:column;gap:12px">
-                <div class="field"><label for="r-account">Account #</label><input id="r-account" name="account" required value="{{ old('account') }}"></div>
-                <div class="field"><label for="r-amount">Amount ($)</label><input id="r-amount" name="amount" type="number" step="0.01" min="0.01" required value="{{ old('amount') }}"></div>
-                <div class="field"><label for="r-kind">For</label><select id="r-kind" name="kind"><option>Balance Payment</option><option>Deposit</option></select></div>
-                <div class="field"><label for="r-method">Method</label><select id="r-method" name="method">@foreach (['Check', 'Money Order', 'Cash', 'Wire'] as $mth)<option>{{ $mth }}</option>@endforeach</select></div>
-                <div class="field"><label for="r-ref">Check # / Reference</label><input id="r-ref" name="reference" value="{{ old('reference') }}"></div>
-                <button class="btn cyan">Record Payment</button>
-            </div>
-        </form>
     </div>
 @endsection

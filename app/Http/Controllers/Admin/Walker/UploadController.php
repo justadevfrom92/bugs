@@ -24,6 +24,12 @@ class UploadController extends Controller
             'counts' => ReportUpload::selectRaw('category, count(*) as n')->groupBy('category')->pluck('n', 'category')]);
     }
 
+    /** Upload a Report: its own page with a simple form. */
+    public function create(): View
+    {
+        return view('admin.walker.upload-form');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([

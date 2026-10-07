@@ -282,15 +282,19 @@ class SurveyController extends Controller
 
     public function bank(Request $request): View
     {
-        $edit = $request->query('edit') ? SurveyBankQuestion::find($request->query('edit')) : null;
-
         return view('admin.rodeo.surveys.bank', [
             'categories' => SurveyCategory::with(['bankQuestions' => fn ($q) => $q->with('answerSet')->withCount('uses')->orderBy('question')])->orderBy('position')->orderBy('name')->get(),
             'uncategorized' => SurveyBankQuestion::with('answerSet')->withCount('uses')->whereNull('survey_category_id')->orderBy('question')->get(),
-            'sets' => SurveyAnswerSet::orderBy('group')->orderBy('name')->get(),
             'allCategories' => SurveyCategory::orderBy('position')->orderBy('name')->get(),
-            'edit' => $edit, 'only' => $request->query('category'),
+            'only' => $request->query('category'),
         ]);
+    }
+
+    /** New Question / Edit Question: its own page with a simple form. */
+    public function bankForm(Request $request, ?SurveyBankQuestion $question = null): View
+    {
+        return view('admin.rodeo.surveys.bank-form', ['question' => $question ?? new SurveyBankQuestion(['type' => 'scale', 'survey_category_id' => $request->query('category')]),
+            'sets' => SurveyAnswerSet::orderBy('group')->orderBy('name')->get(), 'categories' => SurveyCategory::orderBy('position')->orderBy('name')->get()]);
     }
 
     public function saveBank(Request $request, ?SurveyBankQuestion $question = null): RedirectResponse
@@ -324,8 +328,12 @@ class SurveyController extends Controller
         return view('admin.rodeo.surveys.answers', [
             'groups' => SurveyAnswerSet::withCount(['questions', 'bankQuestions'])->orderBy('name')->get()->groupBy('group')
                 ->sortBy(fn ($g, $k) => array_search($k, SurveyAnswerSet::GROUPS) === false ? 99 : array_search($k, SurveyAnswerSet::GROUPS)),
-            'edit' => $request->query('edit') ? SurveyAnswerSet::find($request->query('edit')) : null,
         ]);
+    }
+
+    public function answerForm(?SurveyAnswerSet $set = null): View
+    {
+        return view('admin.rodeo.surveys.answer-form', ['set' => $set ?? new SurveyAnswerSet(['type' => 'scale'])]);
     }
 
     public function saveAnswerSet(Request $request, ?SurveyAnswerSet $set = null): RedirectResponse
@@ -363,8 +371,12 @@ class SurveyController extends Controller
     {
         return view('admin.rodeo.surveys.categories', [
             'categories' => SurveyCategory::withCount(['bankQuestions', 'questions'])->orderBy('position')->orderBy('name')->get(),
-            'edit' => $request->query('edit') ? SurveyCategory::find($request->query('edit')) : null,
         ]);
+    }
+
+    public function categoryForm(?SurveyCategory $category = null): View
+    {
+        return view('admin.rodeo.surveys.category-form', ['category' => $category ?? new SurveyCategory(['color' => '#00AEEF'])]);
     }
 
     public function saveCategory(Request $request, ?SurveyCategory $category = null): RedirectResponse

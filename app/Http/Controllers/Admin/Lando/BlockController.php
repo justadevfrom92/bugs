@@ -33,6 +33,12 @@ class BlockController extends Controller
         ]);
     }
 
+    /** New Category: its own page with a simple form. */
+    public function categoryForm(): View
+    {
+        return view('admin.lando.blocks.category-form');
+    }
+
     public function addCategory(Request $request): RedirectResponse
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:60', 'unique:block_categories,name']]);

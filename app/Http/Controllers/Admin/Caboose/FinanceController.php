@@ -67,6 +67,18 @@ class FinanceController extends Controller
     }
 
     /** Record a payment received by mail or in person (check, money order, cash). */
+    /** Record a Payment: its own page with a simple form. */
+    public function paymentForm(): View
+    {
+        return view('admin.caboose.payment-form');
+    }
+
+    /** Request a Refund: its own page (Credit Balances links prefill the account). */
+    public function refundForm(): View
+    {
+        return view('admin.caboose.refund-form');
+    }
+
     public function recordPayment(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -89,7 +101,7 @@ class FinanceController extends Controller
             $this->note($request, $c, $data['kind'].' of $'.number_format($data['amount'], 2).' received by '.$data['method'].($data['reference'] ? ' #'.$data['reference'] : '').'.', 'Payment Made');
         });
 
-        return back()->with('status', $data['kind'].' recorded for account '.$c->account);
+        return redirect()->route('caboose.payments')->with('status', $data['kind'].' recorded for account '.$c->account);
     }
 
     /** Needs the "refunds" right (same as Corral's reversal). */
@@ -158,7 +170,7 @@ class FinanceController extends Controller
         }
         Refund::create(['customer_id' => $c->id, 'requested_by' => $request->user()->id] + collect($data)->except('account')->all());
 
-        return back()->with('status', 'Refund requested for account '.$c->account);
+        return redirect()->route('caboose.refunds')->with('status', 'Refund requested for account '.$c->account);
     }
 
     /** Approve or reject needs the "refunds" right; paying marks the money as sent. */

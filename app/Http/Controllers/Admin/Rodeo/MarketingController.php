@@ -146,9 +146,21 @@ class MarketingController extends Controller
     public function saveChannel(Request $request): RedirectResponse
     {
         $data = $request->validate(['msid' => ['required', 'regex:/^\d{3,8}$/'], 'name' => ['required', 'string', 'max:100'], 'type' => ['required', Rule::in(['Organic', 'Paid', 'Partner', 'Broker', 'Agent'])], 'active' => ['boolean']]);
-        MarketingChannel::updateOrCreate(['msid' => $data['msid']], $data + ['active' => $request->boolean('active', true)]);
+        MarketingChannel::updateOrCreate(['msid' => $data['msid']], ['active' => $request->boolean('active', true)] + $data);
 
-        return back()->with('status', 'MSID '.$data['msid'].' saved. Website links use ?msid='.$data['msid']);
+        return redirect()->route('rodeo.channels')->with('status', 'MSID '.$data['msid'].' saved. Website links use ?msid='.$data['msid']);
+    }
+
+    /** New MSID / Edit MSID: its own page with a simple form. */
+    public function channelForm(?MarketingChannel $channel = null): View
+    {
+        return view('admin.rodeo.channel-form', ['channel' => $channel ?? new MarketingChannel(['type' => 'Organic', 'active' => true])]);
+    }
+
+    /** New Promo Code / Edit Promo Code. */
+    public function promoForm(?PromoCode $promo = null): View
+    {
+        return view('admin.rodeo.promo-form', ['promo' => $promo ?? new PromoCode(['credit' => 0, 'active' => true])]);
     }
 
     public function savePromo(Request $request): RedirectResponse
@@ -156,8 +168,8 @@ class MarketingController extends Controller
         $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
         $data = $request->validate(['code' => ['required', 'regex:/^[A-Z0-9_-]{3,30}$/'], 'description' => ['required', 'string', 'max:150'], 'credit' => ['required', 'numeric', 'min:0', 'max:1000'],
             'starts_on' => ['nullable', 'date'], 'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'], 'active' => ['boolean']]);
-        PromoCode::updateOrCreate(['code' => $data['code']], $data + ['active' => $request->boolean('active', true)]);
+        PromoCode::updateOrCreate(['code' => $data['code']], ['active' => $request->boolean('active', true)] + $data);
 
-        return back()->with('status', 'Promo code '.$data['code'].' saved. Website links use ?promo='.$data['code']);
+        return redirect()->route('rodeo.channels')->with('status', 'Promo code '.$data['code'].' saved. Website links use ?promo='.$data['code']);
     }
 }

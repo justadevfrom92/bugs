@@ -198,6 +198,7 @@ Route::prefix('admin')->group(function () {
             Route::resource('templates', Admin\Lando\TemplateController::class)->except(['show', 'destroy']);
             Route::resource('markets', Admin\Lando\MarketController::class)->except(['show', 'destroy']);
             Route::resource('blocks', Admin\Lando\BlockController::class)->except(['show']);
+            Route::get('block-categories/new', [Admin\Lando\BlockController::class, 'categoryForm'])->name('blocks.categories.create');
             Route::post('block-categories', [Admin\Lando\BlockController::class, 'addCategory'])->name('blocks.categories.store');
             Route::get('rates', [Admin\Lando\RateController::class, 'index'])->name('rates.index');
             Route::get('rates/edit', [Admin\Lando\RateController::class, 'edit'])->name('rates.edit');
@@ -232,6 +233,7 @@ Route::prefix('admin')->group(function () {
             Route::get('reports/{key}', [Admin\Walker\ReportController::class, 'report'])->name('reports.show');
             Route::post('reports/{key}', [Admin\Walker\ReportController::class, 'run'])->name('reports.run');
             Route::get('uploads', [Admin\Walker\UploadController::class, 'index'])->name('uploads.index');
+            Route::get('uploads/new', [Admin\Walker\UploadController::class, 'create'])->name('uploads.create');
             Route::post('uploads', [Admin\Walker\UploadController::class, 'store'])->name('uploads.store');
             Route::get('uploads/{upload}', [Admin\Walker\UploadController::class, 'download'])->name('uploads.download');
             Route::delete('uploads/{upload}', [Admin\Walker\UploadController::class, 'destroy'])->name('uploads.destroy');
@@ -241,11 +243,13 @@ Route::prefix('admin')->group(function () {
         Route::prefix('caboose')->name('caboose.')->middleware('app:caboose')->controller(Admin\Caboose\FinanceController::class)->group(function () {
             Route::get('/', 'dashboard')->name('dashboard');
             Route::get('payments', 'payments')->name('payments');
+            Route::get('payments/new', 'paymentForm')->name('payments.create');
             Route::post('payments', 'recordPayment')->name('payments.record');
             Route::post('payments/{payment}/reverse', 'reverse')->name('payments.reverse');
             Route::get('credits-debits', 'ledger')->name('ledger');
             Route::post('credits-debits/{entry}', 'decideLedger')->name('ledger.decide');
             Route::get('refunds', 'refunds')->name('refunds');
+            Route::get('refunds/new', 'refundForm')->name('refunds.create');
             Route::post('refunds', 'requestRefund')->name('refunds.request');
             Route::post('refunds/{refund}', 'decideRefund')->name('refunds.decide');
             Route::get('deposits', 'deposits')->name('deposits');
@@ -297,14 +301,20 @@ Route::prefix('admin')->group(function () {
                 Route::get('responses', 'responses')->name('.responses');
                 Route::get('responses/{response}', 'response')->name('.responses.show');
                 Route::get('bank', 'bank')->name('.bank');
+                Route::get('bank/new', 'bankForm')->name('.bank.create');
+                Route::get('bank/{question}/edit', 'bankForm')->name('.bank.edit');
                 Route::post('bank', 'saveBank')->name('.bank.store');
                 Route::put('bank/{question}', 'saveBank')->name('.bank.update');
                 Route::delete('bank/{question}', 'deleteBank')->name('.bank.destroy');
                 Route::get('answer-sets', 'answers')->name('.answers');
+                Route::get('answer-sets/new', 'answerForm')->name('.answers.create');
+                Route::get('answer-sets/{set}/edit', 'answerForm')->name('.answers.edit');
                 Route::post('answer-sets', 'saveAnswerSet')->name('.answers.store');
                 Route::put('answer-sets/{set}', 'saveAnswerSet')->name('.answers.update');
                 Route::delete('answer-sets/{set}', 'deleteAnswerSet')->name('.answers.destroy');
                 Route::get('categories', 'categories')->name('.categories');
+                Route::get('categories/new', 'categoryForm')->name('.categories.create');
+                Route::get('categories/{category}/edit', 'categoryForm')->name('.categories.edit');
                 Route::post('categories', 'saveCategory')->name('.categories.store');
                 Route::put('categories/{category}', 'saveCategory')->name('.categories.update');
                 Route::delete('categories/{category}', 'deleteCategory')->name('.categories.destroy');
@@ -317,6 +327,10 @@ Route::prefix('admin')->group(function () {
             });
             Route::get('channels', 'channels')->name('channels');
             Route::post('channels', 'saveChannel')->name('channels.save');
+            Route::get('channels/new', 'channelForm')->name('channels.create');
+            Route::get('channels/{channel}/edit', 'channelForm')->name('channels.edit');
+            Route::get('promos/new', 'promoForm')->name('promos.create');
+            Route::get('promos/{promo}/edit', 'promoForm')->name('promos.edit');
             Route::post('promos', 'savePromo')->name('promos.save');
         });
 
