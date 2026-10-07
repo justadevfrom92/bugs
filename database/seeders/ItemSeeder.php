@@ -54,11 +54,11 @@ class ItemSeeder extends Seeder
             }
 
             // The welcome, accepted, rewards and AutoPay-removed emails
-            foreach ([['Order Accepted', 0], ['Welcome Letter', 2], ['Rewards - Welcome', 3], ['Rewards - Stars Earned', 40], ['AutoPay Removed', 55], ['Custom Email', 60]] as $n => [$tpl, $days]) {
+            foreach ([['Order Accepted', 0], ['Welcome Letter', 2], ['Rewards - Welcome', 3], ['Rewards - Stars Earned', 40], ['Renewal Offer', 50], ['AutoPay Removed', 55], ['Custom Email', 60]] as $n => [$tpl, $days]) {
                 if ($tpl === 'AutoPay Removed' && $i % 3) {
                     continue;
                 }
-                if ($tpl === 'Welcome Letter' && $c->contactLogs()->where('template', $tpl)->exists()) {
+                if (in_array($tpl, ['Welcome Letter', 'Renewal Offer'], true) && $c->contactLogs()->where('template', $tpl)->exists()) {
                     continue;
                 }
                 ContactLog::create(['customer_id' => $c->id, 'channel' => 'Email', 'template' => $tpl, 'body' => "<p>Hi {$c->first_name}, this is the {$tpl} email.</p>",
