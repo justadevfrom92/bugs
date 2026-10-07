@@ -166,6 +166,9 @@ Route::prefix('admin')->group(function () {
             Route::get('reports/notes', [Admin\Corral\ReportController::class, 'notes'])->name('reports.notes');
             Route::get('reports/phonecalls', [Admin\Corral\ReportController::class, 'phonecalls'])->name('reports.phonecalls');
             Route::get('sms', [Admin\Corral\SmsController::class, 'index'])->name('sms');
+            Route::get('sms/new', [Admin\Corral\SmsController::class, 'create'])->name('sms.create');
+            Route::get('calls', [Admin\Corral\CallController::class, 'index'])->name('calls');
+            Route::get('calls/{call}/transcript', [Admin\Corral\CallController::class, 'transcript'])->name('calls.transcript');
             Route::post('sms', [Admin\Corral\SmsController::class, 'send'])->middleware('throttle:30,1')->name('sms.send');
             Route::get('ercot', [Admin\Corral\ErcotController::class, 'index'])->name('ercot');
             Route::get('queues', [Admin\Corral\QueueController::class, 'index'])->name('queues.index');

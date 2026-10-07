@@ -236,8 +236,9 @@ class AccountSeeder extends Seeder
         ApiLog::create(['customer_id' => $c->id, 'api' => 'Experian', 'action' => 'credit.check', 'status' => '200', 'response_ms' => mt_rand(800, 2500), 'created_at' => $created->copy()->addMinutes(2)]);
         for ($i = 0, $n = mt_rand(0, 3); $i < $n; $i++) {
             Phonecall::create(['customer_id' => $c->id, 'user_id' => $csr?->id, 'agent_id' => 'A'.mt_rand(100, 140), 'phone' => $c->phone,
-                'direction' => mt_rand(0, 3) ? 'inbound' : 'outbound', 'started_at' => $created->copy()->addDays(mt_rand(1, 200))->setTime(mt_rand(8, 17), mt_rand(0, 59))->min(now()->subHour()),
-                'duration_sec' => mt_rand(45, 1500), 'disposition' => ['Status Inquiry', 'Balance Inquiry', 'Payment Made', 'Change Plan', 'Outage'][mt_rand(0, 4)]]);
+                'direction' => mt_rand(0, 3) ? 'inbound' : 'outbound', 'started_at' => $created->copy()->addDays(mt_rand(1, 200))->setTime(mt_rand(8, 17), mt_rand(0, 59))->min(now()->subDays(mt_rand(0, 20))->setTime(mt_rand(8, 17), mt_rand(0, 59))),
+                'duration_sec' => mt_rand(45, 1500), 'disposition' => $issue = ['Status Inquiry', 'Balance Inquiry', 'Payment Made', 'Change Plan', 'Outage'][mt_rand(0, 4)],
+                'transcript' => self::transcript($issue, $c->first_name ?: 'there', $csr?->name ?? 'the agent')]);
         }
         // Text messages for customers with a mobile phone: a bill reminder, sometimes a reply and an answer
         if ($c->phone_type === 'mobile' && $flowing) {
@@ -256,5 +257,24 @@ class AccountSeeder extends Seeder
             }
         }
         $c->syncStars();
+    }
+
+    /** A short fictional call transcript for the sample data. */
+    private static function transcript(string $issue, string $first, string $agent): string
+    {
+        $agentFirst = strtok($agent, ' ');
+        $lines = [
+            "Agent: Thanks for calling, this is {$agentFirst}. Who do I have the pleasure of speaking with?",
+            "Customer: Hi, this is {$first}.",
+        ];
+        $lines = array_merge($lines, match ($issue) {
+            'Balance Inquiry' => ['Customer: I wanted to check what I owe this month.', "Agent: Your current balance is on the last bill we sent; it's due on the date shown. Want me to text you a payment link?", 'Customer: Yes please.'],
+            'Payment Made' => ["Customer: I'd like to make a payment.", 'Agent: I can take that now. Card or bank account?', 'Customer: Card.', "Agent: Done, you'll get a confirmation email shortly."],
+            'Change Plan' => ['Customer: My contract is ending and I want to look at other plans.', "Agent: Let me pull up what's available at your address. The 24-month fixed plan would lower your rate.", "Customer: Let's do that one."],
+            'Outage' => ['Customer: My power is out.', "Agent: I'm sorry about that. Outages are handled by your utility; I'll give you their outage number and report it.", 'Customer: Thanks.'],
+            default => ["Customer: I'm checking on the status of my service.", "Agent: Your enrollment went through and service is active. You'll get your first bill after the first meter read.", 'Customer: Great, thanks.'],
+        }, ['Agent: Is there anything else I can help with today?', 'Customer: No, that was it.', 'Agent: Have a great day.']);
+
+        return implode("\n", $lines);
     }
 }

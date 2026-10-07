@@ -8,31 +8,48 @@ use App\Models\Customer;
 use App\Services\AccountActions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-/** Corral → SMS: text conversations with customers. Sending goes through the SMS integration in .env. */
+/** Corral → SMS: a table of recent text messages, in and out. Sending goes through the SMS integration in .env. */
 class SmsController extends Controller
 {
     public function index(Request $request): View
     {
-        $q = trim((string) $request->query('q'));
+        $f = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'], 'account' => ['nullable', 'string', 'max:20'], 'direction' => ['nullable', 'in:in,out'],
+            'status' => ['nullable', 'string', 'max:20'], 'start' => ['nullable', 'date'], 'end' => ['nullable', 'date'], 'waiting' => ['nullable', 'boolean'],
+        ]);
+        // Customers whose latest text came from them are waiting on a reply
+        $latest = ContactLog::where('channel', 'SMS')->selectRaw('max(id) as id')->groupBy('customer_id');
+        $waiting = ContactLog::whereIn('id', $latest)->where('direction', 'in')->pluck('customer_id');
+        $q = trim((string) ($f['q'] ?? ''));
         $digits = preg_replace('/\D/', '', $q);
 
-        // One row per customer: their latest text
-        $latest = ContactLog::where('channel', 'SMS')->selectRaw('max(id) as id')->groupBy('customer_id');
-        $threads = ContactLog::whereIn('id', $latest)->with('customer')->latest('created_at')->get()
-            ->when($q !== '', fn ($t) => $t->filter(fn ($l) => str_contains(strtolower($l->customer?->name ?? ''), strtolower($q))
-                || ($digits !== '' && (str_contains(preg_replace('/\D/', '', (string) $l->phone), $digits) || str_contains((string) $l->customer?->account, $digits))))->values());
-        $unanswered = $threads->where('direction', 'in')->count();
+        $messages = ContactLog::where('channel', 'SMS')->with(['customer', 'user'])
+            ->when($q !== '', fn ($x) => $x->where(fn ($w) => $w->where('body', 'like', '%'.$q.'%')
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', '%'.$q.'%'))
+                ->when($digits !== '', fn ($w) => $w->orWhereRaw("replace(replace(replace(replace(phone, '(', ''), ')', ''), '-', ''), ' ', '') like ?", ['%'.$digits.'%']))))
+            ->when($f['account'] ?? null, fn ($x, $a) => $x->whereHas('customer', fn ($c) => $c->where('account', trim($a))))
+            ->when($f['direction'] ?? null, fn ($x, $d) => $x->where('direction', $d))
+            ->when($f['status'] ?? null, fn ($x, $s) => $x->where('status', $s))
+            ->when($f['start'] ?? null, fn ($x, $d) => $x->where('created_at', '>=', Carbon::parse($d)->startOfDay()))
+            ->when($f['end'] ?? null, fn ($x, $d) => $x->where('created_at', '<=', Carbon::parse($d)->endOfDay()))
+            ->when($f['waiting'] ?? false, fn ($x) => $x->whereIn('customer_id', $waiting))
+            ->latest('created_at')->latest('id')->paginate(50)->withQueryString();
 
-        $open = $request->query('account') ? Customer::where('account', $request->query('account'))->first() : null;
+        return view('admin.corral.sms', ['messages' => $messages, 'f' => $f, 'waiting' => $waiting, 'ready' => self::ready(),
+            'statuses' => ContactLog::where('channel', 'SMS')->distinct()->pluck('status')]);
+    }
 
-        return view('admin.corral.sms', [
-            'q' => $q, 'threads' => $threads, 'unanswered' => $unanswered, 'open' => $open,
-            'messages' => $open ? ContactLog::where('channel', 'SMS')->where('customer_id', $open->id)->oldest('created_at')->oldest('id')->get() : collect(),
-            'ready' => collect(config('admin.integrations.sms.env'))->every(fn ($v) => filled($v)),
-        ]);
+    /** Send a Text: its own page with a simple form. */
+    public function create(Request $request): View
+    {
+        $c = $request->query('account') ? Customer::where('account', $request->query('account'))->first() : null;
+
+        return view('admin.corral.sms-form', ['c' => $c, 'ready' => self::ready(),
+            'recent' => $c ? ContactLog::where('channel', 'SMS')->where('customer_id', $c->id)->latest('created_at')->limit(5)->get()->reverse() : collect()]);
     }
 
     public function send(Request $request): RedirectResponse
@@ -46,6 +63,11 @@ class SmsController extends Controller
 
         [$message] = DB::transaction(fn () => (new AccountActions($c, $request->user()))->run('send-text', ['message' => $data['message']]));
 
-        return redirect()->route('corral.sms', ['account' => $c->account])->with('status', $message);
+        return redirect()->route('corral.sms')->with('status', $message);
+    }
+
+    private static function ready(): bool
+    {
+        return collect(config('admin.integrations.sms.env'))->every(fn ($v) => filled($v));
     }
 }

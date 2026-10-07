@@ -2,7 +2,9 @@
 
 @section('content')
     @include('admin.partials.page-head', ['title' => 'Search Rates', 'sub' => 'Current energy charge plus TDSP delivery gives the average price customers see on the EFL.'])
-    <div class="panel"><div class="panel-body">
+    <div class="search-layout">
+    <aside class="search-side">
+    <div class="panel"><div class="panel-head"><h2>Search Rates</h2></div><div class="panel-body">
         <form method="get" class="form-row">
             <div class="field grow"><label for="plan">Plan</label><input id="plan" name="plan" value="{{ $f['plan'] ?? '' }}" placeholder="Search plan name or code"></div>
             <div class="field"><label for="market">Market</label><select id="market" name="market" data-autosubmit><option value="">-- All Markets --</option>
@@ -11,6 +13,9 @@
             <button class="btn">Search</button>
         </form>
     </div></div>
+    </aside>
+    <div class="search-main">
+
     <div class="panel"><div class="panel-head"><h2>Current Rates</h2><span class="muted">{{ count($rows) }} rates</span></div>
         <div class="table-wrap"><table>
             <thead><tr><th>Rate Class</th><th class="num">Term</th><th>Display Name</th><th>Internal</th><th>Market</th><th class="num">Energy ¢</th><th class="num">TDSP ¢</th><th class="num">Avg ¢ @ {{ number_format($kwh) }}</th><th>Effective</th></tr></thead>
@@ -19,5 +24,7 @@
                     <td class="num">{{ number_format($r['rate']->energy, 3) }}</td><td class="num">{{ number_format($r['fee']->per_kwh, 4) }}</td><td class="num"><b>{{ number_format($r['avg'], 1) }}</b></td><td>{{ $r['rate']->effective_on->toDateString() }}</td></tr>
             @empty <tr><td colspan="9" class="empty">No rates match.</td></tr> @endforelse</tbody>
         </table></div>
+    </div>
+    </div>
     </div>
 @endsection

@@ -3,7 +3,9 @@
 @section('content')
     @include('admin.partials.page-head', ['title' => 'Phonecalls Report', 'sub' => 'Search calls by date, account, agent id or phone number.'])
 
-    <form method="get" class="panel"><div class="panel-body">
+    <div class="search-layout">
+    <aside class="search-side">
+    <form method="get" class="panel"><div class="panel-head"><h2>Search Phonecalls Report</h2></div><div class="panel-body">
         <div class="form-row">
             <div class="field"><label for="start">Start</label><input id="start" name="start" type="date" value="{{ $f['start'] }}"></div>
             <div class="field"><label for="end">End</label><input id="end" name="end" type="date" value="{{ $f['end'] }}"></div>
@@ -13,6 +15,9 @@
             @include('admin.corral.reports._output')
         </div>
     </div></form>
+    </aside>
+    <div class="search-main">
+
 
     @if ($records !== null)
         <div class="panel">
@@ -34,4 +39,6 @@
     @endif
 
     @include('admin.corral.reports._recent', ['route' => 'corral.reports.phonecalls'])
+    </div>
+    </div>
 @endsection

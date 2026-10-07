@@ -35,6 +35,7 @@ return [
                     ['Create Order', 'corral.orders.create'],
                     ['Create Order - Biz', 'corral.orders.create-biz'],
                     ['SMS', 'corral.sms', 'sms'],
+                    ['Phone Calls', 'corral.calls'],
                 ],
                 'Reports' => [
                     ['Orders', 'corral.reports.orders'],

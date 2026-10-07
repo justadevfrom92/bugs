@@ -33,4 +33,9 @@ class ContactLog extends Model
     {
         return $this->channel.': '.$this->template;
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

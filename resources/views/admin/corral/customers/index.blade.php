@@ -10,7 +10,9 @@
         <div class="stat alert"><span>Exceptions</span><strong>{{ number_format($stats['exceptions']) }}</strong><small>need attention</small></div>
     </div>
 
-    <div class="panel"><div class="panel-body">
+    <div class="search-layout">
+    <aside class="search-side">
+    <div class="panel"><div class="panel-head"><h2>Search Accounts</h2></div><div class="panel-body">
         <form method="get" class="form-row">
             <div class="field grow"><label for="q">Search</label><input id="q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Name, phone, email, account #, ESIID…"></div>
             <div class="field"><label for="type">Customer Type</label>
@@ -32,6 +34,9 @@
             <button class="btn">Search</button>
         </form>
     </div></div>
+    </aside>
+    <div class="search-main">
+
 
     @unless ($searched)
         <div class="panel"><div class="panel-head"><h2>Bookmarks</h2></div>
@@ -41,5 +46,7 @@
 
     <div class="panel"><div class="panel-head"><h2>{{ $searched ? 'Search Results' : 'Recent Accounts' }}</h2><span class="muted">Showing {{ $results->count() }} of {{ $total }}</span></div>
         @include('admin.corral.customers._rows', ['customers' => $results, 'empty' => 'No accounts match. Try fewer filters.'])
+    </div>
+    </div>
     </div>
 @endsection

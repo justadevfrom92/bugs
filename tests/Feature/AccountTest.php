@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\CustomerFlag;
 use App\Models\EmailTemplate;
+use App\Models\Phonecall;
 use App\Models\RewardOffer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -127,7 +128,14 @@ class AccountTest extends TestCase
         $c = Customer::whereHas('contactLogs', fn ($q) => $q->where('channel', 'SMS'))->firstOrFail();
         $this->get('/admin/corral/sms')->assertOk()->assertSee($c->name);
         $this->get('/admin/corral/sms?account='.$c->account)->assertOk()->assertSee('Your');
-        $this->post('/admin/corral/sms', ['account' => $c->account, 'message' => 'Hello from the test'])->assertRedirect('/admin/corral/sms?account='.$c->account);
+        $this->get('/admin/corral/sms/new?account='.$c->account)->assertOk()->assertSee('Send a Text')->assertSee($c->phone);
+        $this->post('/admin/corral/sms', ['account' => $c->account, 'message' => 'Hello from the test'])->assertRedirect('/admin/corral/sms');
+        $this->get('/admin/corral/sms')->assertSee('Hello from the test')->assertSee('Recent Messages');
+        // Phone calls: recent calls with issue, duration, who answered and the transcript
+        $call = Phonecall::whereNotNull('transcript')->firstOrFail();
+        $this->get('/admin/corral/calls')->assertOk()->assertSee('Recent Calls')->assertSee('View transcript')->assertSee(e($call->disposition), false);
+        $this->get('/admin/corral/calls/'.$call->id.'/transcript')->assertOk()->assertSee('Transcript')->assertSee('Agent');
+        $this->get('/admin/corral/customers/'.$call->customer->account)->assertOk()->assertSee('Calls &amp; Texts', false)->assertSee(route('corral.calls.transcript', $call), false);
         $this->assertTrue($c->contactLogs()->where('channel', 'SMS')->where('body', 'Hello from the test')->where('status', 'not sent')->exists());
 
         // Every exception queue is its own menu item

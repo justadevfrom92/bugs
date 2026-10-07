@@ -4,7 +4,9 @@
     @include('admin.partials.page-head', ['title' => 'ERCOT', 'sub' => 'Search market transactions across every account: '
         .collect(['linked', 'unlinked', 'cancelled'])->map(fn ($s) => number_format($counts[$s] ?? 0).' '.$s)->implode(' · ')])
 
-    <form method="get" class="panel"><div class="panel-body">
+    <div class="search-layout">
+    <aside class="search-side">
+    <form method="get" class="panel"><div class="panel-head"><h2>Search Transactions</h2></div><div class="panel-body">
         <div class="form-row">
             <div class="field grow"><label for="esiid">ESIID</label><input id="esiid" name="esiid" value="{{ $f['esiid'] ?? '' }}" inputmode="numeric"></div>
             <div class="field"><label for="account">Account</label><input id="account" name="account" value="{{ $f['account'] ?? '' }}" inputmode="numeric" style="width:14ch"></div>
@@ -18,6 +20,9 @@
             @if (array_filter($f))<a class="btn ghost" href="{{ route('corral.ercot') }}">Clear</a>@endif
         </div>
     </div></form>
+    </aside>
+    <div class="search-main">
+
 
     <div class="panel"><div class="panel-head"><h2>Transactions</h2><span class="muted">{{ number_format($rows->total()) }} found</span></div>
         <div class="table-wrap"><table>
@@ -31,5 +36,7 @@
             @empty <tr><td colspan="8" class="empty">No transactions match.</td></tr> @endforelse</tbody>
         </table></div>
         @include('admin.partials.pager', ['p' => $rows])
+    </div>
+    </div>
     </div>
 @endsection

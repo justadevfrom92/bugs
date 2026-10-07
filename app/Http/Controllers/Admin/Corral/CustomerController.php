@@ -108,6 +108,8 @@ class CustomerController extends Controller
 
         return view('admin.corral.customers.show', [
             'c' => $customer,
+            'calls' => $customer->phonecalls()->with('user')->latest('started_at')->get(),
+            'texts' => $customer->contactLogs()->where('channel', 'SMS')->latest('created_at')->latest('id')->get(),
             'bookmarked' => $request->user()->bookmarks()->whereKey($customer->id)->exists(),
             'canRefund' => Gate::allows('refunds'),
             'banners' => $banners,

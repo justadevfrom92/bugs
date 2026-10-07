@@ -3,7 +3,9 @@
 @section('content')
     @include('admin.partials.page-head', ['title' => 'Notes Report', 'sub' => 'Account notes by agent, date, text and priority. "System" notes are the ones written automatically.'])
 
-    <form method="get" class="panel"><div class="panel-body" style="display:flex;flex-direction:column;gap:16px">
+    <div class="search-layout">
+    <aside class="search-side">
+    <form method="get" class="panel"><div class="panel-head"><h2>Search Notes Report</h2></div><div class="panel-body" style="display:flex;flex-direction:column;gap:16px">
         <div class="form-row">
             <div class="field"><label for="user">Username</label><select id="user" name="user"><option value="">-- Anyone --</option>
                 @foreach ($users as $u)<option value="{{ $u->id }}" @selected($f['user'] == $u->id)>{{ $u->name }}</option>@endforeach</select></div>
@@ -18,6 +20,9 @@
             @include('admin.corral.reports._output')
         </div>
     </div></form>
+    </aside>
+    <div class="search-main">
+
 
     @if ($records !== null)
         <div class="panel">
@@ -39,4 +44,6 @@
     @endif
 
     @include('admin.corral.reports._recent', ['route' => 'corral.reports.notes'])
+    </div>
+    </div>
 @endsection

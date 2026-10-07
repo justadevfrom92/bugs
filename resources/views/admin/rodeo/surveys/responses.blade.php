@@ -3,7 +3,9 @@
 @section('content')
     @include('admin.partials.page-head', ['title' => 'Survey Responses', 'sub' => 'Every answer customers have sent, newest first. Open one to see all its answers by category.'])
 
-    <form method="get" class="panel" style="margin-bottom:16px"><div class="panel-body form-row">
+    <div class="search-layout">
+    <aside class="search-side">
+    <form method="get" class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Search Responses</h2></div><div class="panel-body form-row">
         <div class="field grow"><label for="f-survey">Survey</label><select id="f-survey" name="survey"><option value="">All surveys</option>@foreach ($surveys as $s)<option value="{{ $s->id }}" @selected(($f['survey'] ?? null) == $s->id)>{{ $s->title }}</option>@endforeach</select></div>
         <div class="field"><label for="f-band">Recommend Score</label><select id="f-band" name="band"><option value="">Any</option>@foreach (['promoter' => 'Promoters (9–10)', 'passive' => 'Passives (7–8)', 'detractor' => 'Detractors (0–6)'] as $v => $l)<option value="{{ $v }}" @selected(($f['band'] ?? null) === $v)>{{ $l }}</option>@endforeach</select></div>
         <div class="field"><label for="f-source">Came From</label><select id="f-source" name="source"><option value="">Anywhere</option>@foreach (\App\Models\SurveyResponse::SOURCES as $v => $l)<option value="{{ $v }}" @selected(($f['source'] ?? null) === $v)>{{ $l }}</option>@endforeach</select></div>
@@ -13,6 +15,9 @@
         <label class="check" style="margin-bottom:8px"><input type="checkbox" name="comments" value="1" @checked($f['comments'] ?? false)> With a written answer</label>
         <button class="btn">Filter</button>@if (array_filter($f))<a class="btn ghost" href="{{ route('rodeo.surveys.responses') }}">Clear</a>@endif
     </div></form>
+    </aside>
+    <div class="search-main">
+
 
     <div class="panel">
         <div class="panel-head"><h2>{{ number_format($total) }} {{ Str::plural('Response', $total) }}</h2>@if ($f['survey'] ?? null)<a class="btn sm ghost" href="{{ route('rodeo.surveys.results', $f['survey']) }}">Results for this survey</a>@endif</div>
@@ -31,5 +36,7 @@
             @empty <tr><td colspan="7" class="empty">No responses match.</td></tr> @endforelse</tbody>
         </table></div>
         @include('admin.partials.pager', ['p' => $rows])
+    </div>
+    </div>
     </div>
 @endsection

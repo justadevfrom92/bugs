@@ -15,7 +15,7 @@
     ])
 
     <nav class="jump" aria-label="Sections">
-        @foreach (['actions' => 'Actions', 'general' => 'General', 'products' => 'Products', 'address' => 'Address', 'stars' => 'Stars', 'details' => 'Details', 'files' => 'Files', 'notes' => 'Notes', 'bills' => 'Bills & Payments', 'plans' => 'Plans & Addresses', 'ercot' => 'ERCOT', 'tech' => 'TECH', 'warehouse' => 'Warehouse', 'logs' => 'Logs'] as $id => $label)
+        @foreach (['actions' => 'Actions', 'general' => 'General', 'products' => 'Products', 'address' => 'Address', 'stars' => 'Stars', 'details' => 'Details', 'files' => 'Files', 'notes' => 'Notes', 'calls' => 'Calls & Texts', 'bills' => 'Bills & Payments', 'plans' => 'Plans & Addresses', 'ercot' => 'ERCOT', 'tech' => 'TECH', 'warehouse' => 'Warehouse', 'logs' => 'Logs'] as $id => $label)
             <a href="#{{ $id }}">{{ $label }}</a>
         @endforeach
     </nav>
@@ -205,6 +205,29 @@
             <div class="note"><small>{{ $n->author }} · {{ $n->created_at->format('n/j/Y g:i A') }}@if ($n->category) · {{ $n->category }}@endif @if ($n->action) · {{ $n->action }}@endif @if ($n->priority) · @include('admin.partials.pill', ['text' => $n->priority, 'tone' => ['High' => 'bad', 'Medium' => 'warn'][$n->priority] ?? ''])@endif</small>{{ $n->body }}</div>
         @empty <p class="muted">No notes yet.</p> @endforelse
     </div></div>
+
+    {{-- Phone calls and text messages with this customer --}}
+    <div class="grid-2" id="calls" style="align-items:start">
+        <div class="panel"><div class="panel-head"><h2>Phone Calls ({{ $calls->count() }})</h2><a class="btn sm ghost" href="{{ route('corral.calls', ['account' => $c->account]) }}">All Calls</a></div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Called</th><th>Issue</th><th class="num">Duration</th><th>Answered By</th><th>Transcript</th></tr></thead>
+                <tbody>@forelse ($calls->take(10) as $p)
+                    <tr><td class="nowrap">{{ $p->started_at->format('n/j/Y g:i A') }}<br><span class="help">{{ ucfirst($p->direction) }}</span></td><td>{{ $p->disposition ?? '—' }}</td>
+                        <td class="num">{{ intdiv($p->duration_sec, 60) }}:{{ str_pad((string) ($p->duration_sec % 60), 2, '0', STR_PAD_LEFT) }}</td>
+                        <td>{{ $p->user?->name ?? '—' }}@if ($p->agent_id)<br><span class="help mono">{{ $p->agent_id }}</span>@endif</td>
+                        <td>@if ($p->transcript)<a href="{{ route('corral.calls.transcript', $p) }}">View</a>@else<span class="muted">None</span>@endif</td></tr>
+                @empty <tr><td colspan="5" class="empty">No calls yet.</td></tr> @endforelse</tbody>
+            </table></div>
+        </div>
+        <div class="panel"><div class="panel-head"><h2>Texts ({{ $texts->count() }})</h2><span class="actions"><a class="btn sm ghost" href="{{ route('corral.sms', ['account' => $c->account]) }}">All Texts</a>@if ($c->phone)<a class="btn sm cyan" href="{{ route('corral.sms.create', ['account' => $c->account]) }}">Send a Text</a>@endif</span></div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Sent</th><th>Direction</th><th>Message</th><th>Status</th></tr></thead>
+                <tbody>@forelse ($texts->take(10) as $m)
+                    <tr><td class="nowrap">{{ $m->created_at->format('n/j/Y g:i A') }}</td><td>{{ $m->direction === 'in' ? 'From customer' : 'To customer' }}</td><td class="wrap">{{ $m->body }}</td><td>{{ $m->status }}</td></tr>
+                @empty <tr><td colspan="4" class="empty">No texts yet.</td></tr> @endforelse</tbody>
+            </table></div>
+        </div>
+    </div>
 
     {{-- Bills & Payments --}}
     <div id="bills" style="display:flex;flex-direction:column;gap:20px">

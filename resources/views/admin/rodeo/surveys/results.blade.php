@@ -7,12 +7,17 @@
         'sub' => 'Results · '.$survey->stateLabel().' · <span class="mono">/survey/'.e($survey->slug).'</span>',
         'actions' => '<a class="btn ghost" href="'.route('rodeo.surveys.responses', ['survey' => $survey->id]).'">Responses</a><a class="btn ghost" href="'.route('rodeo.surveys.export', [$survey] + array_filter($f)).'">Export CSV</a><a class="btn ghost" href="'.route('rodeo.surveys.edit', $survey).'">Edit Survey</a>'])
 
-    <form method="get" class="panel" style="margin-bottom:16px"><div class="panel-body form-row">
+    <div class="search-layout">
+    <aside class="search-side">
+    <form method="get" class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Filter Results</h2></div><div class="panel-body form-row">
         <div class="field"><label for="f-from">From</label><input id="f-from" type="date" name="from" value="{{ $f['from'] }}"></div>
         <div class="field"><label for="f-to">To</label><input id="f-to" type="date" name="to" value="{{ $f['to'] }}"></div>
         <div class="field"><label for="f-source">Came From</label><select id="f-source" name="source"><option value="">Anywhere</option>@foreach (\App\Models\SurveyResponse::SOURCES as $v => $l)<option value="{{ $v }}" @selected($f['source'] === $v)>{{ $l }}</option>@endforeach</select></div>
         <button class="btn">Apply</button>@if (array_filter($f))<a class="btn ghost" href="{{ route('rodeo.surveys.results', $survey) }}">Clear</a>@endif
     </div></form>
+    </aside>
+    <div class="search-main">
+
 
     <div class="stat-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px">
         <div class="stat"><span>Responses</span><strong>{{ number_format($responses->count()) }}</strong><small>{{ $responses->whereNotNull('customer_id')->count() }} from known customers</small></div>
@@ -62,4 +67,6 @@
     @empty
         <div class="panel"><div class="panel-body empty">This survey has no questions yet.</div></div>
     @endforelse
+    </div>
+    </div>
 @endsection
