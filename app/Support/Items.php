@@ -42,7 +42,12 @@ class Items
     /** The original items on a log ticket (or on the account ticket when $log is null). */
     public static function forTicket(Customer $c, ?string $log): Collection
     {
-        $all = self::forCustomer($c);
+        return self::onTicket(self::forCustomer($c), $log);
+    }
+
+    /** Filter forCustomer() rows to one ticket. */
+    public static function onTicket(Collection $all, ?string $log): Collection
+    {
         if ($log === null) {
             return $all->filter(fn ($i) => in_array('TicketCart_model', $i['parents'], true))->values();
         }

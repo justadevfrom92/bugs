@@ -21,11 +21,15 @@ class HistoryController extends Controller
         $byGroup = HistoryItem::where('customer_id', $customer->id)->select('group')
             ->selectRaw('count(*) as n, min(created_at) as first_at, max(created_at) as last_at')->groupBy('group')->get()->keyBy('group');
 
-        return collect(config('history.logs'))->map(function ($log, $key) use ($byGroup) {
-            $rows = collect($log[1])->map(fn ($g) => $byGroup[$g] ?? null)->filter();
+        // Original items on each log ticket count too, so a log with items but no history still shows
+        $items = Items::forCustomer($customer);
 
-            return ['key' => $key, 'title' => $log[0], 'count' => (int) $rows->sum('n'),
-                'first' => $rows->min('first_at'), 'last' => $rows->max('last_at')];
+        return collect(config('history.logs'))->map(function ($log, $key) use ($byGroup, $items) {
+            $rows = collect($log[1])->map(fn ($g) => $byGroup[$g] ?? null)->filter();
+            $own = Items::onTicket($items, $key);
+
+            return ['key' => $key, 'title' => $log[0], 'count' => (int) $rows->sum('n') + $own->count(),
+                'first' => collect([$rows->min('first_at'), $own->min('created')?->toDateTimeString()])->filter()->min(), 'last' => collect([$rows->max('last_at'), $own->max('created')?->toDateTimeString()])->filter()->max()];
         })->filter(fn ($l) => $l['count'] > 0)->values();
     }
 
