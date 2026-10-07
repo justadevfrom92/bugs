@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\Campaign;
 use App\Models\ContactLog;
 use App\Models\Customer;
+use App\Models\EmailCategory;
+use App\Models\EmailSuppression;
 use App\Models\EmailTemplate;
 use App\Models\EmailTestSend;
 use App\Models\MarketingChannel;
@@ -33,6 +35,18 @@ class MarketingRewardsSeeder extends Seeder
         foreach (DatabaseSeeder::data('email_templates') as $t) {
             EmailTemplate::create($t);
         }
+        // Rodeo → Emails → Categories
+        foreach ([
+            ['Account', 'Welcome letters, confirmations and sign-in emails', '#00AEEF', ['Welcome Letter', 'Welcome Letter - Renewed', 'Renewal - Confirmation', 'Freedom Flex - Confirmation', 'MyAccount - Password Reset']],
+            ['Billing', 'Bills, payments and collections notices', '#2e7d32', ['Bill Ready', 'Payment Made', 'Billing - Resi - Payment Made', 'Disconnect Notice']],
+            ['Marketing', 'Offers and campaigns; only to opted-in customers', '#f39c12', ['Renewal Offer', 'Winback Offer']],
+            ['Rewards', 'Peak Perks and Bounty emails', '#8e44ad', ['MyAcct - Peak Perks - Welcome to Peak Perks']],
+            ['Surveys', 'Survey invitations', '#c0392b', ['Customer Survey']],
+            ['Service', 'One-off messages from Customer Service', '#607d8b', ['Custom Message']],
+        ] as $i => [$name, $desc, $color, $names]) {
+            $cat = EmailCategory::create(['name' => $name, 'description' => $desc, 'color' => $color, 'position' => $i + 1]);
+            EmailTemplate::whereIn('name', $names)->update(['email_category_id' => $cat->id]);
+        }
         foreach ([['1001', 'Organic Website', 'Organic'], ['2001', 'Call Center', 'Agent'], ['3001', 'Google Ads Pay Per Click', 'Paid'],
             ['32001', 'Partner Referral Network', 'Partner'], ['41001', 'Broker - Sample Brokerage', 'Broker'], ['52001', 'Community Event', 'Partner']] as [$msid, $name, $type]) {
             MarketingChannel::create(['msid' => $msid, 'name' => $name, 'type' => $type]);
@@ -48,9 +62,21 @@ class MarketingRewardsSeeder extends Seeder
             'status' => 'sent', 'sent_at' => now()->subDays(6), 'created_by' => $admin?->id]);
         $recipients = $campaign->audienceQuery()->limit(14)->get();
         foreach ($recipients as $i => $c) {
+            // Two bounce, and their addresses go on the suppression list (Rodeo → Emails)
+            $bounced = in_array($i, [4, 10], true) && $c->email && $c->account !== '1219000000';
             ContactLog::create(['customer_id' => $c->id, 'campaign_id' => $campaign->id, 'channel' => 'Email', 'template' => $tpl->name, 'status' => 'sent',
-                'sent_at' => now()->subDays(6), 'opened_at' => $i % 2 ? now()->subDays(5) : null, 'clicked_at' => $i % 4 === 1 ? now()->subDays(5) : null, 'created_at' => now()->subDays(6)]);
+                'sent_at' => now()->subDays(6), 'dropped_at' => $bounced ? now()->subDays(6)->addMinutes(2) : null,
+                'opened_at' => ! $bounced && $i % 2 ? now()->subDays(5) : null, 'clicked_at' => ! $bounced && $i % 4 === 1 ? now()->subDays(5) : null, 'created_at' => now()->subDays(6)]);
+            if ($bounced) {
+                EmailSuppression::create(['email' => $c->email, 'reason' => 'bounce', 'customer_id' => $c->id, 'note' => 'Mailbox does not exist (550)', 'created_at' => now()->subDays(6)]);
+            }
         }
+        foreach ([['unsubscribe', 'Clicked unsubscribe in a Renewal Offer email', 9], ['complaint', 'Marked a Winback Offer email as spam', 14], ['manual', 'Asked on the phone to stop all emails', 3]] as [$reason, $note, $days]) {
+            $c = Customer::whereNotNull('email')->where('account', '!=', '1219000000')->whereNotIn('email', EmailSuppression::select('email'))->orderByDesc('id')->skip($days)->first();
+            $c && EmailSuppression::create(['email' => $c->email, 'reason' => $reason, 'customer_id' => $c->id, 'note' => $note,
+                'user_id' => $reason === 'manual' ? User::where('email', 'csr@example.com')->value('id') : null, 'created_at' => now()->subDays($days)]);
+        }
+        EmailSuppression::create(['email' => 'old-address@example.net', 'reason' => 'bounce', 'note' => 'Address from a closed account', 'created_at' => now()->subDays(40)]);
         $campaign->update(['recipients' => $recipients->count()]);
         Campaign::create(['name' => 'Peak Perks Enrollment', 'channel' => 'Email', 'email_template_id' => EmailTemplate::where('name', 'like', '%Peak Perks%')->value('id'),
             'audience' => ['statuses' => ['Good - On Flow'], 'without_product' => 'Peak Perks'], 'created_by' => $admin?->id]);

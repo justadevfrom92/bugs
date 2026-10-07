@@ -147,10 +147,10 @@
                     <td>{{ $t->subject ?? '—' }}@if ($t->note)<div class="muted">“{{ Str::limit($t->note, 80) }}”</div>@endif</td>
                     <td><details><summary>{{ count($t->recipients) }} {{ Str::plural('person', count($t->recipients)) }}</summary><ul class="tt-recips" style="margin-top:6px">@foreach ($t->recipients as $r)
                         <li>{{ $r['email'] }}@isset($r['account']) <span class="mono muted">{{ $r['account'] }}</span>@endisset
-                            @include('admin.partials.pill', ['text' => ['sent' => 'Sent', 'logged' => 'Logged', 'failed' => 'Failed'][$r['status'] ?? ''] ?? '—', 'tone' => ['sent' => 'ok', 'failed' => 'bad'][$r['status'] ?? ''] ?? ''])
+                            @include('admin.partials.pill', ['text' => ['sent' => 'Sent', 'logged' => 'Logged', 'failed' => 'Failed', 'suppressed' => 'Suppressed'][$r['status'] ?? ''] ?? '—', 'tone' => ['sent' => 'ok', 'failed' => 'bad'][$r['status'] ?? ''] ?? ''])
                             @isset($r['error'])<span class="muted">{{ $r['error'] }}</span>@endisset</li>
                     @endforeach</ul></details></td>
-                    <td>@include('admin.partials.pill', ['text' => ['sent' => 'Sent', 'logged' => 'Logged only', 'failed' => 'Failed', 'partial' => 'Partly sent'][$t->status] ?? $t->status, 'tone' => ['sent' => 'ok', 'failed' => 'bad', 'partial' => 'warn'][$t->status] ?? ''])</td>
+                    <td>@include('admin.partials.pill', ['text' => ['sent' => 'Sent', 'logged' => 'Logged only', 'failed' => 'Failed', 'partial' => 'Partly sent', 'suppressed' => 'Suppressed'][$t->status] ?? $t->status, 'tone' => ['sent' => 'ok', 'failed' => 'bad', 'partial' => 'warn'][$t->status] ?? ''])</td>
                     <td class="actions">@if ($t->params)<form method="post" action="{{ route('rodeo.templates.test.again', [$template, $t]) }}" class="inline" data-confirm="Send this test again?|Same people, same options.|Send Again">@csrf<button class="btn sm ghost">Send Again</button></form>@endif</td></tr>
             @empty <tr><td colspan="7" class="empty">No tests {{ $statusFilter ? 'with that result' : 'yet' }}.</td></tr> @endforelse</tbody>
         </table></div>

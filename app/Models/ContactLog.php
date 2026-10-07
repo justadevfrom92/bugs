@@ -34,6 +34,23 @@ class ContactLog extends Model
         return $this->channel.': '.$this->template;
     }
 
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    /** Where the email got to: dropped, clicked, opened, sent, queued or not sent. */
+    public function stage(): string
+    {
+        return match (true) {
+            (bool) $this->dropped_at => 'dropped',
+            (bool) $this->clicked_at => 'clicked',
+            (bool) $this->opened_at => 'opened',
+            (bool) $this->sent_at => 'sent',
+            default => $this->status,
+        };
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

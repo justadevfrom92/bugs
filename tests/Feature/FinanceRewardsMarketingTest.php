@@ -6,6 +6,7 @@ use App\Mail\TemplateTest;
 use App\Models\Campaign;
 use App\Models\ContactLog;
 use App\Models\Customer;
+use App\Models\EmailSuppression;
 use App\Models\EmailTemplate;
 use App\Models\LedgerEntry;
 use App\Models\Payment;
@@ -141,7 +142,10 @@ class FinanceRewardsMarketingTest extends TestCase
         $count = $campaign->audienceQuery()->count();
         $this->assertGreaterThan(0, $count);
         $this->post(route('rodeo.campaigns.send', $campaign))->assertRedirect()->assertSessionHas('status');
-        $this->assertSame($count, ContactLog::where('campaign_id', $campaign->id)->count());
+        // Addresses on the suppression list (Rodeo → Emails) are skipped
+        $suppressed = $campaign->audienceQuery()->whereIn('email', EmailSuppression::select('email'))->count();
+        $this->assertGreaterThan(0, $suppressed);
+        $this->assertSame($count - $suppressed, ContactLog::where('campaign_id', $campaign->id)->count());
 
         $this->post(route('rodeo.channels.save'), ['msid' => '77001', 'name' => 'Radio spot', 'type' => 'Paid'])->assertRedirect();
         $this->post(route('rodeo.promos.save'), ['code' => 'rodeo10', 'description' => '$10 off', 'credit' => 10])->assertRedirect();

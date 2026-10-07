@@ -7,6 +7,7 @@ use App\Models\ContactLog;
 use App\Models\Customer;
 use App\Models\CustomerFlag;
 use App\Models\CustomerProduct;
+use App\Models\EmailSuppression;
 use App\Models\ErcotTransaction;
 use App\Models\LedgerEntry;
 use App\Models\Payment;
@@ -109,6 +110,11 @@ class AccountActions
     private function contact(string $channel, string $template, ?string $body = null): string
     {
         $integration = $channel === 'SMS' ? 'sms' : 'salesforce';
+        if ($channel === 'Email' && EmailSuppression::has($this->c->email)) {
+            ContactLog::create(['customer_id' => $this->c->id, 'channel' => $channel, 'template' => $template, 'body' => $body, 'status' => 'suppressed', 'user_id' => $this->user?->id]);
+
+            return 'Email "'.$template.'" not sent: '.$this->c->email.' is on the suppression list (Rodeo → Emails).';
+        }
         $ready = $this->configured($integration);
         ContactLog::create(['customer_id' => $this->c->id, 'channel' => $channel, 'template' => $template, 'body' => $body,
             'phone' => $channel === 'SMS' ? $this->c->phone : null, 'status' => $ready ? 'queued' : 'not sent', 'sent_at' => null, 'user_id' => $this->user?->id]);

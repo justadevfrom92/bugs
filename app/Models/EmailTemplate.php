@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\URL;
 
@@ -13,6 +14,11 @@ class EmailTemplate extends Model
     use RecordsHistory;
 
     protected $guarded = ['id'];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(EmailCategory::class, 'email_category_id');
+    }
 
     public function campaigns(): HasMany
     {

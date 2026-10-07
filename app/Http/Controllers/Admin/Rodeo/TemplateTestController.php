@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\TemplateTest;
 use App\Models\ContactLog;
 use App\Models\Customer;
+use App\Models\EmailSuppression;
 use App\Models\EmailTemplate;
 use App\Models\EmailTestSend;
 use App\Models\Market;
@@ -142,6 +143,11 @@ class TemplateTestController extends Controller
             /** @var Customer $c */
             $c = $r['customer'];
             [$subject, $body] = $this->compose($template, $c, $prefix, $data['note'] ?? null, $request->user());
+            if (EmailSuppression::has($r['email'])) {
+                $log[] = array_filter(['email' => $r['email'], 'name' => $r['name'], 'account' => $r['is_customer'] ? $c->account : null, 'status' => 'suppressed', 'error' => 'On the suppression list']);
+
+                continue;
+            }
             try {
                 Mail::to($r['email'], $r['name'])->send(new TemplateTest($subject, $body));
                 $status = $delivers ? 'sent' : 'logged';
@@ -170,6 +176,7 @@ class TemplateTestController extends Controller
         $msg = match ($overall) {
             'sent' => "Test sent to $n ".str('recipient')->plural($n).'.',
             'logged' => "Test written to the mail log for $n ".str('recipient')->plural($n).' — not delivered, because MAIL_MAILER in .env is "'.config('mail.default').'". Set it to smtp (or ses, postmark…) with its MAIL_* settings to deliver.',
+            'suppressed' => 'Nothing sent: every recipient is on the suppression list (Rodeo → Emails → Suppression List).',
             'failed' => 'The test could not be sent: '.($log[0]['error'] ?? 'mail error').'. Check the MAIL_* settings in .env.',
             default => 'Test sent to some recipients; see Test History for the ones that failed.',
         };

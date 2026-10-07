@@ -19,7 +19,8 @@ class ItemSeeder extends Seeder
     {
         $customers = Customer::orderBy('id')->limit(12)->get();
         foreach ($customers as $i => $c) {
-            $at = fn (int $days) => $c->created_at->copy()->addDays($days);
+            // Never later than now: new accounts get their later items squeezed into the time they have had
+            $at = fn (int $days) => $c->created_at->copy()->addDays($days)->min(now()->subHours(1 + $days % 7));
             $item = fn (string $model, string $summary, array $data, int $days) => DataItem::create(['customer_id' => $c->id, 'model' => $model, 'summary' => $summary, 'data' => $data,
                 'created_at' => $at($days), 'updated_at' => $at($days)]);
 

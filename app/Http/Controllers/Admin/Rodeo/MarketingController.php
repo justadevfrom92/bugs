@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\ContactLog;
 use App\Models\Customer;
+use App\Models\EmailCategory;
+use App\Models\EmailSuppression;
 use App\Models\EmailTemplate;
 use App\Models\Market;
 use App\Models\MarketingChannel;
@@ -90,10 +92,16 @@ class MarketingController extends Controller
     {
         abort_if($campaign->status === 'sent', 422, 'This campaign was already sent.');
         $ready = self::ready($campaign->channel);
-        $count = 0;
-        DB::transaction(function () use ($campaign, $ready, &$count) {
-            $campaign->audienceQuery()->with('plan')->chunkById(200, function ($customers) use ($campaign, $ready, &$count) {
+        $count = $suppressed = 0;
+        DB::transaction(function () use ($campaign, $ready, &$count, &$suppressed) {
+            $campaign->audienceQuery()->with('plan')->chunkById(200, function ($customers) use ($campaign, $ready, &$count, &$suppressed) {
                 foreach ($customers as $c) {
+                    // Rodeo → Emails → Suppression List: no email to these addresses
+                    if ($campaign->channel === 'Email' && EmailSuppression::has($c->email)) {
+                        $suppressed++;
+
+                        continue;
+                    }
                     ContactLog::create(['customer_id' => $c->id, 'campaign_id' => $campaign->id, 'channel' => $campaign->channel,
                         'template' => $campaign->channel === 'Email' ? $campaign->template?->name : 'Campaign: '.$campaign->name,
                         'body' => $campaign->channel === 'Email' ? strip_tags($campaign->template?->render($c) ?? '') : str_replace('{{first_name}}', $c->first_name, $campaign->message),
@@ -104,21 +112,32 @@ class MarketingController extends Controller
             $campaign->update(['status' => 'sent', 'sent_at' => now(), 'recipients' => $count]);
         });
 
-        return redirect()->route('rodeo.campaigns')->with('status', $count.' messages '.($ready ? 'queued.' : 'logged but not sent: '.($campaign->channel === 'SMS' ? 'Twilio' : 'Salesforce').' is not configured in .env.'));
+        return redirect()->route('rodeo.campaigns')->with('status', $count.' messages '.($ready ? 'queued.' : 'logged but not sent: '.($campaign->channel === 'SMS' ? 'Twilio' : 'Salesforce').' is not configured in .env.')
+            .($suppressed ? ' '.$suppressed.' skipped: on the suppression list.' : ''));
     }
 
     // ---------- Email templates ----------
 
-    public function templates(): View
+    public function templates(Request $request): View
     {
-        return view('admin.rodeo.templates', ['templates' => EmailTemplate::withCount(['campaigns', 'testSends'])->withMax('testSends', 'created_at')->orderBy('name')->get()]);
+        $only = $request->query('category');
+
+        return view('admin.rodeo.templates', [
+            'templates' => EmailTemplate::with('category')->withCount(['campaigns', 'testSends'])->withMax('testSends', 'created_at')
+                ->when($only === 'none', fn ($q) => $q->whereNull('email_category_id'))
+                ->when($only && $only !== 'none', fn ($q) => $q->where('email_category_id', $only))
+                ->orderBy('name')->get(),
+            'categories' => EmailCategory::orderBy('position')->orderBy('name')->get(),
+            'only' => $only,
+            'sent' => ContactLog::where('channel', 'Email')->selectRaw('template, count(*) as n')->groupBy('template')->pluck('n', 'template'),
+        ]);
     }
 
     public function templateForm(?EmailTemplate $template = null): View
     {
-        $template ??= new EmailTemplate(['body' => '<p>Hi {{first_name}},</p>']);
+        $template ??= new EmailTemplate(['body' => '<p>Hi {{first_name}},</p>', 'email_category_id' => request()->query('category')]);
 
-        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first()]);
+        return view('admin.rodeo.template', ['template' => $template, 'sample' => Customer::with('plan')->first(), 'categories' => EmailCategory::orderBy('position')->orderBy('name')->get()]);
     }
 
     public function saveTemplate(Request $request, ?EmailTemplate $template = null): RedirectResponse
@@ -127,6 +146,7 @@ class MarketingController extends Controller
             'name' => ['required', 'string', 'max:100', Rule::unique('email_templates')->ignore($template)],
             'subject' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string', 'max:100000'],
+            'email_category_id' => ['nullable', 'exists:email_categories,id'],
         ]);
         $template = $template ? tap($template)->update($data) : EmailTemplate::create($data);
 

@@ -177,7 +177,15 @@ return [
                 'Marketing' => [
                     ['Dashboard', 'rodeo.dashboard'],
                     ['Campaigns', 'rodeo.campaigns'],
-                    ['Email Templates', 'rodeo.templates'],
+                ],
+                'Emails' => [
+                    ['Overview', 'rodeo.emails'],
+                    ['Sent Emails', 'rodeo.emails.sent'],
+                    ['Templates', 'rodeo.templates'],
+                    ['New Template', 'rodeo.templates.create'],
+                    ['Test Sends', 'rodeo.emails.tests'],
+                    ['Categories', 'rodeo.emails.categories'],
+                    ['Suppression List', 'rodeo.emails.suppressions'],
                 ],
                 'Surveys' => [
                     ['All Surveys', 'rodeo.surveys'],

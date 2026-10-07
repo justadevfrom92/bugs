@@ -9,6 +9,7 @@
         <form method="post" action="{{ $template->exists ? route('rodeo.templates.update', $template) : route('rodeo.templates.store') }}" class="panel">@csrf @if ($template->exists) @method('put') @endif
             <div class="panel-body form-grid" style="grid-template-columns:1fr">
                 <label for="name">Name</label><input id="name" name="name" required value="{{ old('name', $template->name) }}">
+                <label for="email_category_id">Category</label><select id="email_category_id" name="email_category_id"><option value="">None</option>@foreach ($categories as $cat)<option value="{{ $cat->id }}" @selected(old('email_category_id', $template->email_category_id) == $cat->id)>{{ $cat->name }}</option>@endforeach</select>
                 <label for="subject">Subject</label><input id="subject" name="subject" required value="{{ old('subject', $template->subject) }}">
                 <label for="b-html">Body (HTML)</label><textarea id="b-html" name="body" spellcheck="false">{{ old('body', $template->body) }}</textarea>
             </div>

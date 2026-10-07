@@ -297,6 +297,22 @@ Route::prefix('admin')->group(function () {
                 Route::get('preview', 'preview')->name('.preview');
                 Route::post('{send}/again', 'again')->middleware('throttle:20,1')->name('.again');
             });
+            Route::controller(Admin\Rodeo\EmailController::class)->prefix('emails')->name('emails')->group(function () {
+                Route::get('/', 'overview');
+                Route::get('sent', 'sent')->name('.sent');
+                Route::get('sent/{email}', 'show')->name('.sent.show');
+                Route::get('tests', 'tests')->name('.tests');
+                Route::get('categories', 'categories')->name('.categories');
+                Route::get('categories/new', 'categoryForm')->name('.categories.create');
+                Route::get('categories/{category}/edit', 'categoryForm')->name('.categories.edit');
+                Route::post('categories', 'saveCategory')->name('.categories.store');
+                Route::put('categories/{category}', 'saveCategory')->name('.categories.update');
+                Route::delete('categories/{category}', 'deleteCategory')->name('.categories.destroy');
+                Route::get('suppressions', 'suppressions')->name('.suppressions');
+                Route::get('suppressions/new', 'suppressionForm')->name('.suppressions.create');
+                Route::post('suppressions', 'saveSuppression')->name('.suppressions.store');
+                Route::delete('suppressions/{suppression}', 'deleteSuppression')->name('.suppressions.destroy');
+            });
             Route::controller(Admin\Rodeo\SurveyController::class)->prefix('surveys')->name('surveys')->group(function () {
                 Route::get('/', 'index');
                 Route::get('new', 'create')->name('.create');
