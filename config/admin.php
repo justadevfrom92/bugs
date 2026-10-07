@@ -214,6 +214,7 @@ return [
     // Detail pages whose menu item isn't named after them: route area => menu route (Walker run pages sit under Report Status)
     'menu_parents' => [
         'walker.runs' => 'walker.home',
+        'corral.items' => 'corral.customers.index',
     ],
 
     // Extra permissions a role can hold besides app access

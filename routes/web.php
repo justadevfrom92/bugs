@@ -122,6 +122,14 @@ Route::prefix('admin')->group(function () {
             Route::post('customers/{customer}/notes', [Admin\Corral\CustomerController::class, 'addNote'])->name('customers.notes');
             Route::post('payments/{payment}/reverse', [Admin\Corral\CustomerController::class, 'reversePayment'])->name('payments.reverse');
             Route::get('history/{item}', [Admin\HistoryController::class, 'show'])->name('history.show');
+            // The original data item pages: corral/data/item/{id}/{Model} (config/items.php)
+            Route::controller(Admin\Corral\ItemController::class)->where(['id' => '[0-9]+', 'model' => '\w+_model'])->group(function () {
+                Route::get('data/item/{id}/{model}', 'show')->name('items.show');
+                Route::get('data/edit/{id}/{model}', 'edit')->name('items.edit');
+                Route::put('data/edit/{id}/{model}', 'update')->name('items.update');
+                Route::delete('data/delete/{id}/{model}', 'destroy')->name('items.destroy');
+                Route::post('data/act/{id}/{model}/{action}', 'act')->middleware('throttle:30,1')->name('items.act');
+            });
             Route::get('customers/{customer}/ticket', [Admin\HistoryController::class, 'ticket'])->name('customers.ticket');
             Route::get('customers/{customer}/logs/{log}', [Admin\HistoryController::class, 'log'])->name('customers.log');
 

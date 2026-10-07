@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             CustomerSeeder::class,
             MarketingRewardsSeeder::class,
             AccountSeeder::class,
+            ItemSeeder::class,
             HistorySeeder::class,
             SystemSeeder::class,
             WalkerSeeder::class,

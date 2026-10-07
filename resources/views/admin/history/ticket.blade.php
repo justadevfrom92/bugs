@@ -65,10 +65,11 @@
         </div>
     </div>
 
-    <div class="panel"><div class="panel-head"><h2>Child Items</h2><span class="muted">{{ $items->count() }}</span></div>
-        <div class="table-wrap"><table class="hist"><tbody>@foreach ($items->sortByDesc('created_at') as $i)
-            <tr class="click" data-href="{{ route('corral.history.show', $i) }}"><td class="mono" style="width:9ch"><a href="{{ route('corral.history.show', $i) }}">{{ $i->id }}</a></td>
-                <td style="width:19ch;white-space:nowrap">{{ $i->created_at->format('Y-m-d H:i:s') }}</td><td class="mono">{{ $i->model }}</td><td>{{ $i->summary }}</td></tr>
-        @endforeach</tbody></table></div>
+    {{-- The original items on this ticket, each opening its own data item page --}}
+    <div class="panel"><div class="panel-head"><h2>Child Items</h2><span class="muted">{{ $dataItems->count() }}</span></div>
+        <div class="table-wrap"><table class="hist"><tbody>@forelse ($dataItems as $i)
+            <tr class="click" data-href="{{ $i['url'] }}"><td style="width:22ch"><a class="mono" href="{{ $i['url'] }}">{{ $i['id'] }}</a><br><span class="muted">{{ $i['created']->format('Y-m-d H:i:s') }}</span></td>
+                <td style="width:18ch">{{ $i['label'] }}</td><td>{{ $i['summary'] }}</td><td class="mono muted">{{ $i['model'] }}</td></tr>
+        @empty <tr><td class="empty">No items on this ticket.</td></tr> @endforelse</tbody></table></div>
     </div>
 @endsection

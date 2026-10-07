@@ -9,7 +9,8 @@
         'title' => $item->model,
         'sub' => e($item->summary).' — '.e($item->action).' '.$item->created_at->format('F jS, Y @ g:i:s A'),
         'actions' => $item->customer && auth()->user()->hasPerm('corral')
-            ? ($logKey ? '<a class="btn ghost" href="'.route('corral.customers.log', [$item->customer, $logKey]).'">Back to ticket</a>' : '')
+            ? ((config()->has('items.models.'.$item->model) && $item->record_id && $item->action !== 'deleted' ? '<a class="btn cyan" href="'.route('corral.items.show', [$item->record_id, $item->model]).'">Item page</a>' : '')
+              .($logKey ? '<a class="btn ghost" href="'.route('corral.customers.log', [$item->customer, $logKey]).'">Back to ticket</a>' : '')
               .'<a class="btn ghost" href="'.route('corral.customers.show', $item->customer).'">Back to account</a>'
             : ($item->user ? '<a class="btn ghost" href="'.route('sheriff.users.history', $item->user).'">'.e($item->user->name).'\'s history</a>' : ''),
     ])

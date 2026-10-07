@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\HistoryItem;
 use App\Models\User;
+use App\Support\Items;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -44,6 +45,7 @@ class HistoryController extends Controller
             'processLogs' => $customer->queueLogs()->get(),
             'currentQueues' => $customer->queueLogs()->whereNull('exited_at')->get(),
             'items' => $items,
+            'dataItems' => Items::forTicket($customer, null),
             'log' => null,
         ]);
     }
@@ -66,6 +68,7 @@ class HistoryController extends Controller
             'processLogs' => collect(),
             'currentQueues' => collect(),
             'items' => $items,
+            'dataItems' => Items::forTicket($customer, $log),
             'log' => $log,
         ]);
     }

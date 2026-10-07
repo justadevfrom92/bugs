@@ -82,6 +82,14 @@ Test emails go out through Laravel's mailer: set `MAIL_MAILER` (e.g. `smtp`) and
 ## Adding an admin app
 On the launcher, **+ New Admin App** (roles with Sheriff, e.g. Administrator) creates a new app: name, description, icon, which roles can open it, and its sidebar links. Each link points to any existing admin screen or to a URL, grouped under headings. The app gets a tile on the launcher, opens at `/admin/<address>` in the shared admin layout, and appears as a column in Sheriff → Roles. Edit or delete it from its **Edit App** button. These apps are stored in the `admin_apps` table; the built-in apps stay in `config/admin.php`.
 
+## Original Corral item pages
+Every item model from the original Corral has its own page at `/admin/corral/data/item/{id}/{Model}` (49 models, e.g. `ItemEmailSalesforce_model`, `ItemPayment_model`, `ItemProductGiddyup_model`, `ItemErcot81405_model`): its fields in the original order, its own buttons (Edit, Resend, Check Status, Duplicate, Mark as Deposit, Regenerate, Check Current Account, Link to All Accounts, Recalculate, Regen Welcome Packet, Delete), Process Logs, and Parent Tickets. The account ticket and each Logs ticket list their items under Child Items.
+
+- `config/items.php` lists each model's fields, buttons and parent tickets (generated from the original pages' field names; no customer data).
+- `App\Support\Items` reads each model from the app's own records where they exist (payments, notes, bills, emails, EDI transactions, products, payment methods, files, addresses, the account) and from `data_items` for the rest (attributes, content viewed, devices, reviews, forecast models, usage buckets). Original fields the app doesn't track are kept on a `data_items` row tied to the record.
+- Sensitive fields (SSN, driver's license, card number, CVV, tokens, password hashes, reset codes) are always masked and can't be edited. Delete needs the *delete* right.
+- Buttons that depend on an outside service (SalesForce, Utilibill, Amazon) say so and log the request when the service isn't configured.
+
 ## History
 Every change to accounts, payments, bills, notes, queues, plans, rates, fees, pricing, pages, blocks, users and roles is recorded automatically in `history_items`: who, when, the record's model name (the original system's naming, e.g. `ItemPayment_model`), each field's old → new value and a snapshot of the record. Sign-ins, plan-group edits, reference-table saves and job runs are recorded too. Passwords are never stored in history.
 
