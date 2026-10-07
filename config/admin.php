@@ -53,10 +53,17 @@ return [
         ],
         'lando' => [
             'name' => 'Lando',
-            'desc' => 'Website CMS: pages, content blocks, plans, rates and TDSP fees.',
+            'desc' => 'Website CMS: site health and visitors, pages, content blocks, plans, rates and TDSP fees.',
             'icon' => 'layout',
-            'home' => 'lando.pages.index',
+            'home' => 'lando.dashboard',
             'menu' => [
+                'Site' => [
+                    ['Dashboard', 'lando.dashboard'],
+                    ['Site Health', 'lando.health'],
+                    ['Visitors', 'lando.visitors'],
+                    ['Blocked Areas', 'lando.blocked.areas'],
+                    ['Blocked IPs', 'lando.blocked.ips'],
+                ],
                 'Pages' => [
                     ['List Pages', 'lando.pages.index'],
                     ['Add a Page', 'lando.pages.create'],

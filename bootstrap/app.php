@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BlockSiteVisitors;
 use App\Http\Middleware\EnsureAppAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // My Account (customers) and the admin (employees) each send people to their own sign-in page
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('myaccount*') ? route('myaccount.login') : route('admin.login'));
         $middleware->redirectUsersTo(fn (Request $request) => $request->is('myaccount*') ? route('myaccount.dashboard') : route('admin.launcher'));
+        $middleware->web(append: [BlockSiteVisitors::class]);
         $middleware->alias([
             'app' => EnsureAppAccess::class,
         ]);

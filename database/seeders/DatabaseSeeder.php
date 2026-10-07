@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             HistorySeeder::class,
             SystemSeeder::class,
             WalkerSeeder::class,
+            SiteTrafficSeeder::class,
         ]);
     }
 

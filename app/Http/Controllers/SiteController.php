@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContactMessage;
+use App\Models\SiteVisit;
 use App\Services\Catalog;
+use App\Support\SiteTraffic;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -32,13 +34,31 @@ class SiteController extends Controller
     public function session(Request $request): JsonResponse
     {
         $user = $request->user();
+        // Each page asks once as it opens: that's the page view (Lando → Site → Visitors)
+        [$visit, $block] = $request->filled('path') ? SiteTraffic::record($request, (string) $request->query('path'), $request->query('ref')) : [null, null];
 
-        return response()->json([
+        $response = response()->json([
             'csrf' => csrf_token(),
             'user' => $user?->active ? ['name' => $user->name] : null,
             // A customer signed in to My Account gets Sign Out in the website header
             'customer' => ($c = auth('customer')->user()) ? ['name' => $c->first_name] : null,
+            'visit' => $visit && ! $block ? $visit->id : null,
+            // The static pages hide themselves when the visitor is blocked
+            'blocked' => $block ? ['message' => $block->message ?: 'This page isn\'t available.'] : null,
         ])->header('Cache-Control', 'no-store');
+
+        return $visit ? $response->withCookie(cookie(SiteTraffic::COOKIE, $visit->visitor, 60 * 24 * 365)) : $response;
+    }
+
+    /** The open page's heartbeat, so Lando can show who is on the site now. */
+    public function ping(Request $request): JsonResponse
+    {
+        $visitor = $request->cookie(SiteTraffic::COOKIE);
+        if ($visitor && $id = $request->integer('v')) {
+            SiteVisit::whereKey($id)->where('visitor', $visitor)->where('created_at', '>=', now()->subHours(12))->update(['seen_at' => now()]);
+        }
+
+        return response()->json(['ok' => true])->header('Cache-Control', 'no-store');
     }
 
     /** Contact Us form → Corral → Web Messages */

@@ -10,7 +10,10 @@ use App\Models\Page;
 use App\Models\PageComponent;
 use App\Models\PlanGroup;
 use App\Models\Site;
+use App\Models\SiteBlock;
+use App\Models\SiteVisit;
 use App\Models\Template;
+use App\Support\SiteTraffic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -48,7 +51,16 @@ class PageController extends Controller
             unset($node);
         }
 
-        return view('admin.lando.pages.index', ['site' => $site, 'sites' => Site::orderBy('name')->get(), 'tree' => $tree, 'count' => $site->pages()->count()]);
+        // Per page: views in the last 7 days, visitors on it now, and admins editing it
+        $ids = $site->pages()->pluck('id');
+        $traffic = [
+            'views' => SiteVisit::whereIn('page_id', $ids)->where('blocked', false)->where('created_at', '>=', today()->subDays(6))->selectRaw('page_id, count(*) as n')->groupBy('page_id')->pluck('n', 'page_id'),
+            'online' => SiteVisit::whereIn('page_id', $ids)->online()->where('blocked', false)->selectRaw('page_id, count(distinct visitor) as n')->groupBy('page_id')->pluck('n', 'page_id'),
+            'editing' => SiteTraffic::editing(),
+            'blocked' => SiteBlock::where('type', 'area')->inForce()->get(),
+        ];
+
+        return view('admin.lando.pages.index', ['site' => $site, 'sites' => Site::orderBy('name')->get(), 'tree' => $tree, 'count' => $site->pages()->count(), 'traffic' => $traffic]);
     }
 
     public function create(Request $request): View
@@ -63,9 +75,41 @@ class PageController extends Controller
         return redirect(app_route('pages.edit', $page))->with('status', 'Page created. Add components below, then publish it.');
     }
 
-    public function edit(Page $page): View
+    public function edit(Request $request, Page $page): View
     {
+        // Shown on List Pages and the page's Activity as "being edited by"
+        SiteTraffic::editing($page->id, ['id' => $request->user()->id, 'name' => $request->user()->name]);
+
         return $this->form($page);
+    }
+
+    /** Lando → List Pages → Activity: who is on the page now, its views, and its change history. */
+    public function activity(Page $page): View
+    {
+        $visits = SiteVisit::where('page_id', $page->id);
+        $since = today()->subDays(29);
+        $perDay = (clone $visits)->where('blocked', false)->where('created_at', '>=', $since)->get(['created_at'])->countBy(fn ($v) => $v->created_at->toDateString());
+
+        return view('admin.lando.pages.activity', [
+            'page' => $page->load('site', 'template'),
+            'online' => (clone $visits)->online()->where('blocked', false)->with('customer')->latest('seen_at')->get()->unique('visitor'),
+            'editing' => SiteTraffic::editing($page->id),
+            'stats' => [
+                'today' => (clone $visits)->where('blocked', false)->where('created_at', '>=', today())->count(),
+                'week' => (clone $visits)->where('blocked', false)->where('created_at', '>=', today()->subDays(6))->count(),
+                'month' => $perDay->sum(),
+                'people' => (clone $visits)->where('blocked', false)->where('created_at', '>=', $since)->distinct()->count('visitor'),
+                'blocked' => (clone $visits)->where('blocked', true)->where('created_at', '>=', $since)->count(),
+            ],
+            'days' => collect(range(29, 0))->map(fn ($i) => [$d = today()->subDays($i), $perDay[$d->toDateString()] ?? 0])->all(),
+            'referrers' => (clone $visits)->whereNotNull('referrer')->where('created_at', '>=', $since)->get(['referrer'])
+                ->countBy(fn ($v) => parse_url($v->referrer, PHP_URL_HOST) ?: $v->referrer)->sortDesc()->take(6),
+            'recent' => (clone $visits)->with('customer')->latest()->limit(15)->get(),
+            'history' => HistoryItem::with('user')->where(fn ($q) => $q->where('model', 'Page_model')->where('record_id', $page->id)
+                ->orWhere(fn ($w) => $w->where('model', 'PageComponent_model')->where('data->page_id', $page->id)))
+                ->latest('created_at')->latest('id')->paginate(25),
+            'blocks' => SiteBlock::where('type', 'area')->get()->filter(fn ($b) => $b->matchesPath($page->path)),
+        ]);
     }
 
     public function update(Request $request, Page $page): RedirectResponse

@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [SiteController::class, 'home']);
 Route::get('/shared/config/brand.js', [SiteController::class, 'brand']);
 Route::get('/shared/config/catalog.js', [SiteController::class, 'catalog']);
-Route::get('/site/session', [SiteController::class, 'session']);
+Route::get('/site/session', [SiteController::class, 'session'])->middleware('throttle:120,1');
+Route::post('/site/ping', [SiteController::class, 'ping'])->middleware('throttle:30,1');
 Route::post('/contact', [SiteController::class, 'contact'])->middleware('throttle:10,1');
 Route::get('/site/components', [SitePageController::class, 'components']);
 
@@ -194,7 +195,22 @@ Route::prefix('admin')->group(function () {
         // Lando — website CMS, plans and rates
         Route::prefix('lando')->name('lando.')->middleware('app:lando')->group(function () use ($websiteScreens) {
             Route::get('styles', [Admin\Lando\StyleController::class, 'index'])->name('styles');
-            Route::get('/', fn () => redirect()->route('lando.pages.index'));
+            // Site: dashboard (Lando's home), health, visitors, blocked IPs and areas
+            Route::get('/', [Admin\Lando\DashboardController::class, 'dashboard'])->name('dashboard');
+            Route::get('health', [Admin\Lando\DashboardController::class, 'health'])->name('health');
+            Route::get('visitors', [Admin\Lando\DashboardController::class, 'visitors'])->name('visitors');
+            foreach (['ips', 'areas'] as $kind) {
+                Route::controller(Admin\Lando\BlockedController::class)->prefix('blocked-'.$kind)->name('blocked.'.$kind)->group(function () {
+                    Route::get('/', 'index');
+                    Route::get('new', 'create')->name('.create');
+                    Route::post('/', 'store')->name('.store');
+                    Route::get('{block}/edit', 'edit')->name('.edit');
+                    Route::put('{block}', 'update')->name('.update');
+                    Route::post('{block}/toggle', 'toggle')->name('.toggle');
+                    Route::delete('{block}', 'destroy')->name('.destroy');
+                });
+            }
+            Route::get('pages/{page}/activity', [Admin\Lando\PageController::class, 'activity'])->name('pages.activity');
             $websiteScreens();
             Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('pages.sitemap');
             Route::resource('sites', Admin\Lando\SiteController::class)->except(['show', 'destroy']);

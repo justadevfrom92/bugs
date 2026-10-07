@@ -82,14 +82,31 @@
   var session = null;
   function loadSession() {
     if (!session) {
-      session = fetch(ET.root + 'site/session', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      // The page path makes this the page view Lando counts (Lando → Site → Visitors)
+      var q = '?path=' + encodeURIComponent(location.pathname) + (document.referrer ? '&ref=' + encodeURIComponent(document.referrer) : '');
+      session = fetch(ET.root + 'site/session' + q, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
         .then(function (r) { return r.ok ? r.json() : { user: null, csrf: '' }; })
         .catch(function () { return { user: null, csrf: '' }; });
     }
     return session;
   }
   var known = null; // resolved session, so the Admin click can open a tab synchronously
-  loadSession().then(function (s) { known = s; });
+  loadSession().then(function (s) {
+    known = s;
+    // A blocked IP address or area (Lando → Site): the page is replaced with a short notice
+    if (s.blocked) {
+      document.body.innerHTML = '<main class="section"><div class="wrap" style="max-width:640px;text-align:center;padding:80px 0">' +
+        '<h1>Not available</h1><p>' + esc(s.blocked.message) + '</p><p><a href="' + ET.root + '">Go to the home page</a></p></div></main>';
+      return;
+    }
+    // Heartbeat while the page is open and showing, so Lando can show who is on the site now
+    if (s.visit) {
+      setInterval(function () {
+        if (document.visibilityState !== 'visible') return;
+        fetch(ET.root + 'site/ping?v=' + s.visit, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': s.csrf, Accept: 'application/json' } }).catch(function () {});
+      }, 60000);
+    }
+  });
 
   /* ---------- Admin sign-in prompt ---------- */
   // The form posts straight to Laravel in a new tab; Laravel signs in and shows the launcher there.
