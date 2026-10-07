@@ -21,6 +21,7 @@
                         <td style="width:19ch;white-space:nowrap">{{ $i->created_at->format('Y-m-d H:i:s') }}</td>
                         <td>{{ $i->summary }}</td>
                         <td class="muted" style="width:14ch">{{ $i->user?->name ?? 'System' }}</td>
+                        <td class="actions" style="width:10ch">@if ($url = $i->recordUrl())<a class="btn sm ghost" href="{{ $url }}">Open</a>@endif</td>
                     </tr>
                 @endforeach</tbody>
             </table></div>

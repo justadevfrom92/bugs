@@ -23,7 +23,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Website pages (Lando → Pages, also Astro → Website → Pages). Each page belongs
+ * Website pages (Lando → Pages). Each page belongs
  * to a site, has content areas and components, and is served at its path.
  */
 class PageController extends Controller

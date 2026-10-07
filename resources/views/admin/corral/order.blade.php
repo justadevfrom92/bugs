@@ -6,7 +6,7 @@
         'sub' => $renew ? 'For account <span class="mono">'.e($renew->account).'</span>' : 'Enroll a new '.($biz ? 'business' : 'residential').' customer over the phone.',
     ])
 
-    <form method="post" action="{{ route('corral.orders.store') }}" class="panel"><div class="panel-body">
+    <form method="post" action="{{ route('corral.orders.store') }}" class="panel simple-form"><div class="panel-body">
         @csrf
         <input type="hidden" name="biz" value="{{ $biz ? 1 : 0 }}">
         @if ($renew)<input type="hidden" name="renew" value="{{ $renew->account }}">@endif

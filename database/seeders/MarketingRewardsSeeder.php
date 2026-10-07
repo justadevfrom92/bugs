@@ -9,6 +9,7 @@ use App\Models\EmailCategory;
 use App\Models\EmailSuppression;
 use App\Models\EmailTemplate;
 use App\Models\EmailTestSend;
+use App\Models\HistoryItem;
 use App\Models\MarketingChannel;
 use App\Models\PromoCode;
 use App\Models\Refund;
@@ -88,6 +89,15 @@ class MarketingRewardsSeeder extends Seeder
                 'requested_by' => User::where('email', 'csr@example.com')->value('id')]);
         }
         Customer::where('status', 'Pending - Deposit Due')->update(['deposit_due' => 150]);
+
+        // Bounty → Monthly Drawing: entries through this month and last month
+        foreach ([now()->startOfMonth(), now()->startOfMonth()->subMonth()] as $m) {
+            $span = max(60, (int) $m->diffInMinutes($m->isSameMonth(now()) ? now() : $m->copy()->endOfMonth(), true));
+            foreach (Customer::inRandomOrder()->limit($m->isSameMonth(now()) ? 18 : 31)->get() as $c) {
+                HistoryItem::create(['customer_id' => $c->id, 'model' => 'ItemDrawingEntry_model', 'group' => 'Products', 'record_id' => $c->id, 'action' => 'created',
+                    'summary' => 'Monthly drawing entry', 'data' => ['month' => $m->format('Y-m')], 'created_at' => $m->copy()->addMinutes(mt_rand(0, $span - 1))]);
+            }
+        }
 
         // A test send of the welcome email to the marketing team
         $marketing = User::where('email', 'marketing@example.com')->first();

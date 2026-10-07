@@ -15,6 +15,16 @@ use Illuminate\View\View;
 /** Corral → SMS: a table of recent text messages, in and out. Sending goes through the SMS integration in .env. */
 class SmsController extends Controller
 {
+    /** One text message, with the whole conversation with that customer. */
+    public function show(ContactLog $message): View
+    {
+        abort_unless($message->channel === 'SMS', 404);
+        $message->load(['customer', 'user']);
+
+        return view('admin.corral.sms-show', ['m' => $message,
+            'thread' => ContactLog::where('channel', 'SMS')->where('customer_id', $message->customer_id)->with('user')->oldest('created_at')->oldest('id')->get()]);
+    }
+
     public function index(Request $request): View
     {
         $f = $request->validate([

@@ -168,6 +168,7 @@ Route::prefix('admin')->group(function () {
             Route::get('reports/phonecalls', [Admin\Corral\ReportController::class, 'phonecalls'])->name('reports.phonecalls');
             Route::get('sms', [Admin\Corral\SmsController::class, 'index'])->name('sms');
             Route::get('sms/new', [Admin\Corral\SmsController::class, 'create'])->name('sms.create');
+            Route::get('sms/{message}', [Admin\Corral\SmsController::class, 'show'])->whereNumber('message')->name('sms.show');
             Route::get('calls', [Admin\Corral\CallController::class, 'index'])->name('calls');
             Route::get('calls/{call}/transcript', [Admin\Corral\CallController::class, 'transcript'])->name('calls.transcript');
             Route::post('sms', [Admin\Corral\SmsController::class, 'send'])->middleware('throttle:30,1')->name('sms.send');
@@ -182,10 +183,6 @@ Route::prefix('admin')->group(function () {
         // Website pages, plan groups and plans: Lando's screens, which Astro's menu also has.
         // Registered under each app's own URL and route names so neither links into the other.
         $websiteScreens = function () {
-            Route::resource('pages', Admin\Lando\PageController::class)->except('show');
-            Route::post('pages/{page}/components', [Admin\Lando\PageController::class, 'addComponent'])->name('pages.components.store');
-            Route::post('page-components/{component}/move', [Admin\Lando\PageController::class, 'moveComponent'])->name('pages.components.move');
-            Route::delete('page-components/{component}', [Admin\Lando\PageController::class, 'removeComponent'])->name('pages.components.destroy');
             Route::resource('plans', Admin\Lando\PlanController::class)->except(['show', 'destroy']);
             Route::resource('groups', Admin\Lando\PlanGroupController::class)->except(['show', 'destroy']);
             Route::post('groups/{group}/plans', [Admin\Lando\PlanGroupController::class, 'attach'])->name('groups.attach');
@@ -212,8 +209,11 @@ Route::prefix('admin')->group(function () {
             }
             Route::get('pages/{page}/activity', [Admin\Lando\PageController::class, 'activity'])->name('pages.activity');
             $websiteScreens();
+            Route::resource('pages', Admin\Lando\PageController::class)->except('show');
+            Route::post('pages/{page}/components', [Admin\Lando\PageController::class, 'addComponent'])->name('pages.components.store');
+            Route::post('page-components/{component}/move', [Admin\Lando\PageController::class, 'moveComponent'])->name('pages.components.move');
+            Route::delete('page-components/{component}', [Admin\Lando\PageController::class, 'removeComponent'])->name('pages.components.destroy');
             Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('pages.sitemap');
-            Route::resource('sites', Admin\Lando\SiteController::class)->except(['show', 'destroy']);
             Route::resource('templates', Admin\Lando\TemplateController::class)->except(['show', 'destroy']);
             Route::resource('markets', Admin\Lando\MarketController::class)->except(['show', 'destroy']);
             Route::resource('blocks', Admin\Lando\BlockController::class)->except(['show']);
@@ -289,6 +289,7 @@ Route::prefix('admin')->group(function () {
             Route::get('members', 'members')->name('members');
             Route::post('members/{customer}', 'adjust')->name('adjust');
             Route::get('drawing', 'drawing')->name('drawing');
+            Route::get('drawing/draw', 'drawForm')->name('drawing.draw');
             Route::post('drawing', 'draw')->name('draw');
         });
 

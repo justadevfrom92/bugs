@@ -212,7 +212,7 @@
             <div class="table-wrap"><table>
                 <thead><tr><th>Called</th><th>Issue</th><th class="num">Duration</th><th>Answered By</th><th>Transcript</th></tr></thead>
                 <tbody>@forelse ($calls->take(10) as $p)
-                    <tr><td class="nowrap">{{ $p->started_at->format('n/j/Y g:i A') }}<br><span class="help">{{ ucfirst($p->direction) }}</span></td><td>{{ $p->disposition ?? '—' }}</td>
+                    <tr class="click" data-href="{{ route('corral.calls.transcript', $p) }}"><td class="nowrap"><a href="{{ route('corral.calls.transcript', $p) }}">{{ $p->started_at->format('n/j/Y g:i A') }}</a><br><span class="help">{{ ucfirst($p->direction) }}</span></td><td>{{ $p->disposition ?? '—' }}</td>
                         <td class="num">{{ intdiv($p->duration_sec, 60) }}:{{ str_pad((string) ($p->duration_sec % 60), 2, '0', STR_PAD_LEFT) }}</td>
                         <td>{{ $p->user?->name ?? '—' }}@if ($p->agent_id)<br><span class="help mono">{{ $p->agent_id }}</span>@endif</td>
                         <td>@if ($p->transcript)<a href="{{ route('corral.calls.transcript', $p) }}">View</a>@else<span class="muted">None</span>@endif</td></tr>
@@ -223,7 +223,7 @@
             <div class="table-wrap"><table>
                 <thead><tr><th>Sent</th><th>Direction</th><th>Message</th><th>Status</th></tr></thead>
                 <tbody>@forelse ($texts->take(10) as $m)
-                    <tr><td class="nowrap">{{ $m->created_at->format('n/j/Y g:i A') }}</td><td>{{ $m->direction === 'in' ? 'From customer' : 'To customer' }}</td><td class="wrap">{{ $m->body }}</td><td>{{ $m->status }}</td></tr>
+                    <tr class="click" data-href="{{ route('corral.sms.show', $m) }}"><td class="nowrap"><a href="{{ route('corral.sms.show', $m) }}">{{ $m->created_at->format('n/j/Y g:i A') }}</a></td><td>{{ $m->direction === 'in' ? 'From customer' : 'To customer' }}</td><td class="wrap">{{ $m->body }}</td><td>{{ $m->status }}</td></tr>
                 @empty <tr><td colspan="4" class="empty">No texts yet.</td></tr> @endforelse</tbody>
             </table></div>
         </div>

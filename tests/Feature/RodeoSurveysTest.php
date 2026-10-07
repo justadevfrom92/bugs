@@ -32,7 +32,7 @@ class RodeoSurveysTest extends TestCase
         $survey = Survey::where('slug', 'how-are-we-doing')->firstOrFail();
         $this->get(route('rodeo.surveys'))->assertOk()->assertSee('How are we doing?')->assertSee('Billing Check-In')->assertSee('Opens');
         $this->get(route('rodeo.surveys', ['state' => 'scheduled']))->assertOk()->assertSee('Billing Check-In')->assertDontSee('New Customer Welcome');
-        $this->get(route('rodeo.surveys.create'))->assertOk()->assertSee('From the Question Bank');
+        $this->get(route('rodeo.surveys.create'))->assertOk()->assertSee('+ Add a Question')->assertSee('Choose a question');
         $this->get(route('rodeo.surveys.edit', $survey))->assertOk()->assertSee('Overall Experience')->assertSee('Rodeo / <a', false);
         $this->get(route('rodeo.surveys.results', $survey))->assertOk()->assertSee('Net Promoter Score')->assertSee('Customer Service')->assertSee('Billing &amp; Payments', false)->assertSee('Responses by Week');
         $this->get(route('rodeo.surveys.responses'))->assertOk()->assertSee('44 Responses');

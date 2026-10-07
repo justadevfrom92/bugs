@@ -71,10 +71,6 @@ return [
                     ['Content Blocks', 'lando.blocks.index'],
                     ['Add a Content Block', 'lando.blocks.create'],
                 ],
-                'Sites' => [
-                    ['Sites', 'lando.sites.index'],
-                    ['New Site', 'lando.sites.create'],
-                ],
                 'Design' => [
                     ['Style Guide', 'lando.styles'],
                 ],
@@ -106,9 +102,8 @@ return [
                     ['ETF', 'astro.etfs.edit'],
                     ['Products', 'astro.modifiers.products'],
                 ],
-                // Same pages, plans and groups as Lando (one copy of the data and screens, Astro's own URLs)
+                // Same plans and groups as Lando (one copy of the data and screens, Astro's own URLs); pages are Lando's only
                 'Website' => [
-                    ['Pages', 'astro.pages.index'],
                     ['Groups', 'astro.groups.index'],
                 ],
                 'Plans' => [

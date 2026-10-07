@@ -470,12 +470,29 @@ a.report-card h3 { margin-bottom: 4px; }
 .health-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--ok); }
 .health-dot.warn { background: var(--warn); }
 .health-dot.bad { background: var(--bad); }
-.hour-chart { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; height: 130px; align-items: end; }
-.hour-chart > div { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; font-size: .66rem; color: var(--muted); gap: 3px; min-width: 0; }
-.hour-chart .bars { position: relative; width: 100%; height: 80%; display: flex; align-items: flex-end; }
-.hour-chart .bars i, .hour-chart .bars b { position: absolute; bottom: 0; border-radius: 3px 3px 0 0; min-height: 1px; }
+.hour-chart { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; height: 160px; padding-top: 18px; }
+.hour-chart .col { display: flex; flex-direction: column; min-width: 0; }
+.hour-chart .bars { flex: 1; position: relative; border-bottom: 1px solid var(--line); }
+.hour-chart .bars i, .hour-chart .bars b { position: absolute; bottom: 0; border-radius: 3px 3px 0 0; }
+.hour-chart .bars i { left: 0; right: 0; background: var(--line); }
+.hour-chart .bars b { left: 22%; right: 22%; background: var(--cyan); }
+.hour-chart em { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 2px; font-style: normal; font-size: .68rem; font-weight: 600; color: var(--ink); line-height: 1; }
+.hour-chart small { height: 18px; padding-top: 4px; text-align: center; font-size: .68rem; color: var(--muted); white-space: nowrap; line-height: 1; }
+.hour-legend { display: flex; gap: 16px; margin-top: 8px; font-size: .78rem; color: var(--muted); }
+.hour-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.hour-legend b, .hour-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: var(--cyan); }
+.hour-legend i { background: var(--line); }
+@media (max-width: 700px) { .hour-chart em { display: none; } .hour-chart small { font-size: .58rem; } }
 .hour-chart .bars i { left: 0; right: 0; background: var(--line); }
 .hour-chart .bars b { left: 20%; right: 20%; background: var(--cyan); }
 .health td { white-space: normal; overflow-wrap: anywhere; }
 .grid-2 > .panel, .it-grid > .panel { min-width: 0; }
 .path-cell { white-space: normal !important; overflow-wrap: anywhere; }
+/* Panels stacked down the page with room between them */
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.check-stack { display: grid; gap: 6px; }
+/* Survey builder: each question is picked from the Question Bank */
+.sv-qhead .sv-pick { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: #fff; }
+.sv-qhead .sv-req { font-size: .8rem; white-space: nowrap; }
+.sv-qinfo { padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (max-width: 700px) { .sv-qhead { flex-wrap: wrap; } .sv-qhead .sv-pick { flex-basis: 100%; order: 5; } }

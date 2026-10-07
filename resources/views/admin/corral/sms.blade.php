@@ -26,8 +26,8 @@
                 <div class="table-wrap"><table>
                     <thead><tr><th>Sent</th><th>Account</th><th>Message</th><th>Status</th><th></th></tr></thead>
                     <tbody>@forelse ($messages as $m)
-                        <tr @class(['row-alert' => $m->direction === 'in' && $waiting->contains($m->customer_id)])>
-                            <td class="nowrap">{{ $m->created_at->format('n/j/Y g:i A') }}<br><span class="help">{{ $m->direction === 'in' ? 'From customer' : 'To customer' }}</span></td>
+                        <tr @class(['click', 'row-alert' => $m->direction === 'in' && $waiting->contains($m->customer_id)]) data-href="{{ route('corral.sms.show', $m) }}">
+                            <td class="nowrap"><a href="{{ route('corral.sms.show', $m) }}">{{ $m->created_at->format('n/j/Y g:i A') }}</a><br><span class="help">{{ $m->direction === 'in' ? 'From customer' : 'To customer' }}</span></td>
                             <td>@if ($m->customer)<a href="{{ route('corral.customers.show', $m->customer) }}">{{ $m->customer->account }}</a><br><span class="help">{{ $m->customer->name }}</span><br>@endif<span class="help mono">{{ $m->phone ?? $m->customer?->phone }}</span></td>
                             <td class="wrap">{{ $m->body }}</td>
                             <td>{{ $m->status }}@if ($m->direction !== 'in')<br><span class="help">by {{ $m->user?->name ?? 'System' }}</span>@endif</td>

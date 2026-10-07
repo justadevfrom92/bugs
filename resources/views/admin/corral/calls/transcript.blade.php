@@ -1,9 +1,9 @@
 @extends('admin.layouts.app')
 
-@section('crumb', 'Call Transcript')
+@section('crumb', 'Phone Call')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => 'Call Transcript',
+    @include('admin.partials.page-head', ['title' => 'Phone Call'.($call->customer ? ': '.$call->customer->name : ''),
         'sub' => $call->started_at->format('l, F j, Y g:i A').' · '.ucfirst($call->direction).' · '.intdiv($call->duration_sec, 60).' min '.($call->duration_sec % 60).' sec',
         'actions' => '<a class="btn ghost" href="'.route('corral.calls').'">Back to Phone Calls</a>'.($call->customer ? '<a class="btn ghost" href="'.route('corral.customers.show', $call->customer).'">Back to account</a>' : '')])
     <div class="grid-2" style="align-items:start;grid-template-columns:minmax(0,1fr) minmax(0,2fr)">

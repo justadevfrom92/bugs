@@ -13,7 +13,7 @@
             : null;
     @endphp
     @include('admin.partials.page-head', ['title' => $survey->exists ? $survey->title : 'New Survey',
-        'sub' => $survey->exists ? 'Customers answer at <span class="mono">'.e(url('survey/'.$survey->slug)).'</span> · '.number_format($responses).' '.Str::plural('response', $responses) : 'Build it from the Question Bank or write your own questions; file each under a category.',
+        'sub' => $survey->exists ? 'Customers answer at <span class="mono">'.e(url('survey/'.$survey->slug)).'</span> · '.number_format($responses).' '.Str::plural('response', $responses) : 'Pick each question from the Question Bank; its category and answers come with it.',
         'actions' => $actions])
 
     <form method="post" action="{{ $survey->exists ? route('rodeo.surveys.update', $survey) : route('rodeo.surveys.store') }}" id="sv-form">@csrf @if ($survey->exists) @method('put') @endif
@@ -37,8 +37,8 @@
                 <div class="panel-body">
                     @if ($responses)<div class="banner-note" style="margin-bottom:12px">This survey has {{ $responses }} {{ Str::plural('response', $responses) }}. Rewording and reordering is safe; changing a question's type or answers changes how its past answers read in results.</div>@endif
                     <div id="sv-rows">@foreach ($rows as $i => $q)@include('admin.rodeo.surveys._question', ['i' => $i, 'q' => $q])@endforeach</div>
-                    <p class="empty" id="sv-empty" @if ($rows) hidden @endif>No questions yet. Add some from the Question Bank on the right, or write your own.</p>
-                    <button type="button" class="btn ghost" id="sv-add" style="margin-top:12px">+ Write a Question</button>
+                    <p class="empty" id="sv-empty" @if ($rows) hidden @endif>No questions yet. Add one and pick it from the Question Bank.</p>
+                    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost" id="sv-add">+ Add a Question</button><a class="help" href="{{ route('rodeo.surveys.bank.create') }}">Need a question that isn't there? Add it to the Question Bank</a></div>
                 </div>
             </div>
         </div>
@@ -48,17 +48,6 @@
                 <button class="btn cyan">Save Survey</button>
                 @if ($survey->exists && ! $responses)<button type="submit" form="sv-delete" class="btn ghost red-text">Delete Survey</button>@endif
             </div></div>
-            <div class="panel">
-                <div class="panel-head"><h3 style="margin:0">From the Question Bank</h3></div>
-                <div class="panel-body" style="display:grid;gap:8px">
-                    <label class="muted" for="sv-bank" style="font-size:.8rem">Pick a ready-made question</label>
-                    <select id="sv-bank"><option value="">Choose…</option>
-                        @foreach ($bank->groupBy(fn ($b) => $b->category?->name ?? 'Uncategorized') as $cat => $items)<optgroup label="{{ $cat }}">@foreach ($items as $b)<option value="{{ $b->id }}">{{ Str::limit($b->question, 70) }}</option>@endforeach</optgroup>@endforeach
-                    </select>
-                    <button type="button" class="btn sm" id="sv-bank-add">Add to Survey</button>
-                    <a class="help" href="{{ route('rodeo.surveys.bank') }}">Manage the Question Bank</a>
-                </div>
-            </div>
             <div class="panel">
                 <div class="panel-head"><h3 style="margin:0">Outline</h3></div>
                 <div class="panel-body"><ul class="sv-outline" id="sv-outline"></ul></div>
@@ -77,15 +66,25 @@
         var box = document.getElementById('sv-rows'), next = {{ count($rows) }};
 
         function cards() { return [].slice.call(box.querySelectorAll('.sv-qcard')); }
+        var types = @json(\App\Models\SurveyQuestion::TYPES);
+        function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+        function field(card, f) { return card.querySelector('[data-f=' + f + ']'); }
+        // Picking a bank question fills in its wording, category, answer type, answers and help
+        function pick(card) {
+            var id = field(card, 'pick').value; if (id === 'own') return;
+            var b = bank.filter(function (x) { return String(x.id) === id; })[0];
+            ['bank', 'question', 'category', 'type', 'answer_set', 'help', 'options'].forEach(function (f) { field(card, f).value = ''; });
+            if (b) { field(card, 'bank').value = b.id; field(card, 'question').value = b.question; field(card, 'category').value = b.category || ''; field(card, 'type').value = b.type; field(card, 'answer_set').value = b.set || ''; field(card, 'help').value = b.help || ''; }
+        }
         function sync(card) {
-            var type = card.querySelector('[data-f=type]').value, set = card.querySelector('[data-f=answer_set]'), cat = card.querySelector('[data-f=category]').value;
-            card.querySelector('[data-show=answers]').hidden = listed.indexOf(type) < 0;
-            card.querySelector('[data-show=custom]').hidden = listed.indexOf(type) < 0 || !!set.value;
-            [].slice.call(set.options).forEach(function (o) { if (o.value) o.hidden = sets[o.value] && (type === 'multi') !== (sets[o.value].type === 'multi'); });
-            var chips = card.querySelector('[data-show=chips]');
-            chips.innerHTML = set.value && sets[set.value] ? sets[set.value].options.map(function (o) { return '<span class="sv-opt">' + o.replace(/[&<>"]/g, '') + '</span>'; }).join('') : '';
+            var cat = field(card, 'category').value, type = field(card, 'type').value, set = field(card, 'answer_set').value;
+            var answers = set && sets[set] ? sets[set].options : (field(card, 'options').value ? field(card, 'options').value.split('\n') : []);
             card.style.setProperty('--dot', colors[cat] || '#D5D9DA');
-            card.querySelector('.grow').textContent = card.querySelector('[data-f=question]').value || 'New question';
+            card.querySelector('[data-show=info]').innerHTML = field(card, 'question').value
+                ? '<span class="sv-cat"><span class="sv-dot" style="--dot:' + (colors[cat] || '#96999d') + '"></span>' + esc(names[cat] || 'Uncategorized') + '</span> <span class="sv-type">' + esc(types[type] || type) + '</span>'
+                  + (answers.length ? ' <span class="sv-opts">' + answers.map(function (o) { return '<span class="sv-opt">' + esc(o) + '</span>'; }).join('') + '</span>' : '')
+                  + (field(card, 'help').value ? '<div class="muted" style="font-size:.8rem;margin-top:4px">' + esc(field(card, 'help').value) + '</div>' : '')
+                : '<span class="muted">Pick a question from the Question Bank.</span>';
         }
         function refresh() {
             var list = cards();
@@ -112,11 +111,10 @@
                 if (el.type === 'checkbox') el.checked = !!values[k]; else el.value = values[k] == null ? '' : values[k];
             });
             refresh(); card.scrollIntoView({ block: 'center', behavior: 'smooth' });
-            card.querySelector('[data-f=question]').focus({ preventScroll: true });
+            field(card, 'pick').focus({ preventScroll: true });
         }
 
-        box.addEventListener('input', function (e) { var c = e.target.closest('.sv-qcard'); if (c) { sync(c); if (e.target.matches('[data-f=category],[data-f=required]')) refresh(); } });
-        box.addEventListener('change', function (e) { var c = e.target.closest('.sv-qcard'); if (c) refresh(); });
+        box.addEventListener('change', function (e) { var c = e.target.closest('.sv-qcard'); if (!c) return; if (e.target.matches('[data-f=pick]')) pick(c); refresh(); });
         box.addEventListener('click', function (e) {
             var b = e.target.closest('[data-move]'); if (!b) return;
             var c = b.closest('.sv-qcard');
@@ -125,11 +123,11 @@
             if (b.dataset.move === 'remove') c.remove();
             refresh();
         });
-        document.getElementById('sv-add').addEventListener('click', function () { add({ type: 'scale' }); });
-        document.getElementById('sv-bank-add').addEventListener('click', function () {
-            var id = document.getElementById('sv-bank').value; if (!id) return;
-            var b = bank.filter(function (x) { return String(x.id) === id; })[0];
-            add({ bank: b.id, question: b.question, type: b.type, category: b.category, answer_set: b.set, help: b.help });
+        document.getElementById('sv-add').addEventListener('click', function () { add({}); });
+        // Every question must be picked before saving
+        document.getElementById('sv-form').addEventListener('submit', function (e) {
+            var empty = cards().filter(function (c) { return !field(c, 'question').value; })[0];
+            if (empty) { e.preventDefault(); empty.scrollIntoView({ block: 'center' }); field(empty, 'pick').focus(); }
         });
         refresh();
     })();

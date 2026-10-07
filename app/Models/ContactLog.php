@@ -51,6 +51,22 @@ class ContactLog extends Model
         };
     }
 
+    /** The original item model an email is shown as (corral/data/item/{id}/{Model}), by its template. */
+    public function itemModel(): ?string
+    {
+        if ($this->channel !== 'Email') {
+            return null;
+        }
+
+        return collect(config('items.models'))->search(fn ($d) => ($d['template'] ?? null) === $this->template) ?: 'ItemEmailSalesforce_model';
+    }
+
+    /** This email's or text's own page in Corral. */
+    public function corralUrl(): string
+    {
+        return $this->channel === 'Email' ? route('corral.items.show', [$this->id, $this->itemModel()]) : route('corral.sms.show', $this);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

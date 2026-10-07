@@ -19,9 +19,10 @@
     </div>
 
     <div class="panel" style="margin-bottom:20px">
-        <div class="panel-head"><h2>Page Views by Hour</h2><span class="muted">today, with yesterday in grey</span></div>
+        <div class="panel-head"><h2>Page Views by Hour</h2><span class="muted">today and yesterday</span></div>
         <div class="panel-body">@php $top = max(1, collect($hours)->max(fn ($h) => max($h['today'], $h['yesterday']))); @endphp
-            <div class="hour-chart">@foreach ($hours as $h)<div title="{{ $h['hour'] }}:00 — today {{ $h['today'] }}, yesterday {{ $h['yesterday'] }}"><span>{{ $h['today'] ?: '' }}</span><div class="bars"><i style="height:{{ round($h['yesterday'] / $top * 100) }}%"></i><b style="height:{{ round($h['today'] / $top * 100) }}%"></b></div>{{ $h['hour'] % 3 === 0 ? date('ga', mktime($h['hour'])) : '' }}</div>@endforeach</div>
+            <div class="hour-chart">@foreach ($hours as $h)<div class="col" title="{{ date('ga', mktime($h['hour'])) }}: today {{ $h['today'] }}, yesterday {{ $h['yesterday'] }}"><div class="bars"><i style="height:{{ round($h['yesterday'] / $top * 100) }}%"></i><b style="height:{{ round($h['today'] / $top * 100) }}%">@if ($h['today'])<em>{{ $h['today'] }}</em>@endif</b></div><small>{{ $h['hour'] % 3 === 0 ? date('ga', mktime($h['hour'])) : '' }}</small></div>@endforeach</div>
+            <div class="hour-legend"><span><b></b> Today</span><span><i></i> Yesterday</span></div>
         </div>
     </div>
 

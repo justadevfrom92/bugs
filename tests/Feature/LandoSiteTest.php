@@ -39,7 +39,6 @@ class LandoSiteTest extends TestCase
         $this->get(route('lando.blocked.ips.edit', SiteBlock::where('value', 'wp-admin')->first()))->assertNotFound();
         $this->get(route('lando.pages.activity', $plans))->assertOk()->assertSee('Views by Day')->assertSee('History')->assertSee('Recent Visits');
         $this->get(route('lando.pages.index'))->assertOk()->assertSee('views this week')->assertSee('Activity');
-        $this->get(route('astro.pages.index'))->assertOk()->assertDontSee('/admin/lando/', false);
     }
 
     public function test_page_views_and_heartbeat(): void

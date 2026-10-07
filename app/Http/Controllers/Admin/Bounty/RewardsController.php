@@ -13,6 +13,7 @@ use App\Models\RewardRule;
 use App\Models\StarEntry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -152,13 +153,37 @@ class RewardsController extends Controller
 
     // ---------- Monthly drawing ----------
 
-    public function drawing(): View
+    /** Entries for a month (this month unless ?month=YYYY-MM), and past winners. */
+    public function drawing(Request $request): View
     {
-        $month = now()->format('Y-m');
+        $month = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('month')) ? Carbon::parse($request->query('month').'-01') : now()->startOfMonth();
+        $entries = self::entries($month)->with('customer')->latest('created_at')->get();
 
         return view('admin.bounty.drawing', ['month' => $month,
-            'entries' => HistoryItem::with('customer')->where('model', 'ItemDrawingEntry_model')->where('created_at', '>=', now()->startOfMonth())->latest('created_at')->get(),
+            'entries' => $entries,
+            'people' => $entries->pluck('customer_id')->unique()->count(),
+            'months' => collect(range(0, 5))->map(fn ($i) => now()->startOfMonth()->subMonths($i)),
+            'winner' => self::winnerRow($month),
             'past' => ReferenceRow::where('table_key', 'monthly-drawing')->orderByDesc('position')->get()]);
+    }
+
+    /** Draw a Winner: its own page for this month's drawing. */
+    public function drawForm(): View
+    {
+        $entries = self::entries(now()->startOfMonth())->get(['customer_id']);
+
+        return view('admin.bounty.draw', ['month' => now()->startOfMonth(), 'count' => $entries->count(),
+            'people' => $entries->pluck('customer_id')->unique()->count(), 'winner' => self::winnerRow(now()->startOfMonth())]);
+    }
+
+    private static function entries(Carbon $month)
+    {
+        return HistoryItem::where('model', 'ItemDrawingEntry_model')->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]);
+    }
+
+    private static function winnerRow(Carbon $month): ?ReferenceRow
+    {
+        return ReferenceRow::where('table_key', 'monthly-drawing')->get()->first(fn ($r) => ($r->cells[0] ?? null) === $month->format('Y-m') && filled($r->cells[2] ?? null));
     }
 
     /** Picks a random entry for the month and records the winner in the Monthly Drawing data table. */
@@ -182,6 +207,6 @@ class RewardsController extends Controller
                 'body' => 'Won the '.$month.' monthly drawing: '.$data['prize'].'.']);
         });
 
-        return back()->with('status', 'Winner: account '.$winner->account.' ('.$winner->first_name.')');
+        return redirect()->route('bounty.drawing')->with('status', 'Winner: account '.$winner->account.' ('.$winner->first_name.')');
     }
 }

@@ -61,9 +61,9 @@ class CmsTest extends TestCase
             }
         }
         // Astro's website screens, deeper pages included
+        // Pages are Lando's only
         $page = Page::where('path', 'about-us')->firstOrFail();
-        $html = $this->get('/admin/astro/pages/'.$page->id.'/edit')->assertOk()->getContent();
-        $this->assertStringNotContainsString(url('/admin/lando/'), $html);
+        $this->get('/admin/astro/pages/'.$page->id.'/edit')->assertNotFound();
         $this->get('/admin/astro/plans/'.Plan::first()->id.'/edit')->assertOk();
         $this->get('/admin/astro/groups/'.PlanGroup::first()->id.'/edit')->assertOk();
     }
@@ -104,8 +104,7 @@ class CmsTest extends TestCase
     public function test_sites_answer_on_their_own_domain(): void
     {
         $this->actingAs($this->admin());
-        $this->post('/admin/lando/sites', ['name' => 'Business Site', 'domain' => 'business.example.test', 'status' => 'Active'])->assertRedirect();
-        $biz = Site::where('domain', 'business.example.test')->firstOrFail();
+        $biz = Site::create(['name' => 'Business Site', 'domain' => 'business.example.test', 'status' => 'Active']);
         $this->post('/admin/lando/blocks', ['name' => 'Biz Solar', 'slug' => 'biz-solar', 'site_id' => $biz->id, 'html' => '<p>Business solar.</p>']);
         $solar = ContentBlock::where('slug', 'biz-solar')->firstOrFail();
         $this->post('/admin/lando/pages', ['site_id' => $biz->id, 'title' => 'Solar', 'path' => 'solar', 'status' => 'Published', 'content_primary_id' => $solar->id])->assertRedirect();
@@ -113,7 +112,6 @@ class CmsTest extends TestCase
         $this->post('/admin/lando/pages', ['site_id' => Site::first()->id, 'title' => 'Solar', 'path' => 'solar-x', 'status' => 'Published', 'content_primary_id' => $solar->id])->assertSessionHasErrors('content_primary_id');
         // Content is chosen from the list, not typed in
         $this->get('/admin/lando/pages/create')->assertOk()->assertSee('<select id="content_primary_id"', false)->assertDontSee('<textarea id="content_primary"', false);
-        $this->post('/admin/lando/sites', ['name' => 'Bad', 'domain' => 'https://x/y', 'status' => 'Active'])->assertSessionHasErrors('domain');
         auth()->logout();
 
         $this->get('http://business.example.test/solar')->assertOk()->assertSee('Business solar.');
