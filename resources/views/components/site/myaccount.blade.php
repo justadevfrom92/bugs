@@ -14,6 +14,16 @@
   <div class="wrap ma-grid">
     <nav class="ma-nav" aria-label="My Account">
       <div class="ma-who"><b>{{ $c->name }}</b><span>Account {{ $c->account }}</span></div>
+      @php $testCustomers = \App\Http\Controllers\MyAccount\AuthController::testCustomers(); @endphp
+      @if ($testCustomers->count() > 1)
+        <form method="post" class="ma-test-switch">@csrf
+          <label for="ma-switch">Testing: switch customer</label>
+          <select id="ma-switch" onchange="if (this.value) { this.form.action = this.value; this.form.requestSubmit(); }">
+            <option value="">Choose…</option>
+            @foreach ($testCustomers as $tc)@unless ($tc->is($c))<option value="{{ route('myaccount.login.test', $tc) }}">{{ $tc->name }} · {{ $tc->status }}</option>@endunless @endforeach
+          </select>
+        </form>
+      @endif
       @foreach ($menu as $heading => $items)
         <h4>{{ $heading }}</h4>
         @foreach ($items as [$label, $route, $params])

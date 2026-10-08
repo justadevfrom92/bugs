@@ -204,7 +204,7 @@ return [
         ],
         'deputy' => [
             'name' => 'Deputy',
-            'desc' => 'AI agents: which model each agent runs on (Claude or downloaded local models), their conversations and transcripts, and testing.',
+            'desc' => 'AI agents on open-weight models (Qwen, Kimi, DeepSeek, Llama…): which model each agent runs on, their conversations and transcripts, and testing.',
             'icon' => 'bolt',
             'home' => 'deputy.dashboard',
             'menu' => [
@@ -342,8 +342,8 @@ return [
         'stripe' => $integration('Stripe', 'Card & ACH payments', ['STRIPE_KEY', 'STRIPE_SECRET', 'STRIPE_WEBHOOK_SECRET']),
         'utilibill' => $integration('Utilibill', 'Billing system (UB)', ['UTILIBILL_ENDPOINT', 'UTILIBILL_USERNAME', 'UTILIBILL_PASSWORD']),
         'sms' => $integration('Twilio', 'Text messages (SMS)', ['TWILIO_SID', 'TWILIO_TOKEN', 'TWILIO_FROM']),
-        'anthropic' => $integration('Anthropic', 'Claude models for Deputy AI agents', ['ANTHROPIC_API_KEY']),
-        'local_models' => $integration('Local Models', 'Custom downloaded models for Deputy, served by Ollama or another local runtime', ['LOCAL_MODELS_URL']),
+        'open_models' => $integration('Open Models API', 'Hosted open-weight models for Deputy (Qwen, Kimi, DeepSeek…) through an OpenAI-compatible endpoint', ['OPEN_MODELS_URL', 'OPEN_MODELS_API_KEY']),
+        'local_models' => $integration('Local Models', 'Downloaded open-weight models for Deputy, served by Ollama on your own server', ['LOCAL_MODELS_URL']),
     ],
 
 ];

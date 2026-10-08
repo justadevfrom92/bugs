@@ -19,7 +19,24 @@ class AuthController extends Controller
 {
     public function show(): View
     {
-        return view('site.myaccount.login');
+        return view('site.myaccount.login', ['testCustomers' => self::testCustomers()]);
+    }
+
+    /** Sample customers with a My Account login, offered for one-click sign-in while testing (none in production). */
+    public static function testCustomers()
+    {
+        return config('admin.test_logins') ? Customer::whereNotNull('password')->whereNotNull('username')->where('email', 'like', '%@example.com')->orderBy('id')->limit(12)->get() : collect();
+    }
+
+    /** Testing only: sign in to My Account as a sample customer, or switch to another one, without a password. */
+    public function testLogin(Request $request, Customer $customer): RedirectResponse
+    {
+        abort_unless(config('admin.test_logins') && $customer->password && $customer->username && str_ends_with((string) $customer->email, '@example.com'), 404);
+        Auth::guard('customer')->login($customer);
+        $request->session()->regenerate();
+        $customer->apiLogs()->create(['api' => 'MyAccount', 'action' => 'test-login', 'status' => '200', 'created_at' => now()]);
+
+        return redirect()->route('myaccount.dashboard')->with('status', 'Signed in as '.$customer->name.' for testing.');
     }
 
     public function login(Request $request): RedirectResponse

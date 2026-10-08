@@ -512,7 +512,10 @@ a.report-card h3 { margin-bottom: 4px; }
 /* Deputy: a model's name with its id, tinted by provider */
 .dp-model { display: inline-grid; gap: 1px; padding-left: 8px; border-left: 3px solid var(--cyan); line-height: 1.25; }
 .dp-model.local { border-left-color: #8e44ad; }
+.dp-model.hosted { border-left-color: var(--cyan); }
 .dp-model small { color: var(--muted); font-size: .72rem; }
 /* Sheriff → Cached Tables */
 .cached-table table { width: 100%; }
 tr.row-new td { background: var(--info-bg); }
+.dp-model { white-space: normal; max-width: 26ch; }
+.dp-model small { overflow-wrap: anywhere; }

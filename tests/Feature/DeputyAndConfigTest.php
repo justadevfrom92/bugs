@@ -94,47 +94,83 @@ class DeputyAndConfigTest extends TestCase
     {
         $this->actingAs($this->admin());
         $c = AiConversation::whereNotNull('customer_id')->firstOrFail();
-        $this->get(route('deputy.dashboard'))->assertOk()->assertSee('Model by Agent')->assertSee('Claude Opus 5.5')->assertSee('Billing Assistant (fine-tuned)');
+        $this->get(route('deputy.dashboard'))->assertOk()->assertSee('Model by Agent')->assertSee('Kimi K2 Instruct')->assertSee('Qwen3 8B')->assertDontSee('claude');
         $this->get(route('deputy.conversations'))->assertOk()->assertSee('Search Conversations');
         $this->get(route('deputy.conversations', ['outcome' => 'handed_off', 'channel' => 'phone']))->assertOk();
         $this->get(route('deputy.conversations.show', $c))->assertOk()->assertSee('Transcript')->assertSee($c->customer->account);
         $this->get(route('deputy.agents'))->assertOk()->assertSee('Phone Agent');
-        $this->get(route('deputy.agents.create'))->assertOk();
-        $this->get(route('deputy.models'))->assertOk()->assertSee('llama3.1:8b');
+        $this->get(route('deputy.agents.create'))->assertOk()->assertSee('Temperature');
+        $this->get(route('deputy.models'))->assertOk()->assertSee('qwen3:8b')->assertSee('moonshotai/Kimi-K2-Instruct');
         $this->get(route('deputy.models.create'))->assertOk();
 
-        // Add a downloaded model and an agent on it
+        // Add a downloaded model and a hosted one, and an agent on the hosted model with the local one as fallback
         $this->post(route('deputy.models.store'), ['name' => 'Phi 3', 'provider' => 'local', 'model_id' => 'phi3:mini', 'size_gb' => 2.2])->assertRedirect(route('deputy.models'));
         $phi = AiModel::where('model_id', 'phi3:mini')->firstOrFail();
         $this->assertSame('missing', $phi->status);
         $this->post(route('deputy.models.store'), ['name' => 'Bad', 'provider' => 'local', 'model_id' => 'has spaces'])->assertSessionHasErrors('model_id');
-        $opus = AiModel::where('model_id', 'claude-opus-5-5')->firstOrFail();
-        $this->post(route('deputy.agents.store'), ['name' => 'Tester', 'activity' => 'chat', 'ai_model_id' => $opus->id, 'fallback_model_id' => $phi->id,
-            'effort' => 'low', 'max_tokens' => 1000, 'system_prompt' => 'Be brief.', 'active' => 1])->assertRedirect(route('deputy.agents'));
+        $this->post(route('deputy.models.store'), ['name' => 'Bad', 'provider' => 'anthropic', 'model_id' => 'x'])->assertSessionHasErrors('provider');
+        $kimi = AiModel::where('model_id', 'moonshotai/Kimi-K2-Instruct')->firstOrFail();
+        $this->post(route('deputy.agents.store'), ['name' => 'Tester', 'activity' => 'chat', 'ai_model_id' => $kimi->id, 'fallback_model_id' => $phi->id,
+            'temperature' => 0.2, 'max_tokens' => 1000, 'system_prompt' => 'Be brief.', 'active' => 1])->assertRedirect(route('deputy.agents'));
         $agent = AiAgent::where('name', 'Tester')->firstOrFail();
 
-        // Claude has no key here, so the fallback (the local model) answers
-        config(['admin.integrations.anthropic.env.ANTHROPIC_API_KEY' => null, 'admin.integrations.local_models.env.LOCAL_MODELS_URL' => 'http://models.test:11434']);
+        // The hosted API answers through its OpenAI-compatible chat completions endpoint
+        config(['admin.integrations.open_models.env' => ['OPEN_MODELS_URL' => 'https://open.test/v1', 'OPEN_MODELS_API_KEY' => 'key-123'],
+            'admin.integrations.local_models.env.LOCAL_MODELS_URL' => 'http://models.test:11434']);
         Http::fake([
-            'models.test:11434/api/chat' => Http::response(['message' => ['role' => 'assistant', 'content' => 'Your bill went up with the heat.'], 'prompt_eval_count' => 42, 'eval_count' => 9]),
+            'open.test/v1/chat/completions' => Http::sequence()
+                ->push(['choices' => [['message' => ['role' => 'assistant', 'content' => 'Kimi says hi.'], 'finish_reason' => 'stop']], 'usage' => ['prompt_tokens' => 30, 'completion_tokens' => 4]])
+                ->push(['error' => ['message' => 'model overloaded']], 503),
+            'open.test/v1/models' => Http::response(['data' => [['id' => 'moonshotai/Kimi-K2-Instruct'], ['id' => 'Qwen/Qwen3-235B-A22B-Instruct-2507']]]),
+            'models.test:11434/api/chat' => Http::response(['message' => ['role' => 'assistant', 'content' => 'Your bill went up with the heat.'], 'prompt_eval_count' => 42, 'eval_count' => 9, 'done_reason' => 'stop']),
             'models.test:11434/api/tags' => Http::response(['models' => [['name' => 'phi3:mini']]]),
         ]);
         $this->get(route('deputy.agents.test', $agent))->assertOk()->assertSee('Send to Agent');
-        $this->post(route('deputy.agents.test.run', $agent), ['message' => 'Why is my bill high?'])->assertRedirect(route('deputy.agents.test', $agent))
-            ->assertSessionHas('agent_result', fn ($r) => $r['ok'] && $r['text'] === 'Your bill went up with the heat.' && str_contains($r['note'], 'fallback'));
-        $test = AiConversation::where('ai_agent_id', $agent->id)->where('channel', 'test')->firstOrFail();
+        $this->post(route('deputy.agents.test.run', $agent), ['message' => 'Hello'])
+            ->assertSessionHas('agent_result', fn ($r) => $r['ok'] && $r['text'] === 'Kimi says hi.' && $r['model_name'] === $kimi->name && $r['input_tokens'] === 30);
+        Http::assertSent(fn ($req) => str_ends_with($req->url(), '/chat/completions') && $req['model'] === 'moonshotai/Kimi-K2-Instruct'
+            && $req['temperature'] == 0.2 && $req['messages'][0]['role'] === 'system' && $req->hasHeader('Authorization', 'Bearer key-123'));
+
+        // The hosted model errors, so the fallback (the downloaded model) answers
+        $this->post(route('deputy.agents.test.run', $agent), ['message' => 'Why is my bill high?'])
+            ->assertSessionHas('agent_result', fn ($r) => $r['ok'] && $r['text'] === 'Your bill went up with the heat.' && str_contains($r['note'], 'fallback') && str_contains($r['note'], '503'));
+        $test = AiConversation::where('ai_agent_id', $agent->id)->where('channel', 'test')->latest('id')->firstOrFail();
         $this->assertSame($phi->id, $test->ai_model_id);
         $this->assertSame(42, $test->input_tokens);
-        Http::assertSent(fn ($req) => str_ends_with($req->url(), '/api/chat') && $req['model'] === 'phi3:mini' && $req['messages'][0]['role'] === 'system');
 
-        // Check finds the downloaded model on the local server
+        // Check finds each model on its server
         $this->post(route('deputy.models.check', $phi))->assertRedirect();
         $this->assertSame('available', $phi->fresh()->status);
+        $this->post(route('deputy.models.check', $kimi))->assertRedirect();
+        $this->assertSame('available', $kimi->fresh()->status);
+        $this->post(route('sheriff.integrations.test', 'open_models'))->assertSessionHas('test_result', fn ($r) => $r['ok'] && str_contains($r['message'], '2 models'));
 
         // Neither model can answer: the test is saved as failed
-        config(['admin.integrations.local_models.env.LOCAL_MODELS_URL' => null]);
-        $this->post(route('deputy.agents.test.run', $agent), ['message' => 'Hello'])->assertSessionHas('agent_result', fn ($r) => ! $r['ok'] && str_contains($r['note'], 'ANTHROPIC_API_KEY'));
+        config(['admin.integrations.open_models.env.OPEN_MODELS_URL' => null, 'admin.integrations.local_models.env.LOCAL_MODELS_URL' => null]);
+        $this->post(route('deputy.agents.test.run', $agent), ['message' => 'Hello'])->assertSessionHas('agent_result', fn ($r) => ! $r['ok'] && str_contains($r['note'], 'OPEN_MODELS_URL'));
         $this->assertSame('failed', AiConversation::where('ai_agent_id', $agent->id)->latest('id')->first()->outcome);
+    }
+
+    public function test_my_account_test_sign_ins(): void
+    {
+        $page = $this->get(route('myaccount.login'))->assertOk()->assertSee('Test Sign-Ins');
+        $business = Customer::where('username', 'test.business')->firstOrFail();
+        $page->assertSee($business->name);
+        $this->post(route('myaccount.login.test', $business))->assertRedirect(route('myaccount.dashboard'));
+        $this->assertAuthenticatedAs($business, 'customer');
+        $this->get(route('myaccount.dashboard'))->assertOk()->assertSee('Testing: switch customer');
+
+        // Switch to another sample customer from inside My Account
+        $credit = Customer::where('username', 'test.credit')->firstOrFail();
+        $this->post(route('myaccount.login.test', $credit))->assertRedirect(route('myaccount.dashboard'));
+        $this->assertAuthenticatedAs($credit, 'customer');
+
+        // Only customers with a My Account login, and never with test sign-ins off
+        $this->post(route('myaccount.login.test', Customer::whereNull('password')->firstOrFail()))->assertNotFound();
+        config(['admin.test_logins' => false]);
+        $this->post(route('myaccount.login.test', $business))->assertNotFound();
+        auth('customer')->logout();
+        $this->get(route('myaccount.login'))->assertOk()->assertDontSee('Test Sign-Ins');
     }
 
     public function test_cached_tables_for_pages_and_new_records(): void

@@ -2,10 +2,6 @@
 
 namespace App\Support;
 
-use Anthropic\Client as AnthropicClient;
-use Anthropic\Core\Exceptions\APIConnectionException;
-use Anthropic\Core\Exceptions\APIStatusException;
-use Anthropic\Core\Exceptions\AuthenticationException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +25,7 @@ class IntegrationTester
         $start = microtime(true);
         try {
             [$ok, $message] = self::run($key, $env);
-        } catch (ConnectionException|APIConnectionException $e) {
+        } catch (ConnectionException $e) {
             [$ok, $message] = [false, 'Could not reach '.$i['name'].': '.self::short($e->getMessage())];
         } catch (\Throwable $e) {
             [$ok, $message] = [false, self::short($e->getMessage())];
@@ -49,7 +45,7 @@ class IntegrationTester
             'authnet' => self::authnet($http, $env),
             'plaid' => self::answer($http->post('https://'.$env['PLAID_ENV'].'.plaid.com/categories/get', ['client_id' => $env['PLAID_CLIENT_ID'], 'secret' => $env['PLAID_SECRET']]), 'Plaid answered for the '.$env['PLAID_ENV'].' environment'),
             'salesforce' => self::answer($http->post('https://'.$env['SALESFORCE_SUBDOMAIN'].'.auth.marketingcloudapis.com/v2/token', ['grant_type' => 'client_credentials', 'client_id' => $env['SALESFORCE_CLIENT_ID'], 'client_secret' => $env['SALESFORCE_CLIENT_SECRET']]), 'Marketing Cloud issued a token'),
-            'anthropic' => self::anthropic($env['ANTHROPIC_API_KEY']),
+            'open_models' => self::openModels($http, $env['OPEN_MODELS_URL'], $env['OPEN_MODELS_API_KEY']),
             'local_models' => self::localModels($http, $env['LOCAL_MODELS_URL']),
             'amazon' => self::reach($http, 'https://s3.'.$env['AWS_DEFAULT_REGION'].'.amazonaws.com', 'Amazon S3 in '.$env['AWS_DEFAULT_REGION']),
             'apple' => self::reach($http, 'https://api.push.apple.com', 'Apple Push'),
@@ -93,18 +89,16 @@ class IntegrationTester
             : [false, 'Auth.net: '.($result['message'][0]['text'] ?? 'HTTP '.$r->status())];
     }
 
-    /** Claude: look up the default Deputy model, which needs a valid key and costs nothing. */
-    private static function anthropic(string $key): array
+    /** OpenAI-compatible endpoint: list the models it serves (needs a valid key, costs nothing). */
+    private static function openModels($http, string $url, string $key): array
     {
-        try {
-            $model = (new AnthropicClient(apiKey: $key))->models->retrieve(config('deputy.default_model'));
-
-            return [true, 'Anthropic accepted the key; '.$model->displayName.' is available.'];
-        } catch (AuthenticationException) {
-            return [false, 'Anthropic rejected the API key.'];
-        } catch (APIStatusException $e) {
-            return [false, 'Anthropic answered HTTP '.$e->status.': '.self::short($e->getMessage())];
+        $r = $http->withToken($key)->get(rtrim($url, '/').'/models');
+        if (! $r->successful()) {
+            return self::answer($r, '');
         }
+        $ids = collect($r->json('data', []))->pluck('id');
+
+        return [true, 'The open models API accepted the key and serves '.$ids->count().' '.str('model')->plural($ids->count()).($ids->isNotEmpty() ? ', e.g. '.$ids->take(5)->implode(', ') : '').'.'];
     }
 
     /** Ollama-style runtime: list the downloaded models. */

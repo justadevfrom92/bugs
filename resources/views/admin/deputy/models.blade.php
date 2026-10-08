@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => 'Models', 'sub' => 'Claude models through the Anthropic API, and custom models downloaded to the local model server. Agents pick from these.',
+    @include('admin.partials.page-head', ['title' => 'Models', 'sub' => 'Open-weight models: downloaded to your local model server, or hosted behind the open models API. Agents pick from these.',
         'actions' => '<a class="btn cyan" href="'.route('deputy.models.create').'">Add a Model</a>'])
     <div class="panel"><div class="table-wrap"><table class="table">
         <thead><tr><th>Model</th><th>Provider</th><th>Source</th><th class="num">Size</th><th class="num">Context</th><th class="num">Agents</th><th>Status</th><th></th></tr></thead>

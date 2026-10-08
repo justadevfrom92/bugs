@@ -1,16 +1,16 @@
 <?php
 
 /*
-| Deputy — AI agents. Claude models go through the Anthropic API (ANTHROPIC_API_KEY);
-| custom downloaded models are served by a local runtime such as Ollama (LOCAL_MODELS_URL).
-| Both are set from Sheriff → APIs → Configure.
+| Deputy — AI agents on open-weight models. Two ways to run a model, both set up in
+| Sheriff → APIs → Configure:
+|  - local:  downloaded to your own server and served by Ollama (LOCAL_MODELS_URL, its /api/chat)
+|  - hosted: any OpenAI-compatible endpoint (OPEN_MODELS_URL + OPEN_MODELS_API_KEY), e.g. vLLM,
+|            llama.cpp server, LM Studio, OpenRouter, Together or Moonshot (Kimi)
 */
 return [
-    'default_model' => 'claude-opus-5-5',
-
     'providers' => [
-        'anthropic' => 'Anthropic API',
-        'local' => 'Local (downloaded)',
+        'local' => 'Local server (Ollama)',
+        'hosted' => 'Hosted (OpenAI-compatible)',
     ],
 
     // What each agent does in the business
@@ -26,8 +26,4 @@ return [
 
     'channels' => ['phone' => 'Phone', 'sms' => 'Text', 'chat' => 'Chat', 'email' => 'Email', 'internal' => 'Internal', 'test' => 'Test'],
     'outcomes' => ['resolved' => 'Resolved', 'handed_off' => 'Handed to a person', 'abandoned' => 'Customer left', 'failed' => 'Model error'],
-    'efforts' => ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High'],
-
-    // Claude models that take the server-side refusal fallback (beta)
-    'fallback_models' => ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-opus-5', 'claude-fable-5-1'],
 ];

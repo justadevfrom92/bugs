@@ -9,7 +9,7 @@ use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-/** Deputy: Claude and downloaded local models, the agents on them, and 30 days of (fictional) conversations. */
+/** Deputy: open-weight models (hosted and downloaded), the agents on them, and 30 days of (fictional) conversations. */
 class DeputySeeder extends Seeder
 {
     public function run(): void
@@ -17,13 +17,17 @@ class DeputySeeder extends Seeder
         mt_srand(7);
         $m = [];
         foreach ([
-            ['opus', 'Claude Opus 5.5', 'anthropic', 'claude-opus-5-5', null, null, null, 1000000, 'available'],
-            ['sonnet', 'Claude Sonnet 5.5', 'anthropic', 'claude-sonnet-5-5', null, null, null, 1000000, 'available'],
-            ['haiku', 'Claude Haiku 5.5', 'anthropic', 'claude-haiku-5-5', null, null, null, 1000000, 'available'],
+            // Hosted open-weight models, through the OpenAI-compatible open models API
+            ['kimi', 'Kimi K2 Instruct', 'hosted', 'moonshotai/Kimi-K2-Instruct', 'Moonshot AI, open weights on Hugging Face', null, null, 131072, 'available'],
+            ['qwen235', 'Qwen3 235B A22B', 'hosted', 'Qwen/Qwen3-235B-A22B-Instruct-2507', 'Alibaba Qwen, open weights on Hugging Face', null, null, 262144, 'available'],
+            ['deepseek', 'DeepSeek V3', 'hosted', 'deepseek-ai/DeepSeek-V3', 'DeepSeek, open weights on Hugging Face', null, null, 131072, 'available'],
+            // Downloaded to the local model server (Ollama)
+            ['qwen8', 'Qwen3 8B', 'local', 'qwen3:8b', 'ollama pull qwen3:8b', 5.2, 'Q4_K_M', 40960, 'available'],
+            ['qwen30', 'Qwen3 30B A3B', 'local', 'qwen3:30b-a3b', 'ollama pull qwen3:30b-a3b', 19.0, 'Q4_K_M', 40960, 'downloading'],
+            ['gptoss', 'gpt-oss 20B', 'local', 'gpt-oss:20b', 'ollama pull gpt-oss:20b', 14.0, 'MXFP4', 131072, 'available'],
             ['llama', 'Llama 3.1 8B', 'local', 'llama3.1:8b', 'ollama pull llama3.1:8b', 4.9, 'Q4_K_M', 131072, 'available'],
             ['mistral', 'Mistral 7B', 'local', 'mistral:7b', 'ollama pull mistral:7b', 4.1, 'Q4_0', 32768, 'available'],
-            ['billing', 'Billing Assistant (fine-tuned)', 'local', 'billing-assistant:7b', '/models/billing-assistant-7b-q4_k_m.gguf (fine-tuned on sample billing questions)', 4.4, 'Q4_K_M', 32768, 'available'],
-            ['qwen', 'Qwen 2.5 14B', 'local', 'qwen2.5:14b', 'ollama pull qwen2.5:14b', 9.0, 'Q4_K_M', 131072, 'downloading'],
+            ['billing', 'Billing Assistant (fine-tuned Qwen3 8B)', 'local', 'billing-assistant:8b', '/models/billing-assistant-8b-q4_k_m.gguf, fine-tuned on sample billing questions', 5.2, 'Q4_K_M', 40960, 'available'],
         ] as [$k, $name, $provider, $id, $source, $size, $quant, $ctx, $status]) {
             $m[$k] = AiModel::create(['name' => $name, 'provider' => $provider, 'model_id' => $id, 'source' => $source, 'size_gb' => $size, 'quantization' => $quant,
                 'context_window' => $ctx, 'status' => $status, 'checked_at' => now()->subHours(mt_rand(2, 30))]);
@@ -32,16 +36,16 @@ class DeputySeeder extends Seeder
         $base = 'You are a customer service agent for a Texas retail electricity provider. Be friendly, brief and accurate. Never guess account details; if you are unsure or the customer is upset, hand the conversation to a person.';
         $agents = [];
         foreach ([
-            ['phone', 'Phone Agent', 'phone', 'Answers the main phone line first', 'opus', 'sonnet', 'medium', 4000, true],
-            ['sms', 'Text Responder', 'sms', 'Replies to customer texts', 'haiku', 'llama', 'low', 1000, true],
-            ['chat', 'My Account Chat', 'chat', 'The chat bubble in My Account', 'sonnet', 'haiku', 'medium', 2000, true],
-            ['email', 'Email Drafter', 'email', 'Drafts replies to Web Messages for a person to send', 'opus', null, 'high', 8000, true],
-            ['queues', 'Queue Triage', 'queues', 'Suggests the right exception queue for new orders', 'billing', 'haiku', 'low', 1000, true],
-            ['surveys', 'Survey Tagger', 'surveys', 'Tags survey comments by topic and mood', 'mistral', 'haiku', 'low', 500, true],
-            ['reports', 'Report Summarizer', 'reports', 'Writes a short summary of finished Walker reports', 'sonnet', 'qwen', 'medium', 2000, false],
-        ] as [$k, $name, $activity, $desc, $model, $fallback, $effort, $max, $active]) {
+            ['phone', 'Phone Agent', 'phone', 'Answers the main phone line first', 'kimi', 'qwen235', 0.3, 2000, true],
+            ['sms', 'Text Responder', 'sms', 'Replies to customer texts', 'qwen8', 'llama', 0.3, 600, true],
+            ['chat', 'My Account Chat', 'chat', 'The chat bubble in My Account', 'qwen235', 'qwen8', 0.4, 1500, true],
+            ['email', 'Email Drafter', 'email', 'Drafts replies to Web Messages for a person to send', 'deepseek', 'kimi', 0.5, 3000, true],
+            ['queues', 'Queue Triage', 'queues', 'Suggests the right exception queue for new orders', 'billing', 'qwen8', 0.0, 500, true],
+            ['surveys', 'Survey Tagger', 'surveys', 'Tags survey comments by topic and mood', 'mistral', 'gptoss', 0.1, 300, true],
+            ['reports', 'Report Summarizer', 'reports', 'Writes a short summary of finished Walker reports', 'gptoss', 'qwen30', 0.3, 1500, false],
+        ] as [$k, $name, $activity, $desc, $model, $fallback, $temperature, $max, $active]) {
             $agents[$k] = AiAgent::create(['name' => $name, 'activity' => $activity, 'description' => $desc, 'ai_model_id' => $m[$model]->id,
-                'fallback_model_id' => $fallback ? $m[$fallback]->id : null, 'effort' => $effort, 'max_tokens' => $max, 'active' => $active,
+                'fallback_model_id' => $fallback ? $m[$fallback]->id : null, 'temperature' => $temperature, 'max_tokens' => $max, 'active' => $active,
                 'system_prompt' => $base."\n\nYour job: ".lcfirst($desc).'.']);
         }
 

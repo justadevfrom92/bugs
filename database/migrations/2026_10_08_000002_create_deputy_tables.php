@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Deputy — AI agents: the models (Claude and downloaded local ones), the agents that use them, and their conversations. */
+/** Deputy — AI agents: the open-weight models (downloaded or hosted), the agents that use them, and their conversations. */
 return new class extends Migration
 {
     public function up(): void
@@ -12,8 +12,8 @@ return new class extends Migration
         Schema::create('ai_models', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('provider');                 // anthropic | local
-            $table->string('model_id');                 // claude-opus-5-5, llama3.1:8b …
+            $table->string('provider');                 // local | hosted
+            $table->string('model_id');                 // qwen3:8b, moonshotai/Kimi-K2-Instruct …
             $table->string('source')->nullable();       // where a downloaded model came from (file, URL, ollama pull name)
             $table->decimal('size_gb', 6, 2)->nullable();
             $table->string('quantization')->nullable(); // Q4_K_M …

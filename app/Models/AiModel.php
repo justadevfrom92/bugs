@@ -6,7 +6,7 @@ use App\Models\Concerns\RecordsHistory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** A model Deputy's agents can use: a Claude model, or a custom model downloaded to the local runtime. */
+/** An open-weight model Deputy's agents can use: downloaded to the local server, or hosted behind an OpenAI-compatible API. */
 class AiModel extends Model
 {
     use RecordsHistory;

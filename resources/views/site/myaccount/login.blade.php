@@ -15,6 +15,17 @@
       <button class="btn btn-block" style="margin-top:16px">Sign In</button>
     </form>
     <p class="muted-text">Forgot your <a href="{{ route('myaccount.forgot', 'username') }}">username</a> or <a href="{{ route('myaccount.forgot', 'password') }}">password</a>?</p>
+    @if ($testCustomers->isNotEmpty())
+      <div class="test-logins-site">
+        <h3>Test Sign-Ins</h3>
+        <p class="muted-text">For testing only (never shown on the live site): open My Account as a sample customer.</p>
+        @foreach ($testCustomers as $tc)
+          <form method="post" action="{{ route('myaccount.login.test', $tc) }}">@csrf
+            <button class="test-customer"><b>{{ $tc->name }}</b><small>{{ $tc->account }} · {{ $tc->type }} · {{ $tc->status }} · {{ $tc->balance < 0 ? '$'.number_format(abs($tc->balance), 2).' credit' : '$'.number_format($tc->balance, 2).' due' }}</small></button>
+          </form>
+        @endforeach
+      </div>
+    @endif
   </div>
   <div class="co-card">
     <h3>New to My Account?</h3>

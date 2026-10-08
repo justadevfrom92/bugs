@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Admin\Deputy;
 
-use Anthropic\Client as AnthropicClient;
-use Anthropic\Core\Exceptions\NotFoundException;
 use App\Http\Controllers\Controller;
 use App\Models\AiAgent;
 use App\Models\AiConversation;
@@ -17,8 +15,9 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Deputy — AI agents. Which model each agent runs on (Claude or a downloaded local model),
- * every conversation the agents had with a transcript, and a place to test an agent.
+ * Deputy — AI agents on open-weight models. Which model each agent runs on (downloaded to
+ * the local server or hosted behind an OpenAI-compatible API), every conversation the agents
+ * had with a transcript, and a place to test an agent.
  */
 class DeputyController extends Controller
 {
@@ -42,7 +41,7 @@ class DeputyController extends Controller
             'handed' => $byAgent->sum('handed'),
             'tokens' => $byAgent->sum('tokens'),
             'local' => AiModel::where('provider', 'local')->count(),
-            'ready' => ['anthropic' => filled(config('admin.integrations.anthropic.env.ANTHROPIC_API_KEY')), 'local' => filled(config('admin.integrations.local_models.env.LOCAL_MODELS_URL'))],
+            'ready' => ['hosted' => filled(config('admin.integrations.open_models.env.OPEN_MODELS_URL')), 'local' => filled(config('admin.integrations.local_models.env.LOCAL_MODELS_URL'))],
             'recent' => AiConversation::with(['agent', 'model', 'customer'])->latest('started_at')->limit(8)->get(),
         ]);
     }
@@ -86,7 +85,7 @@ class DeputyController extends Controller
     public function agentForm(?AiAgent $agent = null): View
     {
         return view('admin.deputy.agent-form', [
-            'agent' => $agent ?? new AiAgent(['effort' => 'medium', 'max_tokens' => 4000, 'active' => true, 'ai_model_id' => AiModel::where('model_id', config('deputy.default_model'))->value('id')]),
+            'agent' => $agent ?? new AiAgent(['temperature' => 0.3, 'max_tokens' => 2000, 'active' => true]),
             'models' => AiModel::orderBy('provider')->orderBy('name')->get(),
         ]);
     }
@@ -99,7 +98,7 @@ class DeputyController extends Controller
             'description' => ['nullable', 'string', 'max:250'],
             'ai_model_id' => ['required', 'exists:ai_models,id'],
             'fallback_model_id' => ['nullable', 'different:ai_model_id', 'exists:ai_models,id'],
-            'effort' => ['required', Rule::in(array_keys(config('deputy.efforts')))],
+            'temperature' => ['required', 'numeric', 'min:0', 'max:2'],
             'max_tokens' => ['required', 'integer', 'min:256', 'max:64000'],
             'system_prompt' => ['required', 'string', 'max:20000'],
             'active' => ['nullable', 'boolean'],
@@ -153,36 +152,39 @@ class DeputyController extends Controller
             'quantization' => ['nullable', 'string', 'max:20'],
             'context_window' => ['nullable', 'integer', 'min:512', 'max:10000000'],
             'notes' => ['nullable', 'string', 'max:1000'],
-        ], ['model_id.regex' => 'Use the model\'s id as the runtime knows it, like claude-opus-5-5 or llama3.1:8b.']);
-        $model ? $model->update($data) : $model = AiModel::create($data + ['status' => $data['provider'] === 'local' ? 'missing' : 'available']);
+        ], ['model_id.regex' => 'Use the model\'s id as the server knows it, like qwen3:8b or moonshotai/Kimi-K2-Instruct.']);
+        $model ? $model->update($data) : $model = AiModel::create($data + ['status' => 'missing']);
 
         return redirect()->route('deputy.models')->with('status', $model->name.' saved. Use Check to confirm it is available.');
     }
 
-    /** Is the model there? Claude: the Models API. Downloaded: the local runtime's list of models. */
+    /** Is the model there? Downloaded: the local server's list of models. Hosted: the API's /models list. */
     public function checkModel(AiModel $model): RedirectResponse
     {
-        [$status, $message] = $model->isLocal() ? $this->checkLocal($model) : $this->checkClaude($model);
+        [$status, $message] = $model->isLocal() ? $this->checkLocal($model) : $this->checkHosted($model);
         $model->update(['status' => $status, 'checked_at' => now()]);
 
         return back()->with('status', $model->name.': '.$message);
     }
 
-    private function checkClaude(AiModel $model): array
+    private function checkHosted(AiModel $model): array
     {
-        $key = (string) config('admin.integrations.anthropic.env.ANTHROPIC_API_KEY');
-        if ($key === '') {
-            return [$model->status, 'ANTHROPIC_API_KEY is not set, so it can\'t be checked (Sheriff → APIs → Anthropic → Configure).'];
+        $url = (string) config('admin.integrations.open_models.env.OPEN_MODELS_URL');
+        if ($url === '') {
+            return [$model->status, 'OPEN_MODELS_URL is not set, so it can\'t be checked (Sheriff → APIs → Open Models API → Configure).'];
         }
         try {
-            $info = (new AnthropicClient(apiKey: $key))->models->retrieve($model->model_id);
-
-            return ['available', 'available as '.$info->displayName.'.'];
-        } catch (NotFoundException) {
-            return ['missing', 'Anthropic doesn\'t offer a model with the id '.$model->model_id.'.'];
-        } catch (\Throwable $e) {
-            return [$model->status, 'could not check: '.mb_strimwidth($e->getMessage(), 0, 200, '…')];
+            $r = Http::timeout(10)->acceptJson()->withToken((string) config('admin.integrations.open_models.env.OPEN_MODELS_API_KEY'))->get(rtrim($url, '/').'/models');
+        } catch (ConnectionException) {
+            return [$model->status, 'could not reach the open models API.'];
         }
+        if (! $r->successful()) {
+            return [$model->status, 'the open models API answered HTTP '.$r->status().'.'];
+        }
+
+        return collect($r->json('data', []))->pluck('id')->contains($model->model_id)
+            ? ['available', 'served by the open models API.']
+            : ['missing', 'the open models API doesn\'t list '.$model->model_id.'. Check the id against the provider\'s model list.'];
     }
 
     private function checkLocal(AiModel $model): array

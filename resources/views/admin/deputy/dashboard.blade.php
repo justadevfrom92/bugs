@@ -1,18 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => 'AI Agents', 'sub' => 'Which model each agent runs on, and how the agents are doing over the last 30 days. Claude models run through the Anthropic API; downloaded models run on the local model server.',
+    @include('admin.partials.page-head', ['title' => 'AI Agents', 'sub' => 'Which open-weight model each agent runs on, and how the agents are doing over the last 30 days. Downloaded models run on your local model server; hosted ones through the open models API.',
         'actions' => '<a class="btn ghost" href="'.route('deputy.conversations').'">Conversations</a><a class="btn cyan" href="'.route('deputy.agents.create').'">New Agent</a>'])
 
-    @foreach (['anthropic' => ['Anthropic', 'ANTHROPIC_API_KEY'], 'local' => ['Local Models', 'LOCAL_MODELS_URL']] as $k => [$name, $env])
-        @unless ($ready[$k])<div class="banner-note" style="margin-bottom:12px"><b>{{ $name }}</b> isn't set up yet: agents on {{ $k === 'local' ? 'downloaded models' : 'Claude models' }} can't answer until <span class="mono">{{ $env }}</span> is uploaded in Sheriff → APIs → {{ $name }} → Configure.</div>@endunless
+    @foreach (['hosted' => ['Open Models API', 'OPEN_MODELS_URL'], 'local' => ['Local Models', 'LOCAL_MODELS_URL']] as $k => [$name, $env])
+        @unless ($ready[$k])<div class="banner-note" style="margin-bottom:12px"><b>{{ $name }}</b> isn't set up yet: agents on {{ $k === 'local' ? 'downloaded models' : 'hosted models' }} can't answer until <span class="mono">{{ $env }}</span> is uploaded in Sheriff → APIs → {{ $name }} → Configure.</div>@endunless
     @endforeach
 
     <div class="grid-4 stat-row">
         <a class="stat" href="{{ route('deputy.conversations') }}"><span>Conversations</span><strong>{{ number_format($total) }}</strong><small>last 30 days, tests not counted</small></a>
         <div class="stat"><span>Resolved by the Agent</span><strong>{{ $resolvedRate }}%</strong><small>{{ number_format($handed) }} handed to a person</small></div>
         <div class="stat"><span>Tokens Used</span><strong>{{ number_format($tokens) }}</strong><small>input and output</small></div>
-        <a class="stat" href="{{ route('deputy.models') }}"><span>Models</span><strong>{{ $models->count() }}</strong><small>{{ $local }} downloaded, {{ $models->count() - $local }} Claude</small></a>
+        <a class="stat" href="{{ route('deputy.models') }}"><span>Models</span><strong>{{ $models->count() }}</strong><small>{{ $local }} downloaded, {{ $models->count() - $local }} hosted</small></a>
     </div>
 
     <div class="panel" style="margin-bottom:20px">
@@ -21,7 +21,7 @@
             <thead><tr><th>Agent</th><th>Model</th><th>Fallback</th><th class="num">Conversations</th><th class="num">Resolved</th><th class="num">Avg Length</th><th class="num">Tokens</th></tr></thead>
             <tbody>@forelse ($agents as $a)
                 @php $s = $byAgent[$a->id] ?? null; @endphp
-                <tr @class(['muted' => ! $a->active])><td><a href="{{ route('deputy.agents.edit', $a) }}"><b>{{ $a->name }}</b></a><div class="help">{{ $a->activityLabel() }} · {{ config('deputy.efforts.'.$a->effort) }} effort{{ $a->active ? '' : ' · Paused' }} · <a href="{{ route('deputy.agents.test', $a) }}">Test</a></div></td>
+                <tr @class(['muted' => ! $a->active])><td><a href="{{ route('deputy.agents.edit', $a) }}"><b>{{ $a->name }}</b></a><div class="help">{{ $a->activityLabel() }} · temperature {{ rtrim(rtrim(number_format($a->temperature, 2), '0'), '.') }}{{ $a->active ? '' : ' · Paused' }} · <a href="{{ route('deputy.agents.test', $a) }}">Test</a></div></td>
                     <td>@include('admin.deputy._model', ['m' => $a->model])</td>
                     <td>@include('admin.deputy._model', ['m' => $a->fallback])</td>
                     <td class="num">@if ($s)<a href="{{ route('deputy.conversations', ['agent' => $a->id]) }}">{{ number_format($s->n) }}</a>@else 0 @endif</td>

@@ -27,6 +27,8 @@ Route::get('/site/components', [SitePageController::class, 'components']);
 // My Account: the customer portal (guard "customer", separate from admin sign-in)
 Route::prefix('myaccount')->name('myaccount.')->group(function () {
     Route::get('quickpay', [MyAccount\PortalController::class, 'quickpay'])->middleware('throttle:30,1')->name('quickpay');
+    // Testing: sign in as a sample customer in one click (404 unless admin.test_logins is on)
+    Route::post('login/test/{customer}', [MyAccount\AuthController::class, 'testLogin'])->middleware('throttle:30,1')->name('login.test');
     Route::middleware('guest:customer')->group(function () {
         Route::get('login', [MyAccount\AuthController::class, 'show'])->name('login');
         Route::post('login', [MyAccount\AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
