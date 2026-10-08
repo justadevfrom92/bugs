@@ -40,6 +40,22 @@
   "active": true
  },
  {
+  "id": 7,
+  "name": "CS Lead Demo",
+  "email": "lead@example.com",
+  "role": "Customer Service Lead",
+  "last": "2026-10-06 10:00",
+  "active": true
+ },
+ {
+  "id": 8,
+  "name": "AI Ops Demo",
+  "email": "ai@example.com",
+  "role": "AI Operations",
+  "last": "2026-10-06 10:00",
+  "active": true
+ },
+ {
   "id": 6,
   "name": "Former Employee",
   "email": "former@example.com",

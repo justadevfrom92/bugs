@@ -20,6 +20,17 @@
         <button class="btn cyan">Sign In</button>
         <a href="/" class="muted" style="text-align:center;font-size:.85rem">← Back to website</a>
     </form>
+    @if ($testUsers->isNotEmpty())
+        <div class="login test-logins">
+            <h2>Test Sign-Ins</h2>
+            <p class="muted">For testing only (never shown in production): sign in as any sample admin to see what their role can do.</p>
+            @foreach ($testUsers as $u)
+                <form method="post" action="{{ route('admin.login.test', $u) }}">@csrf
+                    <button class="test-user"><span class="avatar">{{ $u->initials() }}</span><span><b>{{ $u->name }}</b><small>{{ $u->role?->name ?? 'No role' }} · {{ collect($u->role?->perms ?? [])->map(fn ($p) => \App\Support\AdminApps::get($p)['name'] ?? null)->filter()->implode(', ') ?: 'no apps' }}</small></span></button>
+                </form>
+            @endforeach
+        </div>
+    @endif
 </div>
 </body>
 </html>

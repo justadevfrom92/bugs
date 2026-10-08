@@ -1,7 +1,8 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    @include('admin.partials.page-head', ['title' => $i['name'], 'sub' => e($i['purpose']).' · '.view('admin.partials.pill', $i['configured'] ? ['text' => 'Configured', 'tone' => 'ok'] : ['text' => 'Not configured', 'tone' => 'warn'])->render()])
+    @include('admin.partials.page-head', ['title' => $i['name'], 'sub' => e($i['purpose']).' · '.view('admin.partials.pill', $i['configured'] ? ['text' => 'Configured', 'tone' => 'ok'] : ['text' => 'Not configured', 'tone' => 'warn'])->render(),
+        'actions' => '<a class="btn cyan" href="'.route('sheriff.integrations.configure', request()->route('integration')).'">Configure</a>'])
     <div class="banner-note">Keys and passwords live in the server's <span class="mono">.env</span> file, never in the database or the code. Set them there and run <span class="mono">php artisan config:cache</span>; this page only shows whether each value is present.</div>
 
     <div class="grid-2">

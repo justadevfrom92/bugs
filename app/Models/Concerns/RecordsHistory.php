@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Support\History;
+use App\Support\TableCache;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -13,7 +14,13 @@ trait RecordsHistory
 {
     public static function bootRecordsHistory(): void
     {
-        static::created(fn (Model $m) => History::forModel($m, 'created'));
+        static::created(function (Model $m) {
+            History::forModel($m, 'created');
+            // Sheriff → Cached Tables: a copy of the table with the new record, when an admin adds one
+            if (auth('web')->check()) {
+                TableCache::record($m);
+            }
+        });
         static::updated(fn (Model $m) => History::forModel($m, 'updated'));
         static::deleted(fn (Model $m) => History::forModel($m, 'deleted'));
     }

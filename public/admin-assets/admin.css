@@ -496,3 +496,23 @@ a.report-card h3 { margin-bottom: 4px; }
 .sv-qhead .sv-req { font-size: .8rem; white-space: nowrap; }
 .sv-qinfo { padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 @media (max-width: 700px) { .sv-qhead { flex-wrap: wrap; } .sv-qhead .sv-pick { flex-basis: 100%; order: 5; } }
+/* Testing: one-click sign-in as a sample admin, and the header switcher */
+.login-wrap { gap: 20px; align-content: center; }
+.test-logins h2 { margin: 0; font-size: 1.05rem; color: var(--navy); }
+.test-logins p { margin: 0; font-size: .82rem; }
+.test-logins form { margin: 0; }
+.test-user { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; text-align: left; font: inherit; color: var(--ink); }
+.test-user:hover, .test-user:focus-visible { border-color: var(--cyan); background: var(--row); }
+.test-user > span:last-child { display: grid; min-width: 0; }
+.test-user .avatar { flex: none; }
+.test-user small { color: var(--muted); font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.test-switch select { padding: 5px 8px; border: 1px dashed var(--warn); border-radius: 6px; background: var(--warn-bg); color: var(--ink); font: inherit; font-size: .8rem; max-width: 220px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 700px) { .test-switch { display: none; } }
+/* Deputy: a model's name with its id, tinted by provider */
+.dp-model { display: inline-grid; gap: 1px; padding-left: 8px; border-left: 3px solid var(--cyan); line-height: 1.25; }
+.dp-model.local { border-left-color: #8e44ad; }
+.dp-model small { color: var(--muted); font-size: .72rem; }
+/* Sheriff → Cached Tables */
+.cached-table table { width: 100%; }
+tr.row-new td { background: var(--info-bg); }

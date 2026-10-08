@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             SystemSeeder::class,
             WalkerSeeder::class,
             SiteTrafficSeeder::class,
+            DeputySeeder::class,
         ]);
     }
 

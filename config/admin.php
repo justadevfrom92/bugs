@@ -202,6 +202,24 @@ return [
                 ],
             ],
         ],
+        'deputy' => [
+            'name' => 'Deputy',
+            'desc' => 'AI agents: which model each agent runs on (Claude or downloaded local models), their conversations and transcripts, and testing.',
+            'icon' => 'bolt',
+            'home' => 'deputy.dashboard',
+            'menu' => [
+                'AI Agents' => [
+                    ['Dashboard', 'deputy.dashboard'],
+                    ['Conversations', 'deputy.conversations'],
+                ],
+                'Setup' => [
+                    ['Agents', 'deputy.agents'],
+                    ['New Agent', 'deputy.agents.create'],
+                    ['Models', 'deputy.models'],
+                    ['Add a Model', 'deputy.models.create'],
+                ],
+            ],
+        ],
         'sheriff' => [
             'name' => 'Sheriff',
             'desc' => 'Settings: users, roles, API integrations, scheduled jobs and reference data.',
@@ -215,6 +233,7 @@ return [
                 'Config' => [
                     ['Crons', 'sheriff.jobs.index', 'failed_jobs'],
                     ['Update Sitemap', 'sheriff.sitemap'],
+                    ['Cached Tables', 'sheriff.cache'],
                 ],
                 'APIs' => 'integrations',        // one page per integration below, plus the overview
                 'Data' => 'reference_tables',    // one page per table below, plus TDSP Fees
@@ -228,11 +247,20 @@ return [
         'corral.items' => 'corral.customers.index',
     ],
 
+    // Sample sign-ins: the login page lists every sample admin for one-click sign-in, and the
+    // header gets a "Switch test user" menu. Always off in production.
+    'test_logins' => env('APP_ENV', 'production') !== 'production'
+        && filter_var(env('ADMIN_TEST_LOGINS', true), FILTER_VALIDATE_BOOL),
+
     // Extra permissions a role can hold besides app access
     'permissions' => [
         'delete' => 'Permanent deletes',
         'refunds' => 'Refunds & reversals',
+        'configure' => 'Change API settings (upload .env values)',
     ],
+
+    // Sheriff → APIs → Configure writes uploaded values into this file
+    'env_path' => env('ADMIN_ENV_PATH', base_path('.env')),
 
     'customer_statuses' => [
         'Submitted' => 'info',
@@ -314,6 +342,8 @@ return [
         'stripe' => $integration('Stripe', 'Card & ACH payments', ['STRIPE_KEY', 'STRIPE_SECRET', 'STRIPE_WEBHOOK_SECRET']),
         'utilibill' => $integration('Utilibill', 'Billing system (UB)', ['UTILIBILL_ENDPOINT', 'UTILIBILL_USERNAME', 'UTILIBILL_PASSWORD']),
         'sms' => $integration('Twilio', 'Text messages (SMS)', ['TWILIO_SID', 'TWILIO_TOKEN', 'TWILIO_FROM']),
+        'anthropic' => $integration('Anthropic', 'Claude models for Deputy AI agents', ['ANTHROPIC_API_KEY']),
+        'local_models' => $integration('Local Models', 'Custom downloaded models for Deputy, served by Ollama or another local runtime', ['LOCAL_MODELS_URL']),
     ],
 
 ];

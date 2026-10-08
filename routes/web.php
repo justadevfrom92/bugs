@@ -6,6 +6,7 @@ use App\Http\Controllers\SignupController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePageController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Middleware\CacheAdminTables;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -103,7 +104,11 @@ Route::prefix('admin')->group(function () {
         Route::post('login', [Admin\AuthController::class, 'login'])->middleware('throttle:10,1')->name('admin.login.attempt');
     });
 
-    Route::middleware('auth:web')->group(function () {
+    // Testing: sign in as a sample admin in one click (404 unless admin.test_logins is on)
+    Route::post('login/test/{user}', [Admin\AuthController::class, 'testLogin'])->middleware('throttle:30,1')->name('admin.login.test');
+
+    // Every admin page keeps a cached copy of its table (Sheriff → Cached Tables)
+    Route::middleware(['auth:web', CacheAdminTables::class])->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('admin.logout');
         Route::get('/', Admin\LauncherController::class)->name('admin.launcher');
 
@@ -370,6 +375,26 @@ Route::prefix('admin')->group(function () {
             Route::post('promos', 'savePromo')->name('promos.save');
         });
 
+        // Deputy — AI agents
+        Route::prefix('deputy')->name('deputy.')->middleware('app:deputy')->controller(Admin\Deputy\DeputyController::class)->group(function () {
+            Route::get('/', 'dashboard')->name('dashboard');
+            Route::get('conversations', 'conversations')->name('conversations');
+            Route::get('conversations/{conversation}', 'conversation')->name('conversations.show');
+            Route::get('agents', 'agents')->name('agents');
+            Route::get('agents/new', 'agentForm')->name('agents.create');
+            Route::post('agents', 'saveAgent')->name('agents.store');
+            Route::get('agents/{agent}/edit', 'agentForm')->name('agents.edit');
+            Route::put('agents/{agent}', 'saveAgent')->name('agents.update');
+            Route::get('agents/{agent}/test', 'testForm')->name('agents.test');
+            Route::post('agents/{agent}/test', 'runTest')->middleware('throttle:10,1')->name('agents.test.run');
+            Route::get('models', 'models')->name('models');
+            Route::get('models/new', 'modelForm')->name('models.create');
+            Route::post('models', 'saveModel')->name('models.store');
+            Route::get('models/{model}/edit', 'modelForm')->name('models.edit');
+            Route::put('models/{model}', 'saveModel')->name('models.update');
+            Route::post('models/{model}/check', 'checkModel')->middleware('throttle:20,1')->name('models.check');
+        });
+
         // Sheriff — users, roles, integrations, jobs, reference data
         Route::prefix('sheriff')->name('sheriff.')->middleware('app:sheriff')->group(function () {
             Route::get('/', fn () => redirect()->route('sheriff.users.index'));
@@ -382,6 +407,11 @@ Route::prefix('admin')->group(function () {
             Route::put('roles', [Admin\Sheriff\RoleController::class, 'update'])->name('roles.update');
             Route::get('integrations', [Admin\Sheriff\SystemController::class, 'integrations'])->name('integrations.index');
             Route::get('integrations/{integration}', [Admin\Sheriff\SystemController::class, 'integration'])->name('integrations.show');
+            Route::get('cached-tables', [Admin\Sheriff\CacheController::class, 'index'])->name('cache');
+            Route::get('cached-tables/{snapshot}', [Admin\Sheriff\CacheController::class, 'show'])->name('cache.show');
+            Route::get('integrations/{integration}/configure', [Admin\Sheriff\IntegrationConfigController::class, 'show'])->name('integrations.configure');
+            Route::post('integrations/{integration}/configure', [Admin\Sheriff\IntegrationConfigController::class, 'upload'])->middleware('throttle:20,1')->name('integrations.upload');
+            Route::post('integrations/{integration}/test', [Admin\Sheriff\IntegrationConfigController::class, 'test'])->middleware('throttle:20,1')->name('integrations.test');
             Route::get('sitemap', [Admin\Sheriff\SystemController::class, 'sitemap'])->name('sitemap');
             Route::post('sitemap', [Admin\Lando\PageController::class, 'sitemap'])->name('sitemap.run');
             Route::get('fees', [Admin\Lando\FeeController::class, 'index'])->name('fees.index');

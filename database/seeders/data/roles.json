@@ -11,7 +11,9 @@
    "refunds",
    "caboose",
    "bounty",
-   "rodeo"
+   "rodeo",
+   "deputy",
+   "configure"
   ]
  },
  {
@@ -43,6 +45,23 @@
    "sheriff",
    "refunds",
    "caboose"
+  ]
+ },
+ {
+  "name": "Customer Service Lead",
+  "perms": [
+   "corral",
+   "bounty",
+   "rodeo",
+   "delete",
+   "deputy"
+  ]
+ },
+ {
+  "name": "AI Operations",
+  "perms": [
+   "deputy",
+   "walker"
   ]
  }
 ]
